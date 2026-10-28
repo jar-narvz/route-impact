@@ -1,0 +1,289 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version="0.6" generator="route-impact fixtures">
+  <node id="100" version="1" lat="37.8000000" lon="-122.3000000" />
+  <node id="101" version="1" lat="37.8000000" lon="-122.2950000" />
+  <node id="102" version="1" lat="37.8000000" lon="-122.2900000" />
+  <node id="103" version="1" lat="37.8000000" lon="-122.2850000" />
+  <node id="104" version="1" lat="37.8000000" lon="-122.2800000" />
+  <node id="110" version="1" lat="37.8050000" lon="-122.3000000" />
+  <node id="111" version="1" lat="37.8050000" lon="-122.2950000" />
+  <node id="112" version="1" lat="37.8050000" lon="-122.2900000" />
+  <node id="113" version="1" lat="37.8050000" lon="-122.2850000" />
+  <node id="114" version="1" lat="37.8050000" lon="-122.2800000" />
+  <node id="120" version="1" lat="37.8100000" lon="-122.3000000" />
+  <node id="121" version="1" lat="37.8100000" lon="-122.2950000" />
+  <node id="122" version="1" lat="37.8100000" lon="-122.2900000" />
+  <node id="123" version="1" lat="37.8100000" lon="-122.2850000" />
+  <node id="124" version="1" lat="37.8100000" lon="-122.2800000" />
+  <node id="130" version="1" lat="37.8150000" lon="-122.3000000" />
+  <node id="131" version="1" lat="37.8150000" lon="-122.2950000" />
+  <node id="132" version="1" lat="37.8150000" lon="-122.2900000" />
+  <node id="133" version="1" lat="37.8150000" lon="-122.2850000" />
+  <node id="134" version="1" lat="37.8150000" lon="-122.2800000" />
+  <node id="140" version="1" lat="37.8200000" lon="-122.3000000" />
+  <node id="141" version="1" lat="37.8200000" lon="-122.2950000" />
+  <node id="142" version="1" lat="37.8200000" lon="-122.2900000" />
+  <node id="143" version="1" lat="37.8200000" lon="-122.2850000" />
+  <node id="144" version="1" lat="37.8200000" lon="-122.2800000" />
+  <node id="200" version="1" lat="37.8275000" lon="-122.3000000" />
+  <node id="201" version="1" lat="37.8275000" lon="-122.2950000" />
+  <node id="202" version="1" lat="37.8275000" lon="-122.2900000" />
+  <node id="203" version="1" lat="37.8275000" lon="-122.2850000" />
+  <node id="204" version="1" lat="37.8275000" lon="-122.2800000" />
+  <node id="300" version="1" lat="37.8100000" lon="-122.2755000" />
+  <node id="301" version="1" lat="37.8110000" lon="-122.2740000" />
+  <node id="302" version="1" lat="37.8100000" lon="-122.2725000" />
+  <node id="303" version="1" lat="37.8090000" lon="-122.2740000" />
+  <node id="310" version="1" lat="37.8100000" lon="-122.2700000" />
+  <node id="320" version="1" lat="37.8125000" lon="-122.2740000" />
+  <node id="400" version="1" lat="37.7950000" lon="-122.2800000" />
+  <node id="401" version="1" lat="37.7950000" lon="-122.2750000" />
+  <node id="500" version="1" lat="37.8030000" lon="-122.2930000" />
+  <node id="501" version="1" lat="37.8070000" lon="-122.2890000" />
+  <node id="600" version="1" lat="37.8160000" lon="-122.2975000" />
+  <node id="611" version="1" lat="37.8170000" lon="-122.2975000" />
+  <node id="700" version="1" lat="37.7970000" lon="-122.2900000" />
+  <node id="701" version="1" lat="37.8150000" lon="-122.2900000" />
+  <node id="702" version="1" lat="37.8050000" lon="-122.2770000" />
+  <node id="703" version="1" lat="37.8230000" lon="-122.2950000" />
+  <node id="800" version="1" lat="37.8170000" lon="-122.2830000" />
+  <node id="801" version="1" lat="37.8190000" lon="-122.2840000" />
+  <node id="802" version="1" lat="37.8190000" lon="-122.2820000" />
+  <node id="900" version="1" lat="37.7990000" lon="-122.3010000">
+    <tag k="place" v="town" />
+    <tag k="name" v="Westville" />
+    <tag k="population" v="12000" />
+  </node>
+  <node id="901" version="1" lat="37.8105000" lon="-122.2695000">
+    <tag k="place" v="town" />
+    <tag k="name" v="Easton" />
+    <tag k="population" v="8000" />
+  </node>
+  <way id="10" version="1">
+    <nd ref="100" />
+    <nd ref="101" />
+    <nd ref="102" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="11" version="1">
+    <nd ref="110" />
+    <nd ref="111" />
+    <nd ref="112" />
+    <nd ref="113" />
+    <nd ref="114" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="12" version="1">
+    <nd ref="120" />
+    <nd ref="121" />
+    <nd ref="122" />
+    <nd ref="123" />
+    <nd ref="124" />
+    <tag k="highway" v="tertiary" />
+    <tag k="maxspeed" v="35 mph" />
+    <tag k="name" v="Main St" />
+  </way>
+  <way id="13" version="1">
+    <nd ref="130" />
+    <nd ref="131" />
+    <nd ref="132" />
+    <nd ref="133" />
+    <nd ref="134" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="14" version="1">
+    <nd ref="140" />
+    <nd ref="141" />
+    <nd ref="142" />
+    <nd ref="143" />
+    <nd ref="144" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="20" version="1">
+    <nd ref="100" />
+    <nd ref="110" />
+    <nd ref="120" />
+    <nd ref="130" />
+    <nd ref="140" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="21" version="1">
+    <nd ref="101" />
+    <nd ref="111" />
+    <nd ref="121" />
+    <nd ref="131" />
+    <nd ref="141" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="22" version="1">
+    <nd ref="102" />
+    <nd ref="112" />
+    <nd ref="122" />
+    <nd ref="132" />
+    <nd ref="142" />
+    <tag k="highway" v="tertiary" />
+    <tag k="maxspeed" v="35 mph" />
+    <tag k="name" v="Center Ave" />
+  </way>
+  <way id="23" version="1">
+    <nd ref="103" />
+    <nd ref="113" />
+    <nd ref="123" />
+    <nd ref="133" />
+    <nd ref="143" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+    <tag k="oneway" v="-1" />
+  </way>
+  <way id="24" version="1">
+    <nd ref="104" />
+    <nd ref="114" />
+    <nd ref="124" />
+    <nd ref="134" />
+    <nd ref="144" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="30" version="1">
+    <nd ref="200" />
+    <nd ref="201" />
+    <nd ref="202" />
+    <nd ref="203" />
+    <nd ref="204" />
+    <tag k="highway" v="motorway" />
+    <tag k="maxspeed" v="65 mph" />
+    <tag k="oneway" v="yes" />
+  </way>
+  <way id="31" version="1">
+    <nd ref="140" />
+    <nd ref="201" />
+    <tag k="highway" v="motorway_link" />
+    <tag k="maxspeed" v="35 mph" />
+    <tag k="oneway" v="yes" />
+  </way>
+  <way id="32" version="1">
+    <nd ref="203" />
+    <nd ref="143" />
+    <tag k="highway" v="motorway_link" />
+    <tag k="maxspeed" v="35 mph" />
+    <tag k="oneway" v="yes" />
+  </way>
+  <way id="40" version="1">
+    <nd ref="300" />
+    <nd ref="303" />
+    <nd ref="302" />
+    <nd ref="301" />
+    <nd ref="300" />
+    <tag k="highway" v="primary" />
+    <tag k="maxspeed" v="25 mph" />
+    <tag k="junction" v="roundabout" />
+  </way>
+  <way id="41" version="1">
+    <nd ref="124" />
+    <nd ref="300" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="42" version="1">
+    <nd ref="302" />
+    <nd ref="310" />
+    <tag k="highway" v="tertiary" />
+    <tag k="maxspeed" v="30 mph" />
+  </way>
+  <way id="43" version="1">
+    <nd ref="301" />
+    <nd ref="320" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="50" version="1">
+    <nd ref="101" />
+    <nd ref="500" />
+    <tag k="highway" v="secondary" />
+    <tag k="maxspeed" v="50 mph" />
+  </way>
+  <way id="51" version="1">
+    <nd ref="500" />
+    <nd ref="501" />
+    <tag k="highway" v="secondary" />
+    <tag k="maxspeed" v="50 mph" />
+    <tag k="bridge" v="yes" />
+    <tag k="layer" v="1" />
+  </way>
+  <way id="52" version="1">
+    <nd ref="501" />
+    <nd ref="123" />
+    <tag k="highway" v="secondary" />
+    <tag k="maxspeed" v="50 mph" />
+  </way>
+  <way id="53" version="1">
+    <nd ref="130" />
+    <nd ref="600" />
+    <nd ref="131" />
+    <tag k="highway" v="tertiary" />
+    <tag k="maxspeed" v="35 mph" />
+  </way>
+  <way id="54" version="1">
+    <nd ref="133" />
+    <nd ref="800" />
+    <nd ref="801" />
+    <nd ref="802" />
+    <nd ref="800" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="55" version="1">
+    <nd ref="104" />
+    <nd ref="400" />
+    <nd ref="401" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="60" version="1">
+    <nd ref="102" />
+    <nd ref="700" />
+    <tag k="highway" v="service" />
+    <tag k="maxspeed" v="15 mph" />
+  </way>
+  <way id="61" version="1">
+    <nd ref="132" />
+    <nd ref="701" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+    <tag k="access" v="private" />
+  </way>
+  <way id="62" version="1">
+    <nd ref="141" />
+    <nd ref="703" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+    <tag k="vehicle" v="no" />
+  </way>
+  <way id="63" version="1">
+    <nd ref="114" />
+    <nd ref="702" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+    <tag k="access" v="no" />
+    <tag k="motorcar" v="yes" />
+  </way>
+  <way id="70" version="1">
+    <nd ref="102" />
+    <nd ref="103" />
+    <nd ref="104" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+  <way id="71" version="1">
+    <nd ref="600" />
+    <nd ref="611" />
+    <tag k="highway" v="residential" />
+    <tag k="maxspeed" v="25 mph" />
+  </way>
+</osm>

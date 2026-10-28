@@ -2,10 +2,9 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design (docs/DESIGN.md), Codex plan critique (PLAN.md → Review log), Step 0.
-- **Next up:** Step 1 — Test fixtures with known answers. Claude first writes/reviews the fixture design (which nodes/ways, which edits in `town_v2` and `town_v2_split`, the expected answers), then hands it to Codex.
-  - **Read to resume (only these):** PLAN.md Step 1 (`sed -n 35,44p PLAN.md`) · DESIGN §5.3–5.4 (`sed -n 133,149p docs/DESIGN.md`) · §5.13 (`sed -n 247,263p docs/DESIGN.md`).
-  - **Decided so far:** tag every fixture way with an explicit `maxspeed` so expected times are hand-computable before `config/speeds.toml` exists (Step 3); default-speed fill gets its own Step 3 test. `osmium` is installed (`/opt/homebrew/bin/osmium`).
+- **Done:** design, plan critique, Step 0, Step 1 (fixtures + oracle; not yet committed).
+- **Next up:** Step 2 (see PLAN.md). Read to resume: PLAN.md Step 2 only, plus `docs/FIXTURES.md` §3 and §6 if a test needs fixture ids.
+  - **Decided so far:** fixture travel times come from `scripts/fixture_oracle.py` (independent, stdlib only). The motorway and ramps are covered structurally only (no named trip uses them).
 - **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
 - **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial` installed). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, checksums verified. Run `codex exec` with `< /dev/null`.
 - **Blockers:** none
@@ -24,6 +23,14 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 1: Test fixtures with known answers
+- **Agent:** Claude (design `docs/FIXTURES.md`), Codex (implementation)
+- **Did:** Designed a 50-node / 28-way town with 5 v2 edits, 3 zero-impact split edits, and 9 named trips. Codex built the XML, the PBFs, `build_fixtures.sh`, the oracle, and `expected.json`. Claude swapped T2 after the isolation check failed.
+- **Changed:** `docs/FIXTURES.md`, `PLAN.md` (Step 1 uses the oracle), `scripts/build_fixtures.sh`, `scripts/fixture_oracle.py`, `tests/fixtures/{town_v1,town_v2,town_v2_split}.osm(.pbf)`, `tests/fixtures/berkeley_sample.osm.pbf`, `tests/fixtures/expected.json`
+- **Verify:** ST_ReadOSM counts → v1 `[('node', 50), ('way', 28)]`, v2 `[('node', 51), ('way', 26)]`, v2_split `[('node', 51), ('way', 29)]`, all equal to the XML element counts. Sizes: berkeley_sample 263K, town PBFs < 1K each. `python scripts/fixture_oracle.py --check` → `OK`.
+- **Review:** Claude reviewed the oracle: it is independent of `src/`, applies access precedence and implied one-ways per DESIGN §5.3–5.4, and tie-breaks parallel edges deterministically. Finding: the first `--check` failed with `T2: isolation changed by [], expected ['E2']`, because 140 → 103 never used col 3. Fixed by T2 = 133 → 113 (99.49 s → 149.67 s, E2 only), with a matching one-line change in the oracle's trip list.
+- **Gotchas:** in this grid the motorway is never on a shortest path, so ramps are tested structurally only. Codex ran without writing a final message to the session log, so Claude reran Verify itself.
 
 ### 2026-10-28 — Step 0: Scaffold the repo
 - **Agent:** Codex (implement) · Claude (review + Verify)
