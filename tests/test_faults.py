@@ -98,6 +98,7 @@ def test_mini_suite(towns, baseline, thresholds, tmp_path, monkeypatch):
         [c[0] for c in CASES],
         tmp_path,
         "town_v1",
+        full_check_every=1,
     )
     assert scores["incremental_equals_full"]["percent"] == 100
     assert scores["incremental_equals_full"]["denominator"] == 11
@@ -137,7 +138,14 @@ def test_slowdown_run_batch(towns, baseline, thresholds, tmp_path):
         "root_cause_joint": (0, 0),
     }
     scores = evaluate_faults(
-        towns["db"]["town_v1"], baseline, towns["rows"], thresholds, faults, tmp_path, "town_v1"
+        towns["db"]["town_v1"],
+        baseline,
+        towns["rows"],
+        thresholds,
+        faults,
+        tmp_path,
+        "town_v1",
+        full_check_every=1,
     )
     assert scores["root_cause_joint"] == {"correct": 0, "denominator": 0, "percent": None}
     assert scores["root_cause_batch"] == {"correct": 1, "denominator": 1, "percent": 100}
@@ -302,6 +310,7 @@ def test_seeded_suite_files(tmp_path):
             "town_v1",
             n=7,
             seed=2027,
+            full_check_every=1,
             data_dir=Path("tests/fixtures"),
             trips_path=Path("tests/fixtures/town_trips.csv"),
             results_dir=tmp_path / name,
@@ -444,6 +453,7 @@ def test_equality_detects_unaffected_record_difference(
         [Fault("delete_way", way_id=51)],
         tmp_path,
         "town_v1",
+        full_check_every=1,
     )
     assert scores["incremental_equals_full"] == {
         "correct": 0,
@@ -566,3 +576,198 @@ def test_cli_run_culprit_output(tmp_path, capsys):
     saved = json.loads((tmp_path / "run/impact.json").read_text())
     assert saved["trips"][0]["changed_segment_count"] == 2
     assert not {"old_path", "new_path", "changed_segments"} & saved["trips"][0].keys()
+
+
+@pytest.mark.parametrize("every,checked", [(1, list(range(11))), (3, [0, 3, 6, 9])])
+def test_full_check_schedule(towns, baseline, thresholds, tmp_path, monkeypatch, every, checked):
+    from route_impact import faults
+
+    compare = Mock(wraps=faults.compare_trips)
+    sync = Mock(wraps=faults.os.fsync)
+    monkeypatch.setattr(faults, "compare_trips", compare)
+    monkeypatch.setattr(faults.os, "fsync", sync)
+    scores = evaluate_faults(
+        towns["db"]["town_v1"],
+        baseline,
+        towns["rows"],
+        thresholds,
+        [case[0] for case in CASES],
+        tmp_path,
+        "town_v1",
+        full_check_every=every,
+    )
+    assert scores["full_check_every"] == every
+    assert [i for i, run in enumerate(scores["runs"]) if run["full_checked"]] == checked
+    assert compare.call_count == len(checked)
+    assert sync.call_count == 11
+    assert scores["incremental_equals_full"] == {
+        "correct": len(checked),
+        "denominator": len(checked),
+        "percent": 100,
+    }
+    assert scores["root_cause_single"] == {"correct": 7, "denominator": 7, "percent": 100}
+    assert scores["impact_rate"] == {
+        "correct": 7,
+        "denominator": 7,
+        "percent": 100,
+        "description": "Network redundancy, not accuracy",
+    }
+    lines = (tmp_path / "progress.jsonl").read_text().splitlines()
+    assert [json.loads(line)["index"] for line in lines] == list(range(11))
+    for i, (run, timing, line) in enumerate(
+        zip(scores["runs"], scores["seconds"]["runs"], lines, strict=True)
+    ):
+        record = json.loads(line)
+        assert line == json.dumps(record, sort_keys=True, allow_nan=False)
+        assert record["equal"] is (True if i in checked else None)
+        assert run["incremental_equals_full"] is record["equal"]
+        if i not in checked:
+            assert timing["compare_full"] == 0.0
+
+
+def fixture_suite(directory, **kwargs):
+    from route_impact.faults import run_suite
+
+    return run_suite(
+        "town_v1",
+        n=7,
+        seed=2027,
+        data_dir=Path("tests/fixtures"),
+        trips_path=Path("tests/fixtures/town_trips.csv"),
+        results_dir=directory,
+        **kwargs,
+    )
+
+
+def test_crash_resume(tmp_path, monkeypatch):
+    from route_impact import faults
+
+    original = faults.apply_faults
+    calls = []
+
+    def crash(db, group, out):
+        calls.append(group)
+        if len(calls) == 3:
+            raise RuntimeError("third run crashed")
+        return original(db, group, out)
+
+    monkeypatch.setattr(faults, "apply_faults", crash)
+    directory = tmp_path / "resumed/faults/town_v1"
+    with pytest.raises(RuntimeError, match="third run crashed"):
+        fixture_suite(tmp_path / "resumed", full_check_every=3)
+    progress = directory / "progress.jsonl"
+    first_lines = progress.read_text().splitlines()
+    assert len(first_lines) == 2
+    assert [json.loads(line)["index"] for line in first_lines] == [0, 1]
+    assert not (directory / "scores.json").exists()
+    apply = Mock(wraps=original)
+    monkeypatch.setattr(faults, "apply_faults", apply)
+    resumed = fixture_suite(tmp_path / "resumed", full_check_every=3)
+    assert len(resumed["runs"]) == 8
+    assert apply.call_count == 6
+    assert [[asdict(f) for f in call.args[1]] for call in apply.call_args_list] == [
+        run["faults"] for run in resumed["runs"][2:]
+    ]
+    assert progress.read_text().splitlines()[:2] == first_lines
+    uninterrupted = fixture_suite(tmp_path / "uninterrupted", full_check_every=3)
+    assert {k: v for k, v in resumed.items() if k != "seconds"} == {
+        k: v for k, v in uninterrupted.items() if k != "seconds"
+    }
+    # Rebuild scores from the completed log, without applying any faults.
+    (directory / "scores.json").unlink()
+    apply.reset_mock()
+    repeated = fixture_suite(tmp_path / "resumed", full_check_every=3)
+    apply.assert_not_called()
+    assert repeated == resumed
+
+
+@pytest.mark.parametrize("field", ["seed", "N", "faults", "full_check_every", "missing"])
+def test_resume_manifest_mismatch(tmp_path, monkeypatch, field):
+    from route_impact import faults
+
+    fixture_suite(tmp_path)
+    path = tmp_path / "faults/town_v1/faults.json"
+    manifest = json.loads(path.read_text())
+    if field == "missing":
+        path.unlink()
+    else:
+        manifest[field] = list(reversed(manifest[field])) if field == "faults" else -1
+        path.write_text(json.dumps(manifest))
+    apply = Mock(wraps=faults.apply_faults)
+    monkeypatch.setattr(faults, "apply_faults", apply)
+    with pytest.raises(ValueError, match="Resume faults.json does not match"):
+        fixture_suite(tmp_path)
+    apply.assert_not_called()
+    scores = fixture_suite(tmp_path, fresh=True, full_check_every=3)
+    assert apply.call_count == 8
+    assert scores["full_check_every"] == 3
+    assert len((path.parent / "progress.jsonl").read_text().splitlines()) == 8
+
+
+@pytest.mark.parametrize("bad_index", [-1, 8, 0, True])
+def test_invalid_progress_index(tmp_path, monkeypatch, bad_index):
+    from route_impact import faults
+
+    fixture_suite(tmp_path)
+    path = tmp_path / "faults/town_v1/progress.jsonl"
+    lines = path.read_text().splitlines()
+    record = json.loads(lines[0])
+    record["index"] = bad_index
+    path.write_text("\n".join(lines + [json.dumps(record)]) + "\n")
+    apply = Mock(wraps=faults.apply_faults)
+    monkeypatch.setattr(faults, "apply_faults", apply)
+    with pytest.raises(ValueError, match="duplicate or out-of-range index"):
+        fixture_suite(tmp_path)
+    apply.assert_not_called()
+
+
+@pytest.mark.parametrize("every", [0, -1])
+def test_cli_invalid_full_check_every(every, tmp_path, capsys):
+    assert (
+        main(
+            [
+                "faults",
+                "--snapshot",
+                "town_v1",
+                "--n",
+                "7",
+                "--seed",
+                "2027",
+                "--data-dir",
+                "tests/fixtures",
+                "--trips",
+                "tests/fixtures/town_trips.csv",
+                "--results-dir",
+                str(tmp_path),
+                "--full-check-every",
+                str(every),
+            ]
+        )
+        == 2
+    )
+    assert "full_check_every must be at least 1" in capsys.readouterr().err
+    assert not (tmp_path / "faults").exists()
+
+
+def test_cli_fault_options(tmp_path, monkeypatch):
+    suite = Mock()
+    monkeypatch.setattr("route_impact.cli.run_suite", suite)
+    arguments = [
+        "faults",
+        "--snapshot",
+        "town_v1",
+        "--n",
+        "7",
+        "--seed",
+        "2027",
+        "--results-dir",
+        str(tmp_path),
+    ]
+    assert main(arguments) == 0
+    assert suite.call_args.kwargs["full_check_every"] == 10
+    assert suite.call_args.kwargs["fresh"] is False
+    assert main([*arguments, "--full-check-every", "3", "--fresh"]) == 0
+    assert suite.call_args.kwargs["full_check_every"] == 3
+    assert suite.call_args.kwargs["fresh"] is True
+    suite.side_effect = ValueError("Resume faults.json does not match")
+    assert main(arguments) == 2

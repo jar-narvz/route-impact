@@ -46,6 +46,8 @@ def main(argv: list[str] | None = None) -> int:
     what_if.add_argument("--out", type=Path)
     for flag in ("delete-way", "flip-oneway", "disconnect-node"):
         what_if.add_argument(f"--{flag}", action="append", type=int, default=[])
+    faults.add_argument("--full-check-every", type=int, default=10)
+    faults.add_argument("--fresh", action="store_true")
     faults.add_argument("--n", type=int, required=True)
     faults.add_argument("--seed", type=int, required=True)
     faults.add_argument("--results-dir", type=Path, default=Path("results"))
@@ -70,7 +72,13 @@ def main(argv: list[str] | None = None) -> int:
                 payload = run_what_if(args.snapshot, injections, out=args.out, **options)
                 return payload["exit_code"]
             run_suite(
-                args.snapshot, n=args.n, seed=args.seed, results_dir=args.results_dir, **options
+                args.snapshot,
+                n=args.n,
+                seed=args.seed,
+                results_dir=args.results_dir,
+                full_check_every=args.full_check_every,
+                fresh=args.fresh,
+                **options,
             )
             return 0
         except Exception as error:  # noqa: BLE001 — fault failures are tool errors.

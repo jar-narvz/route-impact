@@ -1,6 +1,7 @@
 """Inject reproducible table mutations and evaluate routing and attribution."""
 
 import json
+import os
 import random
 import re
 import shutil
@@ -356,19 +357,29 @@ def _write_json(path: Path, value: dict) -> None:
     )
 
 
-def evaluate_faults(
-    db: Path,
-    baseline: Baseline,
-    trips: list[dict],
-    thresholds: Thresholds,
-    faults: list[Fault],
-    directory: Path,
-    snapshot: str,
-    *,
-    extract_seconds: float = 0.0,
-    baseline_seconds: float = 0.0,
-) -> dict:
-    """Evaluate each fault and consecutive distinct-target batches against full routing."""
+def _read_progress(path: Path, groups: list[list[Fault]], full_check_every: int) -> dict[int, dict]:
+    """Reject ambiguous or incompatible checkpoints before executing any runs."""
+    records = {}
+    if not path.exists():
+        return records
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        try:
+            record = json.loads(line)
+            index = record["index"]
+            if type(index) is not int or not 0 <= index < len(groups) or index in records:
+                raise ValueError("duplicate or out-of-range index")
+            if record["faults"] != [asdict(f) for f in groups[index]]:
+                raise ValueError("faults do not match")
+            if record["full_checked"] is not (index % full_check_every == 0):
+                raise ValueError("full-check schedule does not match")
+            records[index] = record
+        except (ValueError, KeyError, TypeError) as error:
+            raise ValueError(f"Invalid progress.jsonl line {line_number}: {error}") from error
+    return records
+
+
+def _progress_scores(records: dict[int, dict], full_check_every: int) -> dict:
+    """Reduce only persisted run contributions, in suite order."""
     counts = {
         key: [0, 0]
         for key in (
@@ -381,11 +392,76 @@ def evaluate_faults(
     }
     runs = []
     run_seconds = []
+    for _, record in sorted(records.items()):
+        for key, (correct, total) in record["contributions"].items():
+            counts[key][0] += correct
+            counts[key][1] += total
+        runs.append(
+            {
+                "faults": record["faults"],
+                "single": record["single"],
+                "full_checked": record["full_checked"],
+                "incremental_equals_full": record["equal"],
+                "affected_trip_ids": record["affected_trip_ids"],
+            }
+        )
+        run_seconds.append(record["seconds"])
+    scores = {
+        key: {
+            "correct": correct,
+            "denominator": total,
+            "percent": 100 * correct / total if total else None,
+        }
+        for key, (correct, total) in counts.items()
+    }
+    scores["impact_rate"]["description"] = "Network redundancy, not accuracy"
+    scores["full_check_every"] = full_check_every
+    scores["runs"] = runs
+
+    def mean(single: bool) -> float:
+        totals = [
+            t["total"] for r, t in zip(runs, run_seconds, strict=True) if r["single"] == single
+        ]
+        return sum(totals) / len(totals) if totals else 0.0
+
+    setup_seconds = (
+        records[min(records)]["setup_seconds"] if records else {"extract": 0.0, "baseline": 0.0}
+    )
+    scores["seconds"] = {
+        **setup_seconds,
+        "runs": run_seconds,
+        "mean_single": mean(True),
+        "mean_batch": mean(False),
+    }
+    return scores
+
+
+def evaluate_faults(
+    db: Path,
+    baseline: Baseline,
+    trips: list[dict],
+    thresholds: Thresholds,
+    faults: list[Fault],
+    directory: Path,
+    snapshot: str,
+    *,
+    full_check_every: int = 10,
+    extract_seconds: float = 0.0,
+    baseline_seconds: float = 0.0,
+) -> dict:
+    """Checkpoint each run and sample full routing checks in seeded suite order."""
+    if full_check_every < 1:
+        raise ValueError("full_check_every must be at least 1")
+    directory.mkdir(parents=True, exist_ok=True)
+    progress = directory / "progress.jsonl"
+    singles = [[fault] for fault in faults]
+    batches = fault_batches(faults, baseline.ways)
+    completed = _read_progress(progress, singles + batches, full_check_every)
     with TemporaryDirectory(prefix="route-faults-") as temporary:
         new_db = Path(temporary) / "fault.duckdb"
-        singles = [[fault] for fault in faults]
-        batches = fault_batches(faults, baseline.ways)
         for index, group in enumerate(singles + batches):
+            if index in completed:
+                continue
             start = perf_counter()
             timing = {}
             if new_db.exists():
@@ -409,66 +485,51 @@ def evaluate_faults(
                 new_ways=new_ways,
                 timings=timing,
             )
-            full_start = perf_counter()
-            full_trips, _ = compare_trips(
-                baseline.graph,
-                new_graph,
-                baseline.nodes,
-                new_nodes,
-                trips,
-                thresholds,
-                full=True,
-                old_routes=baseline.routes,
-            )
-            timing["compare_full"] = perf_counter() - full_start
-            # The rerouted flag describes execution mode, not a routing result.
-            # Compare every other field on ALL records before JSON rounds floats.
-            equal = [
-                {k: v for k, v in t.items() if k != "rerouted"} for t in incremental_trips
-            ] == [{k: v for k, v in t.items() if k != "rerouted"} for t in full_trips]
-            counts["incremental_equals_full"][0] += equal
-            counts["incremental_equals_full"][1] += 1
+            full_checked = index % full_check_every == 0
+            equal = None
+            timing["compare_full"] = 0.0
+            if full_checked:
+                full_start = perf_counter()
+                full_trips, _ = compare_trips(
+                    baseline.graph,
+                    new_graph,
+                    baseline.nodes,
+                    new_nodes,
+                    trips,
+                    thresholds,
+                    full=True,
+                    old_routes=baseline.routes,
+                )
+                timing["compare_full"] = perf_counter() - full_start
+                # Compare raw records; rerouted describes execution, not results.
+                equal = [
+                    {k: v for k, v in t.items() if k != "rerouted"} for t in incremental_trips
+                ] == [{k: v for k, v in t.items() if k != "rerouted"} for t in full_trips]
             single = index < len(singles)
+            contributions = score_payload(payload, group, single=single)
+            if full_checked:
+                contributions["incremental_equals_full"] = (int(equal), 1)
             if single:
-                counts["impact_rate"][0] += bool(payload["trips"])
-                counts["impact_rate"][1] += 1
-            for key, (correct, total) in score_payload(payload, group, single=single).items():
-                counts[key][0] += correct
-                counts[key][1] += total
-            runs.append(
-                {
-                    "faults": [asdict(f) for f in group],
-                    "single": single,
-                    "incremental_equals_full": equal,
-                    "affected_trip_ids": [trip["trip_id"] for trip in payload["trips"]],
-                }
-            )
+                contributions["impact_rate"] = (int(bool(payload["trips"])), 1)
             timing["total"] = perf_counter() - start
-            run_seconds.append(timing)
-    scores = {
-        key: {
-            "correct": correct,
-            "denominator": total,
-            "percent": 100 * correct / total if total else None,
-        }
-        for key, (correct, total) in counts.items()
-    }
-    scores["impact_rate"]["description"] = "Network redundancy, not accuracy"
-    scores["runs"] = runs
-
-    def mean(single: bool) -> float:
-        totals = [
-            t["total"] for r, t in zip(runs, run_seconds, strict=True) if r["single"] == single
-        ]
-        return sum(totals) / len(totals) if totals else 0.0
-
-    scores["seconds"] = {
-        "extract": extract_seconds,
-        "baseline": baseline_seconds,
-        "runs": run_seconds,
-        "mean_single": mean(True),
-        "mean_batch": mean(False),
-    }
+            record = {
+                "index": index,
+                "faults": [asdict(f) for f in group],
+                "single": single,
+                "full_checked": full_checked,
+                "equal": equal,
+                "contributions": contributions,
+                "affected_trip_ids": [trip["trip_id"] for trip in payload["trips"]],
+                "seconds": timing,
+                "setup_seconds": {"extract": extract_seconds, "baseline": baseline_seconds},
+            }
+            with progress.open("a", encoding="utf-8") as output:
+                output.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
+                output.flush()
+                os.fsync(output.fileno())
+    scores = _progress_scores(
+        _read_progress(progress, singles + batches, full_check_every), full_check_every
+    )
     _write_json(directory / "scores.json", scores)
     return scores
 
@@ -478,11 +539,15 @@ def run_suite(
     *,
     n: int,
     seed: int,
+    full_check_every: int = 10,
+    fresh: bool = False,
     data_dir: Path = Path("data"),
     trips_path: Path = Path("config/trips.csv"),
     results_dir: Path = Path("results"),
     thresholds_path: Path = Path("config/thresholds.toml"),
 ) -> dict:
+    if full_check_every < 1:
+        raise ValueError("full_check_every must be at least 1")
     trips = read_trips(trips_path)
     thresholds = load_thresholds(thresholds_path)
     with TemporaryDirectory(prefix="route-suite-") as temporary:
@@ -494,9 +559,21 @@ def run_suite(
         baseline_seconds = perf_counter() - start
         faults = sample_faults(db, baseline, n, seed)
         directory = results_dir / "faults" / snapshot
-        _write_json(
-            directory / "faults.json", {"seed": seed, "N": n, "faults": [asdict(f) for f in faults]}
-        )
+        manifest = {
+            "seed": seed,
+            "N": n,
+            "faults": [asdict(f) for f in faults],
+            "full_check_every": full_check_every,
+        }
+        if fresh:
+            for name in ("faults.json", "progress.jsonl", "scores.json"):
+                (directory / name).unlink(missing_ok=True)
+        if (directory / "progress.jsonl").exists():
+            manifest_path = directory / "faults.json"
+            if not manifest_path.exists() or json.loads(manifest_path.read_text()) != manifest:
+                raise ValueError("Resume faults.json does not match this invocation; use --fresh")
+        else:
+            _write_json(directory / "faults.json", manifest)
         return evaluate_faults(
             db,
             baseline,
@@ -505,6 +582,7 @@ def run_suite(
             faults,
             directory,
             snapshot,
+            full_check_every=full_check_every,
             extract_seconds=extract_seconds,
             baseline_seconds=baseline_seconds,
         )

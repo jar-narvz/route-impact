@@ -1,10 +1,10 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 9b — implementation verified offline; awaits Claude review and the planned real-data size, map and timed-suite checks.
+- **Working on:** Step 9c — implementation verified offline; awaits Claude review, rehearsal and the real suite run.
 - **Done:** design, plan critique, Steps 0–9 committed (Step 9 = `a8c7c9a`).
-- **Next up:** Claude writes the Step 9b Codex brief from PLAN "### Step 9b", launches Codex, reviews, then reruns the Bay Bridge what-if and an n=10 timed suite on 261027 (scratchpad outputs). Then Step 10/11.
-  - **Read to resume (one call):** `grep -n "### Step 9b" PLAN.md` and read that step; `grep -n "def explain_trips\|def candidate_edits\|def write_geojson\|def render_markdown\|def evaluate_faults" src/route_impact/*.py; git status --short`. Previous Bay Bridge outputs + preview are in the session scratchpad; `.claude/launch.json` (untracked, local) serves that preview.
+- **Next up:** Claude reviews Step 9c, rehearses the n=10 suite with default K=10 in a scratch directory (11 progress lines, runs 0 and 10 checked), then starts the n=200 real suite. Then Step 10/11.
+  - **Read to resume:** PLAN "### Step 9c", the newest log entry below, and the allowed-file diff. No Step 9c real-data run has been performed by Codex.
   - **Real-data what-if (Claude, 2026-10-28):** `route-impact what-if --snapshot 261027 --out <scratchpad> --delete-way` ×10 Bay Bridge ways → `Affected: 253 intercity · 96 local trips · 15% weighted travel`, `Root cause: way 661905446 ✔`; `/usr/bin/time -l`: 603.98 s real, 8549171200 bytes max RSS. Map preview (12 heaviest trips) drawn in the browser: detours follow real roads (Richmond–San Rafael and San Mateo bridges). Outputs left in the scratchpad, not `results/`.
   - **Finding A — output size:** that run wrote impact.json 117,885,253 B and impact.geojson 110,577,262 B (349 trips × full paths). Too big to commit or load in the map; a bad real day would do the same. Needs a size cap (e.g. top-K trips in GeoJSON, paths out of the committed impact.json).
   - **Finding B — multi-way edits read as "joint":** the bridge is 10 ways in series, so restoring any one way recovers nothing; 348 of 349 trips are `joint` (1 confirmed) and the top culprit has 1 trip. Correct per DESIGN §5.7, but the flagship demo looks like a miss. Option: when no single edit recovers a trip, try restoring all its candidates together and label the set "confirmed (group)".
@@ -41,6 +41,41 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 9c: sampled full checks and resumable fault suite
+- **Agent:** Codex
+- **Did:** Added configurable full checks on indices 0, K, 2K in singles-then-batches order (default K=10); unchecked runs record full_checked=false, null equality and compare_full=0.0. Persisted each finished run's index, faults, score contributions, affected trip ids, phase and setup timings as sorted strict JSON, followed by flush and fsync. Final scores are reduced from the persisted records in suite order; equality counts only checked runs. Resume re-samples faults deterministically, validates the manifest, rejects duplicate/out-of-range progress indices and skips completed runs. Added --full-check-every/--fresh, Make defaults/help and 15 offline test cases covering sampling, crash/resume equivalence, score reconstruction, manifest mismatches, invalid indices, fresh starts and CLI errors.
+- **Changed:** `src/route_impact/faults.py`, `src/route_impact/cli.py`, `Makefile`, `tests/test_faults.py`, `PROGRESS.md`.
+- **Verify:** Both required commands exited 0 using the existing venv via `PATH="$PWD/.venv/bin:$PATH"`; fixtures only, offline. Actual final output:
+
+```text
+$ make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 132 items
+
+tests/test_extract.py ......                                             [  4%]
+tests/test_faults.py ................................................... [ 43%]
+                                                                         [ 43%]
+tests/test_graph.py .............                                        [ 53%]
+tests/test_impact.py .............................                       [ 75%]
+tests/test_report.py ..........                                          [ 82%]
+tests/test_rootcause.py ................                                 [ 94%]
+tests/test_smoke.py .                                                    [ 95%]
+tests/test_trips.py ......                                               [100%]
+
+============================= 132 passed in 34.80s =============================
+$ make lint
+ruff check . && ruff format --check .
+All checks passed!
+28 files already formatted
+```
+
+- **Review:** Awaiting Claude review; Claude owns the n=10 rehearsal and n=200 real run.
+- **Gotchas:** No network and no `data/*.osm.pbf` execution. Pre-existing `PLAN.md`, `docs/DESIGN.md` edits and untracked `.claude/` were left untouched. `--fresh` removes the manifest, progress and stale scores before starting the new suite. Malformed progress stops with a line-specific error rather than discarding completed records. Setup timings come from the first persisted run; resume still rebuilds the baseline and re-samples before validation. Crash test raises on run index 2, preserves exactly two lines, resumes with only six remaining apply_faults calls and matches uninterrupted scores excluding seconds; rebuilding completed scores makes zero apply_faults calls and reproduces scores including saved timings. No commit.
 
 ### 2026-10-28 — Step 9b: small outputs, contiguous-run culprits, fault timing
 - **Agent:** Codex

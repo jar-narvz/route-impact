@@ -13,7 +13,7 @@ help:
 	@echo "report    Re-render report wording (DATE=YYYY-MM-DD)"
 	@echo "map       Serve the results map at http://localhost:8000/site/"
 	@echo "what-if   Evaluate edits (SNAPSHOT=YYMMDD ARGS='--delete-way ID')"
-	@echo "faults    Run injected faults (SNAPSHOT=YYMMDD N=200 SEED=2027)"
+	@echo "faults    Run injected faults (SNAPSHOT=YYMMDD N=200 SEED=2027 FULL_CHECK_EVERY=10)"
 	@echo "demos     Run the three configured what-if demos (SNAPSHOT=261027)"
 	@echo "bench     Benchmark the pipeline (stub)"
 	@echo "test      Run pytest"
@@ -50,8 +50,9 @@ what-if:
 faults: SNAPSHOT ?= latest
 faults: N ?= 200
 faults: SEED ?= 2027
+faults: FULL_CHECK_EVERY ?= 10
 faults:
-	route-impact faults --snapshot $(SNAPSHOT) --n $(N) --seed $(SEED)
+	route-impact faults --snapshot $(SNAPSHOT) --n $(N) --seed $(SEED) --full-check-every $(FULL_CHECK_EVERY)
 
 demos: SNAPSHOT ?= 261027
 demos:
