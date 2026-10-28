@@ -2,14 +2,14 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–3. Step 3 reviewed and approved, **not committed yet** (last commit `e0432b7`).
-- **Next up:** Step 4 — Road graph + feasibility on the full graph (Codex implements, Claude reviews and runs Verify).
-  - **Read to resume (one call):** `sed -n 60,65p PLAN.md; sed -n 139,149p docs/DESIGN.md; sed -n 5,9p docs/FIXTURES.md; sed -n 89,120p docs/FIXTURES.md`
-  - **Then:** write the Codex brief from those lines and launch it.
-  - **Watch in review:**
-    - Fixture times use haversine R = 6,371,008.8 m (`scripts/fixture_oracle.py`); Step 4 must use the same R to match within 0.05 s.
-    - Step 3 can leave `speed_kph` NULL if a drivable class is missing from `config/speeds.toml`. Step 4 should fail loudly on a NULL or non-positive speed rather than produce NaN times.
-    - DESIGN §5.4 says zero/unparseable maxspeeds are *counted*. Step 3 doesn't count them; Step 4 (or the report) should, from `maxspeed_raw IS NOT NULL` vs parsed.
+- **Done:** design, plan critique, Steps 0–4. Step 4 reviewed and approved and the full-graph feasibility check passed (peak RSS 4.55 GB < 12 GB). **Step 4 not committed yet** (last commit `612f6b3`).
+- **Next up:** Jared commits Step 4. Then Step 5, the fixed trip set (Claude writes the Codex brief from PLAN Step 5).
+  - **Read to resume (one call):** `sed -n 67,72p PLAN.md; grep -n "def lscc\|def build_graph" src/route_impact/graph.py; git status --short`
+  - **Watch in Step 5 review:**
+    - `scripts/feasibility.py:31-32` hardcodes the city filter. `trips.py` must own that rule, and the script should import it later.
+    - Local trips must sample from `graph.lscc()`. Feasibility sampled from all vertices, and 4,631 of 65,952 routes were unreachable.
+  - **Follow-ups (not blocking):** remove the unused `segments` temp table (`segments.sql:21-25`). Have Step 3 emit a `speed_source` column so `graph.py:70-80` stops duplicating the maxspeed parser.
+  - **Still open from earlier reviews:**
     - `extract()` fails if the output DB already has the tables. The CLI step must delete/rebuild the snapshot DB (or skip if present).
     - `extract()` finds `sql/` and `config/` via the source checkout (`parents[2]`), so it needs the editable install (the CI workflow must use `pip install -e`).
     - The motorway and ramps are on no named trip, so they're covered structurally only.
@@ -32,6 +32,48 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 4: Road graph and fixture feasibility
+- **Agent:** Codex
+- **Did:** Added haversine directed segments, repeated-node/endpoint vertices, ordered segment runs, deterministic minimum-time parallel reduction before CSR construction, winning-edge lookup, on-demand LSCC, and batched shortest paths with requested times/segment paths (unreachable = inf/None). Validate NULL/non-positive/non-finite speeds and return the count of tagged speeds falling back under Step 3's parser. Added a temporary-DB feasibility script with spherical nearest-vertex city snapping, seeded local origin/target samples, phase timings, and platform-correct peak RSS.
+- **Changed:** `sql/extract/segments.sql`, `src/route_impact/graph.py`, `scripts/feasibility.py`, `tests/test_graph.py`, `PROGRESS.md` (log only; Current state unchanged).
+- **Verify:** Actual output:
+
+```text
+$ .venv/bin/pytest tests/test_graph.py -q
+.............                                                            [100%]
+13 passed in 6.74s
+$ .venv/bin/pytest -q
+....................                                                     [100%]
+20 passed in 2.65s
+$ .venv/bin/ruff check . && .venv/bin/ruff format --check .
+All checks passed!
+16 files already formatted
+$ .venv/bin/python scripts/feasibility.py tests/fixtures/town_v1.osm.pbf
+extract_seconds=0.101
+vertices=40 edges=108 reduced_edges=105 fallback_speed_roads=0 graph_seconds=0.028
+city_places=0 city_origins=0 local_origins=40 targets=32 seed=2027 prepare_seconds=0.018
+routes=1280 unreachable=69 routing_seconds=0.011
+peak_rss_bytes=140034048 peak_rss_gb=0.140034
+```
+
+- **Review (Claude, 2026-10-28):** Approved. Reran the tests and lint, and the results match the output above. Haversine R matches the oracle. NULL, non-positive and non-finite speeds raise an error. Parallel edges are reduced before the CSR matrix is built. Checked that scipy keeps explicit zero-cost edges. Non-blocking findings:
+  - The maxspeed regex is duplicated in `graph.py:70-80`.
+  - `segments.sql:21-25` builds a `segments` table that nothing uses.
+  - `graph.edges` keeps the parallel edges that lost.
+  - Segments are Python objects. That is fine at 4.55 GB but is the first place to cut memory.
+
+  **Full-graph Verify** (Claude, `/usr/bin/time -l python scripts/feasibility.py data/norcal-latest.osm.pbf`, norcal-latest = 261027):
+```text
+extract_seconds=18.881
+vertices=726182 edges=1660020 reduced_edges=1646959 fallback_speed_roads=45 graph_seconds=26.341
+city_places=61 city_origins=61 local_origins=2000 targets=32 seed=2027 prepare_seconds=1.498
+routes=65952 unreachable=4631 routing_seconds=266.767
+peak_rss_bytes=4545970176 peak_rss_gb=4.545970
+      315.49 real       329.45 user         5.96 sys
+```
+  Peak RSS is 4.55 GB, under the 12 GB budget → **PASS**. 61 city places were found, matching the plan. The 4,631 unreachable routes come from sampling all vertices rather than the LSCC.
+- **Gotchas (Codex, written before the full run):** Full-graph feasibility run is **NOT done**; `data/norcal-latest.osm.pbf` was not run. The < 12 GB full-graph budget remains unverified. Town has no qualifying city places, so its smoke run does not exercise city snapping. Routing requires vertex OSM ids and returns the requested source/target Cartesian product; the feasibility driver discards each batch's routes and samples 32 destination vertices by default (2,000 local origins, seed 2027). Segment seq is zero-based in original way order even when traveling in reverse. Initial lint reported EXE001 for the script's shebang without executable permission; fixed by setting its executable bit before the successful lint run above. All three town versions match oracle counts/times. Tests also cover invalid speeds, fallback counts, equal-time parallel tie-breaks, LSCC, empty graphs, and disconnected/source-to-self routing. No commit.
 
 ### 2026-10-28 — Step 3: Extract roads, nodes, places
 - **Agent:** Codex

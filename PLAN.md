@@ -62,7 +62,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Files:** `sql/extract/segments.sql`, `src/route_impact/graph.py`, `scripts/feasibility.py`, `tests/test_graph.py`
 - **Do:** Per DESIGN §5.4: SQL emits directed **segments** `(a, b, way_id, seq, length_m, seconds)`; vertices = nodes occurring ≥ 2 times across all refs + way endpoints; edges = segment runs between vertices, each keeping its segment list. Reduce parallel edges to the minimum time per (u, v) with a deterministic tie-break **before** building the CSR matrix; keep the (u, v) → winning-edge table. LSCC on demand. `shortest(graph, sources, targets, batch=32)` returns only requested times + paths (as segment lists). `scripts/feasibility.py` builds the full NorCal graph and routes the 61 city origins + the local origins in batches, printing vertices, edges, seconds, and peak RSS.
 - **Verify:** `pytest tests/test_graph.py` → on `town_v1`: vertex/edge counts and hand-computed trip times equal `expected.json`; the faster parallel road wins (not the sum); closed and self-intersecting ways create the expected vertices; the bridge over the road creates no vertex; the roundabout is never traversed backwards. Then `python scripts/feasibility.py data/norcal-latest.osm.pbf` → completes with **peak RSS < 12 GB** (headroom on a 16 GB runner); record vertices, edges, seconds, RSS in PROGRESS. If it fails the budget, stop and revisit DESIGN §5.4 before Step 5.
-- **Status:** todo
+- **Status:** done (2026-10-28)
 
 ### Step 5 — Fixed trip set
 - **Owner:** Codex
