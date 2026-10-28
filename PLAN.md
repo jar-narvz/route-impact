@@ -34,14 +34,14 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 
 ### Step 1 — Test fixtures with known answers
 - **Owner:** Codex (fixture design reviewed by Claude before code that uses it)
-- **Files:** `tests/fixtures/town_v1.osm`, `tests/fixtures/town_v2.osm`, `tests/fixtures/town_v2_split.osm`, `tests/fixtures/*.osm.pbf`, `tests/fixtures/expected.json`, `tests/fixtures/berkeley_sample.osm.pbf`, `scripts/build_fixtures.sh`
-- **Do:** Hand-write a small grid "town" (~40 nodes, ~20 ways) with hand-computable shortest paths, containing: a motorway with on/off ramps; a roundabout **without** a `oneway` tag; a `oneway=-1` street; a `service` road and an `access=private` road (excluded); an `access=no` + `motorcar=yes` road (kept) and a `vehicle=no` road (excluded); two parallel ways between the same two junctions with different speeds; a closed way and a self-intersecting way (repeated node); a bridge crossing over a road **without** a shared node; a bridge with one alternative; two `place=town` nodes with populations.
+- **Files:** `tests/fixtures/town_v1.osm`, `tests/fixtures/town_v2.osm`, `tests/fixtures/town_v2_split.osm`, `tests/fixtures/*.osm.pbf`, `tests/fixtures/expected.json`, `tests/fixtures/berkeley_sample.osm.pbf`, `scripts/build_fixtures.sh`, `scripts/fixture_oracle.py` (design: `docs/FIXTURES.md`, Claude-owned)
+- **Do:** Hand-write a small grid "town" (~50 nodes, ~30 ways) laid out per `docs/FIXTURES.md`; travel times come from an independent oracle (`scripts/fixture_oracle.py`: plain-Python Dijkstra over the XML, no imports from `src/`), not hand arithmetic, containing: a motorway with on/off ramps; a roundabout **without** a `oneway` tag; a `oneway=-1` street; a `service` road and an `access=private` road (excluded); an `access=no` + `motorcar=yes` road (kept) and a `vehicle=no` road (excluded); two parallel ways between the same two junctions with different speeds; a closed way and a self-intersecting way (repeated node); a bridge crossing over a road **without** a shared node; a bridge with one alternative; two `place=town` nodes with populations.
   - `town_v2.osm` = v1 plus a known edit set: bridge deleted; one one-way flipped; one intersection disconnected (shared node replaced by two nodes); one `maxspeed` lowered; one destination's only access road deleted (destination becomes an island).
   - `town_v2_split.osm` = v1 with **only** way splits, a way merge, and a new mid-road junction node — must produce zero impact.
   - `expected.json` records vertex/edge counts, kept/excluded way ids, travel times of named trips on each version, which trips break/slow, and each one's confirmed culprit.
   - Convert with `osmium cat`. Cut a real Berkeley bbox with `osmium extract` from `data/norcal-latest.osm.pbf`, < 2 MB.
-- **Verify:** `python -c "import duckdb; c=duckdb.connect(); c.execute('LOAD spatial'); print(c.sql(\"SELECT kind, count(*) FROM ST_ReadOSM('tests/fixtures/town_v1.osm.pbf') GROUP BY 1 ORDER BY 1\").fetchall())"` → counts match the XML (same for v2, v2_split); `ls -lh tests/fixtures/*.pbf` → each < 2 MB.
-- **Status:** todo
+- **Verify:** `python -c "import duckdb; c=duckdb.connect(); c.execute('LOAD spatial'); print(c.sql(\"SELECT kind, count(*) FROM ST_ReadOSM('tests/fixtures/town_v1.osm.pbf') GROUP BY 1 ORDER BY 1\").fetchall())"` → counts match the XML (same for v2, v2_split); `ls -lh tests/fixtures/*.pbf` → each < 2 MB; `python scripts/fixture_oracle.py --check` → `OK` (recomputes every time and count in `expected.json`, and confirms each changed trip is changed by exactly its listed edit).
+- **Status:** done (2026-10-28)
 
 ### Step 2 — Download with integrity check
 - **Owner:** Codex
