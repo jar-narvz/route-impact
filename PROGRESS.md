@@ -2,12 +2,13 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–4. Step 4 reviewed and approved and the full-graph feasibility check passed (peak RSS 4.55 GB < 12 GB). **Step 4 not committed yet** (last commit `612f6b3`).
-- **Next up:** Jared commits Step 4. Then Step 5, the fixed trip set (Claude writes the Codex brief from PLAN Step 5).
-  - **Read to resume (one call):** `sed -n 67,72p PLAN.md; grep -n "def lscc\|def build_graph" src/route_impact/graph.py; git status --short`
-  - **Watch in Step 5 review:**
-    - `scripts/feasibility.py:31-32` hardcodes the city filter. `trips.py` must own that rule, and the script should import it later.
-    - Local trips must sample from `graph.lscc()`. Feasibility sampled from all vertices, and 4,631 of 65,952 routes were unreachable.
+- **Done:** design, plan critique, Steps 0–5. Step 5 was reviewed and approved but **not committed yet** (last commit `545f7cc`). `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
+- **Next up:** Jared commits Step 5. Then Step 6 — Impact (Claude writes the Codex brief from PLAN Step 6).
+  - **Read to resume (one call):** `grep -n "### Step 6" PLAN.md` then read that step; `grep -n "^def " src/route_impact/trips.py src/route_impact/graph.py; git status --short`
+  - **Watch in Step 6 review:**
+    - Step 6 snaps trip coordinates to the nearest vertex of each snapshot's graph (trips are coordinates, not node ids).
+    - `scripts/feasibility.py:31-32` still hardcodes the city filter. Switch it to `trips.filter_places` when a step names that file.
+    - `Makefile:2-3`: the SNAPSHOT/SEED defaults are global. Make them target-specific when faults/bench are implemented.
   - **Follow-ups (not blocking):** remove the unused `segments` temp table (`segments.sql:21-25`). Have Step 3 emit a `speed_source` column so `graph.py:70-80` stops duplicating the maxspeed parser.
   - **Still open from earlier reviews:**
     - `extract()` fails if the output DB already has the tables. The CLI step must delete/rebuild the snapshot DB (or skip if present).
@@ -32,6 +33,53 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 5: Fixed trip set
+- **Agent:** Codex
+- **Did:** Centralized city/box and local-trip defaults in `trips.py`, with an importable pure `filter_places` function. Added sorted ordered intercity pairs with integer gravity weights and unsnapped place coordinates; seeded uniform rejection sampling without replacement for local pairs from `build_graph(db).lscc()`. Generation uses a fresh temporary DuckDB, explicit threads/memory limits, deterministic CSV formatting, and one summary line. Wired the CLI and Make target with seed 2027. Added offline synthetic and Berkeley fixture tests.
+- **Changed:** `src/route_impact/trips.py`, `src/route_impact/cli.py`, `Makefile`, `config/trips.csv`, `tests/test_trips.py`, `PROGRESS.md`.
+- **Verify:** Actual output (timed the requested generation commands with `/usr/bin/time -p`; `real` is wall runtime in seconds):
+
+```text
+$ source .venv/bin/activate
+$ make test && make lint
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 26 items
+
+tests/test_extract.py ......                                             [ 23%]
+tests/test_graph.py .............                                        [ 73%]
+tests/test_smoke.py .                                                    [ 76%]
+tests/test_trips.py ......                                               [100%]
+
+============================== 26 passed in 3.79s ==============================
+ruff check . && ruff format --check .
+All checks passed!
+18 files already formatted
+$ /usr/bin/time -p route-impact trips --snapshot latest --seed 2027 && shasum config/trips.csv
+snapshot=data/norcal-latest.osm.pbf seed=2027 n_places=61 intercity=3660 local=2000 lscc_vertices_in_box=602267
+real 47.70
+user 65.87
+sys 2.45
+cc7e8452f04d0729e490d81f9b0f3ab50402fde5  config/trips.csv
+$ /usr/bin/time -p route-impact trips --snapshot latest --seed 2027 && shasum config/trips.csv
+snapshot=data/norcal-latest.osm.pbf seed=2027 n_places=61 intercity=3660 local=2000 lscc_vertices_in_box=602267
+real 47.61
+user 65.72
+sys 2.36
+cc7e8452f04d0729e490d81f9b0f3ab50402fde5  config/trips.csv
+$ grep -c '^ic-' config/trips.csv; grep -c '^lo-' config/trips.csv
+3660
+2000
+$ git diff --check
+```
+
+  Both SHA-1 hashes match. Found n = 61, so 61 × 60 = 3,660 intercity rows; 2,000 local rows. Full generation wall runtimes: 47.70 s and 47.61 s. Seed 2027 is recorded in the Makefile defaults and both summary lines.
+- **Review (Claude, 2026-10-28):** Approved. Reran Verify: 26 passed, ruff clean, both runs hash `cc7e8452f04d0729e490d81f9b0f3ab50402fde5` (matches above). Summary line: n_places=61, intercity=3660, local=2000, lscc_vertices_in_box=602267. Measured with `/usr/bin/time -l`: 47.5 s wall, peak RSS 3.80 GB and 4.09 GB on the two runs. Scope: only the named files. Local sampling uses `graph.lscc()`, and `filter_places` is importable. Non-blocking findings: (1) `Makefile:2` `SNAPSHOT ?= latest` is a moving target, so a later `make trips` would silently replace the committed trips. The committed file comes from `norcal-latest` = **261027**, seed 2027. (2) `Makefile:2-3` puts the SNAPSHOT/SEED defaults at global scope, so they will also apply to `faults`/`bench` when those are implemented. Make them target-specific then. (3) `tests/test_trips.py:129`: the fixture has no place nodes, so `generate()`'s intercity path is only covered by unit tests plus the full run (n=61). (4) `cli.py:7` imports `trips` at module top, so `--version` also loads duckdb/scipy. Negligible.
+- **Gotchas:** Berkeley sample has no place nodes, so its end-to-end test asserts empty intercity output while checking local LSCC endpoint membership and identical CSV bytes; synthetic city tests check ordering and exact gravity weights. Sampling is bounded at 100 batches of 100,000 draws and raises a clear error if it cannot fill the requested count. `scripts/feasibility.py:31-32` still hardcodes the city filter; it should import `filter_places`/constants in a later authorized step (outside this step's allowed files). `PLAN.md` and `PROGRESS.md` had pre-existing edits at the start; `PLAN.md` and `docs/DESIGN.md` were not edited. No commit.
 
 ### 2026-10-28 — Step 4: Road graph and fixture feasibility
 - **Agent:** Codex

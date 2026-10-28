@@ -1,13 +1,16 @@
 PYTHON ?= python
+SNAPSHOT ?= latest
+SEED ?= 2027
 
 .DEFAULT_GOAL := help
-.PHONY: help setup download extract impact what-if faults bench test lint
+.PHONY: help setup download extract trips impact what-if faults bench test lint
 
 help:
 	@echo "help      List available targets"
 	@echo "setup     Install the DuckDB spatial extension (requires network)"
 	@echo "download  Download a checksum-verified snapshot (DATE=YYMMDD; default latest)"
 	@echo "extract   Extract snapshot tables (stub)"
+	@echo "trips     Generate fixed trips (SNAPSHOT=latest SEED=2027)"
 	@echo "impact    Compare routing impact (stub)"
 	@echo "what-if   Evaluate a hypothetical edit (stub)"
 	@echo "faults    Run injected faults (stub)"
@@ -23,6 +26,9 @@ download:
 
 extract:
 	@echo "not implemented yet (Step 3)"
+
+trips:
+	route-impact trips --snapshot $(SNAPSHOT) --seed $(SEED)
 
 impact:
 	@echo "not implemented yet (Step 6)"

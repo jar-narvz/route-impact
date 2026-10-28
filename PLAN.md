@@ -67,9 +67,9 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 ### Step 5 — Fixed trip set
 - **Owner:** Codex
 - **Files:** `src/route_impact/trips.py`, `src/route_impact/cli.py`, `Makefile`, `config/trips.csv`, `tests/test_trips.py`
-- **Do:** `route-impact trips --snapshot latest --seed 2027` writes `config/trips.csv` (`trip_id, kind, o_lat, o_lon, d_lat, d_lon, weight`): intercity = all ordered pairs among places with population ≥ 50,000 inside lat 36.2–41.7, lon < −120.3, weight `pop_A × pop_B`; local = 2,000 pairs of LSCC vertices in the same box, straight-line 2–30 km. Generated once and committed.
+- **Do:** `route-impact trips --snapshot latest --seed 2027` writes `config/trips.csv` (`trip_id, kind, o_lat, o_lon, d_lat, d_lon, weight`): intercity = all ordered pairs among places with population ≥ 50,000 inside lat 36.2–41.7, lon < −120.3, weight `pop_A × pop_B`; local = 2,000 pairs of LSCC vertices in the same box, straight-line 2–30 km, weight 1 (local trips are counted, not gravity-weighted). Intercity rows first, then local; coordinates written with 6 decimals so the file is byte-stable. Generated once and committed.
 - **Verify:** run twice with the same seed → identical file hash; intercity rows = n × (n − 1) for the n places found (expected n = 61 → 3,660; record n in PROGRESS); local rows = 2,000.
-- **Status:** todo
+- **Status:** done
 
 ### Step 6 — Impact (snap, route, segment diff, incremental reroute, risk)
 - **Owner:** Codex (correctness argument reviewed by Claude)
