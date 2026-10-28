@@ -1,0 +1,16 @@
+# All defaults are miles per hour; the extractor converts to km/h once on load.
+[speeds_mph]
+motorway = 65 # Typical California freeway limit.
+trunk = 55 # Conservative default for major non-freeway highways.
+primary = 45 # Major arterial travel below freeway speeds.
+secondary = 40 # Secondary arterials typically have lower limits.
+tertiary = 35 # Collector roads connect local streets to arterials.
+unclassified = 30 # Minor through roads without a finer classification.
+residential = 25 # Typical California residential street limit.
+living_street = 10 # Shared pedestrian-priority streets require low speeds.
+motorway_link = 35 # Freeway ramps require slower merging and turning.
+trunk_link = 35 # Major highway connectors require slower turning.
+primary_link = 30 # Arterial connectors are slower than their main road.
+secondary_link = 25 # Secondary connectors usually have tight turns.
+tertiary_link = 25 # Collector connectors operate at local street speeds.
+ferry = 10 # Conservative car-ferry cruising speed, excluding waiting time.
