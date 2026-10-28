@@ -2,12 +2,13 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–6 all committed (Step 6 = `8e746c5`, review + first NorCal result = `b36769f`). `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
-- **Next up:** Step 7 — Root cause (Claude writes the Codex brief from PLAN Step 7).
-  - **Read to resume (one call):** `grep -n "### Step 7" PLAN.md` then read that step plus DESIGN §5.7; `grep -n "^def " src/route_impact/impact.py src/route_impact/risk.py; git status --short`
-  - **Fold into the Step 7 brief (from the Step 6 review):** write `weight` as an int (`impact.py:103`); state the share and the threshold in the HIGH share rule's message (`risk.py:41`); pass the old/new labels explicitly instead of taking them from the DB stem (`impact.py:309`). Root cause needs NEW tags and segments, so `compute_impact` must also keep both DBs/graphs available to `rootcause.py`.
+- **Done:** design, plan critique, Steps 0–7 (Step 7 reviewed and approved 2026-10-28; awaiting Jared's commit).
+- **Next up:** Step 8 — Report, GeoJSON, results map (Claude writes the Codex brief from PLAN Step 8).
+  - **Read to resume (one call):** `grep -n "### Step 8" PLAN.md` then read that step plus DESIGN §5.8–5.9; `grep -n "^def " src/route_impact/rootcause.py src/route_impact/impact.py; git status --short`
+  - **Fold into the Step 8 brief:** `impact.json` now has per-trip `cause` (`confirmed` | `joint` | `unexplained`) and `edits`, plus top-level `culprits` and `candidates`. `before_tags`/`after_tags`/`*_nodes` are a single dict for way edits but a way-id → value map for node edits; the report must handle both.
   - **Watch:**
-    - Peak RSS is ≈ 8 GB for a full impact run (two graphs). Check it against the runner's memory in Step 11.
+    - Peak RSS ≈ 8 GB for a full impact run (two graphs); root cause adds one O(E) CSR copy per candidate check plus one Python pass over OLD roads and NEW edges per run — unmeasured on NorCal. Time both in Step 11.
+    - Two independent slowdowns that each exceed `slow_seconds` are labelled `joint` (DESIGN §5.7 as written). Revisit only if Jared changes the confirmation rule.
     - `scripts/feasibility.py:31-32` still hardcodes the city filter. Switch it to `trips.filter_places` when a step names that file.
     - `Makefile:2-3`: the SNAPSHOT/SEED defaults are global. Make them target-specific when faults/bench are implemented.
   - **Follow-ups (not blocking):** remove the unused `segments` temp table (`segments.sql:21-25`). Have Step 3 emit a `speed_source` column so `graph.py:70-80` stops duplicating the maxspeed parser.
@@ -33,6 +34,71 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 7: review fix-up
+- **Agent:** Codex
+- **Did:** Resolved review findings 1–4: candidate-free affected trips are unexplained; slowed counterfactual routing uses old_seconds + slow_seconds as its Dijkstra limit, while broken trips remain unbounded; the mixed-cause test requires fixture origins; shared towns and thresholds fixtures now live in conftest.py.
+- **Changed:** `src/route_impact/rootcause.py`, `src/route_impact/graph.py`, `tests/test_rootcause.py`, `tests/test_impact.py`, `tests/conftest.py` (new), `PROGRESS.md`.
+- **Verify:** Actual output, offline, both commands exited 0:
+
+```text
+$ PYENV_VERSION=3.11.14 PATH="$PWD/.venv/bin:$PATH" make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 69 items
+
+tests/test_extract.py ......                                             [  8%]
+tests/test_graph.py .............                                        [ 27%]
+tests/test_impact.py .............................                       [ 69%]
+tests/test_rootcause.py ..............                                   [ 89%]
+tests/test_smoke.py .                                                    [ 91%]
+tests/test_trips.py ......                                               [100%]
+
+============================== 69 passed in 5.90s ==============================
+$ PYENV_VERSION=3.11.14 PATH="$PWD/.venv/bin:$PATH" make lint
+ruff check . && ruff format --check .
+All checks passed!
+24 files already formatted
+```
+
+- **Review:** Awaiting Claude's independent review; Codex implemented these fixes.
+- **Gotchas:** Recovery remains strict: restored delay exactly slow_seconds stays candidate; tests cover below/at/above the boundary and assert the slowed routing limit. Candidate-free tests cover both the all-empty early return and a mixed batch with another trip's edit. Direct restoration checks verify inclusive Dijkstra limits and infinity beyond the limit. Existing fixture scope and test behavior are preserved. No full-size NorCal performance run. Current state, PLAN.md and docs/ were not changed; no staging or commit performed.
+
+### 2026-10-28 — Step 7: Root cause with counterfactual confirmation
+- **Agent:** Codex
+- **Did:** Added pure edit grouping and one roads-info loader; indexed candidate restoration sets once across affected trips; restored OLD edges into a copy of NEW's CSR with minimum-cost parallel union and attachment-point splitting of compressed NEW runs. One Dijkstra per candidate confirms recovery. Added per-trip confirmed/joint labels, ranked culprits and candidates, before/after metadata, disconnected-node descriptions and OSM links. Passed explicit snapshot labels from CLI, preserved integer weights with validation, and included measured share and threshold in the HIGH rule.
+- **Changed:** `src/route_impact/rootcause.py` (new), `tests/test_rootcause.py` (new), `src/route_impact/impact.py`, `src/route_impact/graph.py`, `src/route_impact/risk.py`, `src/route_impact/cli.py`, `tests/test_impact.py`, `PROGRESS.md`.
+- **Verify:** Actual final output, repo venv and Python 3.11.14, offline:
+
+```text
+$ PYENV_VERSION=3.11.14 PATH="$PWD/.venv/bin:$PATH" make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 64 items
+
+tests/test_extract.py ......                                             [  9%]
+tests/test_graph.py .............                                        [ 29%]
+tests/test_impact.py .............................                       [ 75%]
+tests/test_rootcause.py .........                                        [ 89%]
+tests/test_smoke.py .                                                    [ 90%]
+tests/test_trips.py ......                                               [100%]
+
+============================== 64 passed in 6.19s ==============================
+$ PYENV_VERSION=3.11.14 PATH="$PWD/.venv/bin:$PATH" make lint
+ruff check . && ruff format --check .
+All checks passed!
+23 files already formatted
+```
+
+- **Review:** Pending Claude; Codex implemented this step and does not provide independent approval.
+- **Gotchas:** No full-size NorCal run or performance measurement. Counterfactual union deliberately retains NEW directions alongside restored OLD directions. Two independently sufficient slowdowns remain joint/candidate when neither single restore brings delay below the threshold. Tests search fixture OLD origins for a way-41 path to node 401 and fall back to a small synthetic graph only if none exists. Additional checks cover zero-cost edges, minimum parallel cost, multiple interior attachments, directionality and unchanged NEW CSR. Initial lint found fixture-import naming issues; resolved before the clean final run above. Existing PLAN.md edits and docs were left untouched; no commit or staging performed.
+- **Review:** Claude — Verify rerun independently: `make test` → 64 passed; `make lint` → clean. Mixed-cause test takes the fixture branch (origins 300, 301, 302, 310, 320 reach 401 via way 41). Findings: (1) `rootcause.py:133-135,191` an affected trip with no candidate edits (e.g. a fallback-snap-only slowdown) is labelled `joint` with empty `edits` — should be `unexplained`; (2) `graph.py` `restored_seconds` runs an unbounded Dijkstra per check — for slowed trips pass `limit=old_seconds + slow_seconds`; NorCal cost unmeasured; (3) `test_rootcause.py:132-137` synthetic fallback is dead code — assert fixture origins exist instead; (4) `test_rootcause.py:5` imports `test_impact` via pytest rootdir path — move shared fixtures to `tests/conftest.py`; (5) `edit_details` tag shape differs for way edits (dict) vs node edits (way→tags) — Step 8 report must handle both. (6) `rootcause.py:143-145,157-159` full Python scans of OLD roads / NEW edges run once per impact run — fine for fixtures, time it in Step 11.
 
 ### 2026-10-28 — Step 6: Impact
 - **Agent:** Codex

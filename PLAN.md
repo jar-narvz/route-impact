@@ -80,10 +80,10 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 
 ### Step 7 — Root cause with counterfactual confirmation
 - **Owner:** Codex
-- **Files:** `src/route_impact/rootcause.py`, `tests/test_rootcause.py`
+- **Files:** `src/route_impact/rootcause.py`, `tests/test_rootcause.py`; plus `impact.py`, `graph.py`, `risk.py`, `cli.py`, `tests/test_impact.py` for wiring and the Step 6 review fixes
 - **Do:** Per DESIGN §5.7: group changed segments on each affected trip's OLD path into candidate edits (way, disconnected node, lost endpoint); confirm each by restoring only that edit's OLD segments into NEW and rerouting; label confirmed / candidate / joint cause; rank by gravity weight + trips affected; attach before/after tags and openstreetmap.org links; add to `impact.json`.
-- **Verify:** `make test` → every affected trip on `town_v1 → town_v2` has the confirmed culprit listed in `expected.json`; a trip that also passes the lowered-maxspeed road but is broken by the bridge deletion lists the bridge as confirmed and the maxspeed edit as candidate only; `town_v2_split` names nothing.
-- **Status:** todo
+- **Verify:** `make test` → every affected trip on `town_v1 → town_v2` has the confirmed culprit listed in `expected.json`; a trip whose OLD path passes the lowered-maxspeed road (E4) and is broken by the island deletion (E5) lists E5 as confirmed and E4 as candidate only (built in the test; synthetic graph if no fixture origin works); restoring a deleted way that attached mid-way to a surviving road recovers the trip; `town_v2_split` names nothing.
+- **Status:** done
 
 ### Step 8 — Report, GeoJSON, results map
 - **Owner:** Codex (report wording reviewed by Claude)
