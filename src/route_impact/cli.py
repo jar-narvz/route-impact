@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 from route_impact.extract import extract
 from route_impact.faults import Fault, run_suite, run_what_if
-from route_impact.impact import compute_impact, read_trips
+from route_impact.impact import compute_impact, read_trips, serialisable
 from route_impact.report import render_markdown, write_report
 from route_impact.risk import load_thresholds
 from route_impact.trips import generate
@@ -107,7 +107,8 @@ def main(argv: list[str] | None = None) -> int:
                 output = args.results_dir / dates[1].strftime("%Y-%m-%d") / "impact.json"
                 output.parent.mkdir(parents=True, exist_ok=True)
                 output.write_text(
-                    json.dumps(payload, sort_keys=True, indent=2, allow_nan=False) + "\n",
+                    json.dumps(serialisable(payload), sort_keys=True, indent=2, allow_nan=False)
+                    + "\n",
                     encoding="utf-8",
                 )
                 write_report(payload, output.parent, *databases)

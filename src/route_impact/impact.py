@@ -5,6 +5,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import asdict
 from math import inf, isfinite
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 import duckdb
@@ -292,6 +293,25 @@ def json_safe(value: Any) -> Any:
     return value
 
 
+def serialisable(payload: dict) -> dict:
+    """Drop route geometry only in the on-disk impact payload, without mutation."""
+    if "trips" not in payload:
+        return payload
+    omitted = {"old_path", "new_path", "changed_segments"}
+    return {
+        **payload,
+        "trips": [
+            {
+                **{k: v for k, v in trip.items() if k not in omitted},
+                "changed_segment_count": len(trip["changed_segments"])
+                if "changed_segments" in trip
+                else trip["changed_segment_count"],
+            }
+            for trip in payload["trips"]
+        ],
+    }
+
+
 def compute_impact(
     old_db: Path,
     new_db: Path,
@@ -341,6 +361,7 @@ def impact_from_graphs(
     new_graph: Graph | None = None,
     new_nodes: list[tuple[int, float, float]] | None = None,
     new_ways: dict[int, WayInfo] | None = None,
+    timings: dict[str, float] | None = None,
 ) -> dict:
     """Reuse supplied snapshot data; raw_trips receives all unrounded route records."""
     if new_graph is None:
@@ -349,6 +370,7 @@ def impact_from_graphs(
         new_nodes = snapshot_nodes(new_db, new_graph, threads, memory_limit)
     if new_ways is None:
         new_ways = load_way_info(new_db, threads=threads, memory_limit=memory_limit)
+    compare_start = perf_counter()
     records, excluded = compare_trips(
         old_graph,
         new_graph,
@@ -360,6 +382,8 @@ def impact_from_graphs(
         batch=batch,
         old_routes=old_routes,
     )
+    if timings is not None:
+        timings["compare_incremental"] = perf_counter() - compare_start
     metrics = summarize(records, excluded, thresholds)
     level, rule = risk_level(metrics, thresholds)
     affected = [
@@ -367,6 +391,7 @@ def impact_from_graphs(
         for r in records
         if r["status"] in {"broken", "slowed"}
     ]
+    cause_start = perf_counter()
     culprits, candidates = explain_trips(
         affected,
         old_graph,
@@ -375,6 +400,8 @@ def impact_from_graphs(
         new_ways,
         thresholds.slow_seconds,
     )
+    if timings is not None:
+        timings["root_cause"] = perf_counter() - cause_start
     if raw_trips is not None:
         raw_trips.extend(records)
     return json_safe(

@@ -111,7 +111,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 ### Step 9b — Small outputs, contiguous-run culprits, fault timing
 - **Owner:** Codex (root-cause rule and output budget reviewed by Claude)
 - **Why:** the real Bay Bridge what-if on 261027 (PROGRESS 2026-10-28) wrote a 117,885,253 B `impact.json` and a 110,577,262 B `impact.geojson`, labelled 348 of 349 trips `joint` because the bridge is 10 ways in series, and took 603.98 s with per-fault suite cost unmeasured.
-- **Files:** `src/route_impact/impact.py`, `src/route_impact/rootcause.py`, `src/route_impact/report.py`, `src/route_impact/faults.py`, `site/index.html`, `tests/test_rootcause.py`, `tests/test_report.py`, `tests/test_faults.py`
+- **Files:** `src/route_impact/impact.py`, `src/route_impact/rootcause.py`, `src/route_impact/report.py`, `src/route_impact/faults.py`, `src/route_impact/cli.py` (added 2026-10-28 after Codex's scope stop: `impact` writes impact.json at `cli.py:110`), `site/index.html`, `tests/test_rootcause.py`, `tests/test_report.py`, `tests/test_faults.py`
 - **Do:**
   - **A — output budget (DESIGN §5.10):**
     - `impact.json` keeps every per-trip scalar plus `edits`, but drops `old_path`, `new_path` and `changed_segments` (adds `changed_segment_count`). *Why:* they are the bulk, and nothing reads them back from disk; `report` re-renders from metrics and culprits only.
@@ -132,7 +132,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
     - `impact.json` has no path keys.
   - Then Claude reruns the Bay Bridge what-if on 261027 into the scratchpad:
     - both files are ≤ 5 MB;
-    - most affected trips are `confirmed` via run culprits, and the top culprit is a run of bridge ways;
+    - trips are `joint`, which is correct: deleting both spans makes two separate runs per route, split by the undeleted Yerba Buena tunnel (Jared kept both spans, 2026-10-28);
     - the map draws in the browser.
   - Then Claude runs `route-impact faults --snapshot 261027 --n 10 --seed 2027 --results-dir <scratchpad>` with `/usr/bin/time -l`, records the per-fault seconds in PROGRESS, and Jared picks N for Step 12 from that.
 - **Status:** todo

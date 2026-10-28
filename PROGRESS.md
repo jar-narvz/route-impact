@@ -1,7 +1,7 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 9b — small outputs, contiguous-run culprits, fault timing (added to PLAN.md + DESIGN §5.7/§5.9/§5.10 by Claude, 2026-10-28; Jared chose a separate step).
+- **Working on:** Step 9b — implementation verified offline; awaits Claude review and the planned real-data size, map and timed-suite checks.
 - **Done:** design, plan critique, Steps 0–9 committed (Step 9 = `a8c7c9a`).
 - **Next up:** Claude writes the Step 9b Codex brief from PLAN "### Step 9b", launches Codex, reviews, then reruns the Bay Bridge what-if and an n=10 timed suite on 261027 (scratchpad outputs). Then Step 10/11.
   - **Read to resume (one call):** `grep -n "### Step 9b" PLAN.md` and read that step; `grep -n "def explain_trips\|def candidate_edits\|def write_geojson\|def render_markdown\|def evaluate_faults" src/route_impact/*.py; git status --short`. Previous Bay Bridge outputs + preview are in the session scratchpad; `.claude/launch.json` (untracked, local) serves that preview.
@@ -10,6 +10,10 @@
   - **Finding B — multi-way edits read as "joint":** the bridge is 10 ways in series, so restoring any one way recovers nothing; 348 of 349 trips are `joint` (1 confirmed) and the top culprit has 1 trip. Correct per DESIGN §5.7, but the flagship demo looks like a miss. Option: when no single edit recovers a trip, try restoring all its candidates together and label the set "confirmed (group)".
   - **Finding C — suite runtime:** one what-if = 604 s incl. one extract + two graph builds. The suite repeats copy + NEW graph + compare ×2 + root cause ~220 times; per-fault cost unmeasured. Profile one fault before Step 12; a 200-fault run may not fit Nov 3.
   - Minor: report.md header/Map link use `date=261027+what-if` for what-if runs (link is broken there).
+  - **Step 9b real-data checks (Claude, 2026-10-28; outputs in the session scratchpad, not `results/`):**
+    - Bay Bridge what-if (10 ways): 667.68 s real, 7794311168 B max RSS; impact.json 374,105 B, impact.geojson 1,942,107 B (25 of 349 trips). Still 348 joint / 1 confirmed: the undeleted Yerba Buena tunnel splits each route into two separate runs. Jared, 2026-10-28: keep both spans. DESIGN §5.7 and the PLAN 9b Verify now note this.
+    - `route-impact faults --snapshot 261027 --n 10 --seed 2027`: 4873.03 s real, 12240011264 B max RSS, 11 runs (10 single + 1 batch). Setup: extract 17.9 s, baseline 307.4 s. Per run mean 410.2 s, of which compare_full 73.6%, new_graph 17.9%; apply 0.1–0.3 s; root cause ≤ 5.7 s. Scores: incremental==full 11/11, root cause single 8/8 and batch 8/8 (all 8 trips from one fault), impact rate 1/10.
+    - Implication: the in-memory fault design would save at most the new_graph share (17.9%). The full-recompute check dominates. Projected Step 12 (setup + runs × measured means): N=200 all-full 25.2 h · full on every 10th run 8.6 h; N=100 12.6 h / 4.3 h; N=50 6.4 h / 2.2 h. Impact rate 1/10 means few faults produce scored trips — the root-cause denominator will be small.
   - **Watch:**
     - Peak RSS ≈ 8 GB for a full impact run (two graphs); root cause adds one O(E) CSR copy per candidate check plus one Python pass over OLD roads and NEW edges per run — unmeasured on NorCal. Time both in Step 11.
     - Two independent slowdowns that each exceed `slow_seconds` are labelled `joint`; after Step 9b only if they are not contiguous on the OLD path (DESIGN §5.7).
@@ -37,6 +41,48 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 9b: small outputs, contiguous-run culprits, fault timing
+- **Agent:** Codex
+- **Did:** Added shared nonmutating impact serialization that drops trip paths/segments only on disk and records changed_segment_count; both CLI impact and what-if use it. Capped map trips at 25 by broken status, descending weight and trip id, retained all confirmed culprits including run members, rounded coordinates to six decimals and compacted GeoJSON. Added map coverage counts/notice and relative site/?src= links for non-date reports. Added contiguous OLD-path run confirmation after single-edit checks, reusing indexed restoration edges, aggregating/ranking runs across trips, reporting member details/geometry and scoring only all-expected runs as correct. Added raw perf_counter extraction/baseline/per-run phase durations and single/batch total means. Added ten offline regression cases, plus updated existing affected expectations.
+- **Changed:** `src/route_impact/impact.py`, `src/route_impact/rootcause.py`, `src/route_impact/report.py`, `src/route_impact/faults.py`, `src/route_impact/cli.py`, `site/index.html`, `tests/test_rootcause.py`, `tests/test_report.py`, `tests/test_faults.py`, `PROGRESS.md`.
+- **Verify:** Both required commands exited 0 using the existing venv via `PATH="$PWD/.venv/bin:$PATH"`; fixtures only, offline. Actual output:
+
+```text
+$ make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 117 items
+
+tests/test_extract.py ......                                             [  5%]
+tests/test_faults.py ....................................                [ 35%]
+tests/test_graph.py .............                                        [ 47%]
+tests/test_impact.py .............................                       [ 71%]
+tests/test_report.py ..........                                          [ 80%]
+tests/test_rootcause.py ................                                 [ 94%]
+tests/test_smoke.py .                                                    [ 94%]
+tests/test_trips.py ......                                               [100%]
+
+============================= 117 passed in 16.75s =============================
+$ make lint
+ruff check . && ruff format --check .
+All checks passed!
+28 files already formatted
+```
+
+- **Review:** Claude — pending. NorCal what-if size/culprit checks, browser map check, and real-data n=10 timed suite remain for Claude per PLAN. The scope-blocker entry below is preserved; PLAN.md and docs/DESIGN.md were not edited by Codex.
+- **Gotchas:** Intentional expectation changes: (1) bad_maxspeed on consecutive T1 ways 50+51 now confirms `run/way_changed/50+way_changed/51`; its batch score moves from joint to confirmed. The replacement fixture joint test uses ways 50+52, separated by unchanged 51, and verifies each fault individually exceeds slow_seconds. (2) The synthetic independent-slowdown and single-restore boundary tests now insert an unchanged segment between edits so they still test independent causes and the strict recovery boundary; their expected single-edit behavior is unchanged. (3) impact.json drops old_path/new_path/changed_segments and adds changed_segment_count; in-memory payloads retain geometry, and both serialization paths plus CLI report re-render are covered. (4) GeoJSON intentionally changes path ordering, coordinate precision, whitespace and adds trips_shown/trips_total; all culprit features remain, even with a cap of zero in the run-member regression. (5) Non-date Markdown Map links now resolve relative to the report and pass a source relative to site/; date Pages links stay unchanged. (6) scores.json timing values vary between runs; seeded fault lists remain deterministic. evaluate_faults accepts extraction/baseline seconds from run_suite (defaults 0.0 when evaluating an already prepared baseline); per-run totals include measurement/serialization/scoring overhead in addition to the named phases. The what-if CLI prints a run key when the top culprit is a run, avoiding a missing scalar id. An initial focused lint pass caught a duplicated timing keyword during implementation; corrected before all passing checks. No network, data/*.osm.pbf processing, staging or commits.
+
+### 2026-10-28 — Step 9b: scope blocker
+- **Agent:** Codex
+- **Did:** Read AGENTS.md, PLAN.md Step 9b (Why/Do/Verify), and DESIGN §5.7/§5.9/§5.10; inspected the current serialization call sites. Stopped under AGENTS.md's instruction: "If another file needs changing, stop and note it in PROGRESS.md instead."
+- **Changed:** `PROGRESS.md` only.
+- **Verify:** Not run: no implementation changes were made, so there is no `make test` / `make lint` output to report.
+- **Review:** Claude — stop was correct; the omission was Claude's. `cli.py` added to PLAN Step 9b Files; Codex relaunched.
+- **Gotchas:** `cli.py:110` directly calls `json.dumps(payload, ...)` before `write_report` uses the same payload's paths. The requested shared serialization helper must be called at that JSON write to strip paths only on disk while preserving them for GeoJSON. Step 9b lists impact.py, rootcause.py, report.py, faults.py, site/index.html and three test files, but omits cli.py. No workaround that changes the in-memory payload or globally alters JSON serialization was introduced. No network, data/*.osm.pbf runs, staging or commits. PLAN.md and docs/DESIGN.md remain untouched.
 
 ### 2026-10-28 — Step 9: Faults + what-if
 - **Agent:** Codex

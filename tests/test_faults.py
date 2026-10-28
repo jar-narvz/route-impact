@@ -108,7 +108,7 @@ def test_mini_suite(towns, baseline, thresholds, tmp_path, monkeypatch):
     assert json.loads((tmp_path / "scores.json").read_text()) == scores
 
 
-def test_joint_batch(towns, baseline, thresholds, tmp_path):
+def test_slowdown_run_batch(towns, baseline, thresholds, tmp_path):
     faults = [Fault("bad_maxspeed", way_id=w) for w in (50, 51)]
     for index, fault in enumerate(faults):
         db = apply_faults(towns["db"]["town_v1"], [fault], tmp_path / f"single{index}.duckdb")
@@ -120,21 +120,27 @@ def test_joint_batch(towns, baseline, thresholds, tmp_path):
     assert [(t["trip_id"], t["cause"], t["edits"]) for t in payload["trips"]] == [
         (
             "T1",
-            "joint",
+            "confirmed",
             [
+                {
+                    "edit": "run/way_changed/50+way_changed/51",
+                    "label": "confirmed",
+                    "members": ["way_changed/50", "way_changed/51"],
+                },
                 {"edit": "way_changed/50", "label": "candidate"},
                 {"edit": "way_changed/51", "label": "candidate"},
             ],
         )
     ]
     assert score_payload(payload, faults, single=False) == {
-        "root_cause_batch": (0, 0),
-        "root_cause_joint": (1, 1),
+        "root_cause_batch": (1, 1),
+        "root_cause_joint": (0, 0),
     }
     scores = evaluate_faults(
         towns["db"]["town_v1"], baseline, towns["rows"], thresholds, faults, tmp_path, "town_v1"
     )
-    assert scores["root_cause_joint"] == {"correct": 1, "denominator": 1, "percent": 100}
+    assert scores["root_cause_joint"] == {"correct": 0, "denominator": 0, "percent": None}
+    assert scores["root_cause_batch"] == {"correct": 1, "denominator": 1, "percent": 100}
     assert scores["incremental_equals_full"] == {"correct": 3, "denominator": 3, "percent": 100}
 
 
@@ -216,6 +222,10 @@ def test_cli_fixture_thresholds(capsys, tmp_path):
     assert [line for line in lines if line.startswith("Trip ")] == ["Trip T1: slowed"]
     assert lines[-2] == "Worst: T1 (intercity)  +1.2 min"
     assert lines[-1] == "Root cause: way 51 ✔ (matches injected fault)"
+    saved = json.loads((tmp_path / "report/impact.json").read_text())
+    assert len(saved["trips"]) == 1
+    assert saved["trips"][0]["changed_segment_count"] == 1
+    assert not {"old_path", "new_path", "changed_segments"} & saved["trips"][0].keys()
     geojson = json.loads((tmp_path / "report/impact.geojson").read_text())
     assert [f["properties"]["role"] for f in geojson["features"]] == [
         "old_path",
@@ -301,6 +311,30 @@ def test_seeded_suite_files(tmp_path):
         tmp_path / "second" / relative
     ).read_bytes()
     recorded = json.loads((tmp_path / "first" / relative).read_text())
+    scores = json.loads((tmp_path / "first/faults/town_v1/scores.json").read_text())
+    seconds = scores["seconds"]
+    assert set(seconds) == {"extract", "baseline", "runs", "mean_single", "mean_batch"}
+    assert seconds["extract"] > 0
+    assert seconds["baseline"] > 0
+    assert len(seconds["runs"]) == len(scores["runs"])
+    for timing in seconds["runs"]:
+        assert set(timing) == {
+            "apply",
+            "new_graph",
+            "compare_incremental",
+            "compare_full",
+            "root_cause",
+            "total",
+        }
+        assert all(isinstance(value, float) and value >= 0 for value in timing.values())
+        assert timing["total"] >= sum(value for key, value in timing.items() if key != "total")
+    for single, field in ((True, "mean_single"), (False, "mean_batch")):
+        totals = [
+            t["total"]
+            for r, t in zip(scores["runs"], seconds["runs"], strict=True)
+            if r["single"] == single
+        ]
+        assert seconds[field] == sum(totals) / len(totals)
     assert recorded["N"] == 7
     assert recorded["seed"] == 2027
     assert len(recorded["faults"]) == 7
@@ -463,3 +497,72 @@ def test_run_demos_parses_faults(tmp_path, monkeypatch):
         [Fault("delete_way", way_id=51)],
         out=tmp_path / "faults/town_v1/demo-custom",
     )
+
+
+def test_deleted_run(towns, baseline, thresholds, tmp_path):
+    faults = [Fault("delete_way", way_id=w) for w in (50, 51)]
+    db = apply_faults(towns["db"]["town_v1"], faults, tmp_path / "deleted.duckdb")
+    payload = baseline.impact(db, towns["rows"], thresholds, "town_v1")
+    trip = next(t for t in payload["trips"] if t["trip_id"] == "T1")
+    key = "run/way_deleted/50+way_deleted/51"
+    assert trip["cause"] == "confirmed"
+    assert trip["edits"][0] == {
+        "edit": key,
+        "label": "confirmed",
+        "members": ["way_deleted/50", "way_deleted/51"],
+    }
+    assert payload["culprits"][0]["edit"] == top_confirmed(payload, trip) == key
+    assert score_payload(payload, faults, single=False)["root_cause_batch"] == (1, 1)
+    assert score_payload(payload, faults[:1], single=False)["root_cause_batch"] == (0, 1)
+
+
+def test_nonadjacent_slowdowns_joint(towns, baseline, thresholds, tmp_path):
+    # T1: 50 → 51 → 52. Leave 51 unchanged to separate the two stretches.
+    faults = [Fault("bad_maxspeed", way_id=w) for w in (50, 52)]
+    for index, fault in enumerate(faults):
+        db = apply_faults(towns["db"]["town_v1"], [fault], tmp_path / f"single-{index}.duckdb")
+        trip = baseline.impact(db, towns["rows"], thresholds, "town_v1")["trips"][0]
+        assert trip["trip_id"] == "T1"
+        assert trip["delay_s"] > thresholds.slow_seconds
+    db = apply_faults(towns["db"]["town_v1"], faults, tmp_path / "joint.duckdb")
+    payload = baseline.impact(db, towns["rows"], thresholds, "town_v1")
+    assert [(t["trip_id"], t["cause"]) for t in payload["trips"]] == [("T1", "joint")]
+    assert payload["culprits"] == []
+    assert score_payload(payload, faults, single=False)["root_cause_joint"] == (1, 1)
+
+
+def test_cli_run_culprit_output(tmp_path, capsys):
+    thresholds = tmp_path / "thresholds.toml"
+    thresholds.write_text(
+        Path("config/thresholds.toml")
+        .read_text()
+        .replace("slow_seconds = 120", "slow_seconds = 10")
+    )
+    assert (
+        main(
+            [
+                "what-if",
+                "--snapshot",
+                "town_v1",
+                "--data-dir",
+                "tests/fixtures",
+                "--trips",
+                "tests/fixtures/town_trips.csv",
+                "--thresholds",
+                str(thresholds),
+                "--delete-way",
+                "50",
+                "--delete-way",
+                "51",
+                "--out",
+                str(tmp_path / "run"),
+            ]
+        )
+        == 0
+    )
+    assert capsys.readouterr().out.splitlines()[-1] == (
+        "Root cause: run run/way_deleted/50+way_deleted/51 ✔ (matches injected fault)"
+    )
+    saved = json.loads((tmp_path / "run/impact.json").read_text())
+    assert saved["trips"][0]["changed_segment_count"] == 2
+    assert not {"old_path", "new_path", "changed_segments"} & saved["trips"][0].keys()

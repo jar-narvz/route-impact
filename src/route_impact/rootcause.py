@@ -64,6 +64,40 @@ def candidate_edits(
     return [edits[key] for key in sorted(edits)]
 
 
+def changed_runs(record: dict[str, Any]) -> list[list[tuple[int, int, int]]]:
+    """Split changed OLD segments at every unchanged segment in path order."""
+    changed = {tuple(s) for s in record["changed_segments"]}
+    runs: list[list[tuple[int, int, int]]] = []
+    current: list[tuple[int, int, int]] = []
+    for segment in record["old_path"]:
+        key = tuple(segment)
+        if key in changed:
+            current.append(key)
+        elif current:
+            runs.append(current)
+            current = []
+    if current:
+        runs.append(current)
+    return runs
+
+
+def run_candidates(record: dict[str, Any], edits: list[Edit]) -> dict[str, list[str]]:
+    """Associate each contiguous stretch with its distinct trip candidate edits."""
+    candidates = {}
+    for run in changed_runs(record):
+        segments = set(run)
+        nodes = {n for a, b, _ in run for n in (a, b)}
+        members = sorted(
+            edit.key
+            for edit in edits
+            if edit.segments & segments
+            or (edit.kind in {"node_disconnected", "endpoint_lost"} and edit.id in nodes)
+        )
+        if len(members) >= 2:
+            candidates["run/" + "+".join(members)] = members
+    return candidates
+
+
 def restoration_edges(old: Graph, edits: dict[str, Edit]) -> dict[str, list[Edge]]:
     """Index all candidates together: one Python scan, never one scan per check."""
     segments: dict[tuple[int, int, int], set[str]] = {}
@@ -188,6 +222,43 @@ def explain_trips(
             summary["trips" if recovered else "candidate_trips"].append(record["trip_id"])
             if recovered:
                 summary["weight"] += record["weight"]
+        if not any(label["label"] == "confirmed" for label in labels):
+            for key, members in run_candidates(record, grouped[record["trip_id"]]).items():
+                # Union the already indexed restoration edges; never rescan OLD.
+                edges = list({id(edge): edge for m in members for edge in restores[m]}.values())
+                origin, destination = record["new_origin"], record["new_destination"]
+                for member in members:
+                    edit = edits[member]
+                    if edit.kind == "endpoint_lost":
+                        if record["old_origin"] == edit.id:
+                            origin = edit.id
+                        if record["old_destination"] == edit.id:
+                            destination = edit.id
+                limit = (
+                    record["old_seconds"] + slow_seconds if record["status"] == "slowed" else inf
+                )
+                seconds = restored_seconds(
+                    new_graph, edges, touching, origin, destination, limit=limit
+                )
+                recovered = isfinite(seconds) and (
+                    record["status"] == "broken" or seconds - record["old_seconds"] < slow_seconds
+                )
+                if recovered:
+                    labels.append({"edit": key, "label": "confirmed", "members": members})
+                    summary = summaries.setdefault(
+                        key,
+                        {
+                            "edit": key,
+                            "kind": "run",
+                            "url": None,
+                            "members": [edit_details(edits[m], old, new, shared) for m in members],
+                            "trips": [],
+                            "candidate_trips": [],
+                            "weight": 0,
+                        },
+                    )
+                    summary["trips"].append(record["trip_id"])
+                    summary["weight"] += record["weight"]
         record["edits"] = sorted(
             labels, key=lambda item: (item["label"] != "confirmed", item["edit"])
         )

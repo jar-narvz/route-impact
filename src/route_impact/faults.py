@@ -8,6 +8,7 @@ import tomllib
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import perf_counter
 
 import duckdb
 
@@ -19,6 +20,7 @@ from route_impact.impact import (
     impact_from_graphs,
     prepare_trips,
     read_trips,
+    serialisable,
     snapshot_nodes,
 )
 from route_impact.report import write_report
@@ -177,6 +179,7 @@ class Baseline:
         new_graph: Graph | None = None,
         new_nodes: list[tuple[int, float, float]] | None = None,
         new_ways: dict[int, WayInfo] | None = None,
+        timings: dict[str, float] | None = None,
     ) -> dict:
         return impact_from_graphs(
             self.graph,
@@ -193,6 +196,7 @@ class Baseline:
             new_graph=new_graph,
             new_nodes=new_nodes,
             new_ways=new_ways,
+            timings=timings,
         )
 
 
@@ -330,15 +334,12 @@ def score_payload(
             continue
         total += 1
         # Confirmed labels already mean restoration alone recovers this trip.
-        truth = (
-            expected
-            if single
-            else {
-                e["edit"]
-                for e in trip["edits"]
-                if e["label"] == "confirmed" and e["edit"] in expected
-            }
-        )
+        truth = {
+            e["edit"]
+            for e in trip["edits"]
+            if e["label"] == "confirmed"
+            and all(member in expected for member in e.get("members", [e["edit"]]))
+        }
         top = top_confirmed(payload, trip)
         correct += top is not None and top in truth
     return {
@@ -350,7 +351,8 @@ def score_payload(
 def _write_json(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(value, sort_keys=True, indent=2, allow_nan=False) + "\n", encoding="utf-8"
+        json.dumps(serialisable(value), sort_keys=True, indent=2, allow_nan=False) + "\n",
+        encoding="utf-8",
     )
 
 
@@ -362,6 +364,9 @@ def evaluate_faults(
     faults: list[Fault],
     directory: Path,
     snapshot: str,
+    *,
+    extract_seconds: float = 0.0,
+    baseline_seconds: float = 0.0,
 ) -> dict:
     """Evaluate each fault and consecutive distinct-target batches against full routing."""
     counts = {
@@ -375,18 +380,24 @@ def evaluate_faults(
         )
     }
     runs = []
+    run_seconds = []
     with TemporaryDirectory(prefix="route-faults-") as temporary:
         new_db = Path(temporary) / "fault.duckdb"
         singles = [[fault] for fault in faults]
         batches = fault_batches(faults, baseline.ways)
         for index, group in enumerate(singles + batches):
+            start = perf_counter()
+            timing = {}
             if new_db.exists():
                 new_db.unlink()
             apply_faults(db, group, new_db)
+            timing["apply"] = perf_counter() - start
+            graph_start = perf_counter()
             incremental_trips: list[dict] = []
             new_graph = build_graph(new_db)
             new_nodes = snapshot_nodes(new_db, new_graph, 2, "2GB")
             new_ways = load_way_info(new_db)
+            timing["new_graph"] = perf_counter() - graph_start
             payload = baseline.impact(
                 new_db,
                 trips,
@@ -396,7 +407,9 @@ def evaluate_faults(
                 new_graph=new_graph,
                 new_nodes=new_nodes,
                 new_ways=new_ways,
+                timings=timing,
             )
+            full_start = perf_counter()
             full_trips, _ = compare_trips(
                 baseline.graph,
                 new_graph,
@@ -407,6 +420,7 @@ def evaluate_faults(
                 full=True,
                 old_routes=baseline.routes,
             )
+            timing["compare_full"] = perf_counter() - full_start
             # The rerouted flag describes execution mode, not a routing result.
             # Compare every other field on ALL records before JSON rounds floats.
             equal = [
@@ -429,6 +443,8 @@ def evaluate_faults(
                     "affected_trip_ids": [trip["trip_id"] for trip in payload["trips"]],
                 }
             )
+            timing["total"] = perf_counter() - start
+            run_seconds.append(timing)
     scores = {
         key: {
             "correct": correct,
@@ -439,6 +455,20 @@ def evaluate_faults(
     }
     scores["impact_rate"]["description"] = "Network redundancy, not accuracy"
     scores["runs"] = runs
+
+    def mean(single: bool) -> float:
+        totals = [
+            t["total"] for r, t in zip(runs, run_seconds, strict=True) if r["single"] == single
+        ]
+        return sum(totals) / len(totals) if totals else 0.0
+
+    scores["seconds"] = {
+        "extract": extract_seconds,
+        "baseline": baseline_seconds,
+        "runs": run_seconds,
+        "mean_single": mean(True),
+        "mean_batch": mean(False),
+    }
     _write_json(directory / "scores.json", scores)
     return scores
 
@@ -456,14 +486,28 @@ def run_suite(
     trips = read_trips(trips_path)
     thresholds = load_thresholds(thresholds_path)
     with TemporaryDirectory(prefix="route-suite-") as temporary:
+        start = perf_counter()
         db = extract(snapshot_path(snapshot, data_dir), Path(temporary) / "old.duckdb")
+        extract_seconds = perf_counter() - start
+        start = perf_counter()
         baseline = Baseline.load(db, trips)
+        baseline_seconds = perf_counter() - start
         faults = sample_faults(db, baseline, n, seed)
         directory = results_dir / "faults" / snapshot
         _write_json(
             directory / "faults.json", {"seed": seed, "N": n, "faults": [asdict(f) for f in faults]}
         )
-        return evaluate_faults(db, baseline, trips, thresholds, faults, directory, snapshot)
+        return evaluate_faults(
+            db,
+            baseline,
+            trips,
+            thresholds,
+            faults,
+            directory,
+            snapshot,
+            extract_seconds=extract_seconds,
+            baseline_seconds=baseline_seconds,
+        )
 
 
 def run_what_if(
@@ -518,10 +562,19 @@ def run_what_if(
         else:
             print("Worst: none")
         top = payload["culprits"][0] if payload["culprits"] else None
-        matches = top and top["edit"] in {f.expected_edit for f in faults}
+        matches = top and all(
+            member["edit"] in {f.expected_edit for f in faults}
+            for member in (top["members"] if top["kind"] == "run" else [top])
+        )
         print(
             "Root cause: "
-            + (f"{top['kind'].split('_')[0]} {top['id']}" if top else "none")
+            + (
+                f"run {top['edit']}"
+                if top and top["kind"] == "run"
+                else f"{top['kind'].split('_')[0]} {top['id']}"
+                if top
+                else "none"
+            )
             + (" ✔ (matches injected fault)" if matches else "")
         )
     return payload

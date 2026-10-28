@@ -1,10 +1,15 @@
 """Render impact summaries and the small geometry layer used by the static map."""
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 import duckdb
+
+# Bound browser geometry while retaining every confirmed culprit.
+MAP_MAX_TRIPS = 25
 
 
 def _date(label: str) -> str:
@@ -41,7 +46,7 @@ def _tags(tags: dict | None) -> str:
     )
 
 
-def render_markdown(payload: dict) -> str:
+def render_markdown(payload: dict, geojson_path: Path | None = None) -> str:
     """Render a report using only measurements and edit details in impact.json."""
     metrics = payload["metrics"]
     slow_minutes = payload["thresholds"]["slow_seconds"] / 60
@@ -66,6 +71,21 @@ def render_markdown(payload: dict) -> str:
     if not payload["culprits"]:
         lines.append("Culprits: none")
     for culprit in payload["culprits"]:
+        if culprit["kind"] == "run":
+            members = []
+            for member in culprit["members"]:
+                tags = member["before_tags"]
+                tag_sets = tags.values() if _node_edit(member) else [tags]
+                names = ", ".join(dict.fromkeys(t["name"] for t in tag_sets if t and t.get("name")))
+                members.append(
+                    f"{_text(member['kind'])} {member['id']}"
+                    + (f' "{_text(names)}"' if names else "")
+                    + f" ({member['url']})"
+                )
+            lines.extend(
+                ["", f"- run · Trips affected: {len(culprit['trips'])} · " + "; ".join(members)]
+            )
+            continue
         node = _node_edit(culprit)
         before, after = culprit["before_tags"], culprit["after_tags"]
         tag_sets = (
@@ -99,12 +119,22 @@ def render_markdown(payload: dict) -> str:
             lines.extend([f"  - before: {_tags(before)}", f"    after: {_tags(after)}"])
         lines.append(f"  - {_text(culprit['url'])}")
     unresolved = [_text(t["trip_id"]) for t in payload["trips"] if t["cause"] != "confirmed"]
+    label = payload["new"]
+    if len(label) == 6 and label.isascii() and label.isdigit():
+        map_url = f"https://jar-narvz.github.io/route-impact/site/?date={_date(label)}"
+    elif geojson_path is not None:
+        site = Path(__file__).resolve().parents[2] / "site"
+        source = quote(Path(os.path.relpath(geojson_path.resolve(), site)).as_posix(), safe="/")
+        site_link = Path(os.path.relpath(site, geojson_path.resolve().parent)).as_posix()
+        map_url = f"{site_link}/?src={source}"
+    else:
+        map_url = "site/?src=impact.geojson"
     lines.extend(
         [
             "",
             "Joint / unexplained: " + (", ".join(unresolved) or "none"),
             "",
-            f"Map: https://jar-narvz.github.io/route-impact/site/?date={_date(payload['new'])}",
+            f"Map: {map_url}",
             "",
         ]
     )
@@ -126,7 +156,7 @@ def _way_nodes(connection: duckdb.DuckDBPyConnection, ids: set[int]) -> dict[int
 def _coordinates(connection: duckdb.DuckDBPyConnection, ids: set[int]) -> dict[int, list[float]]:
     # One batched coordinate query per snapshot; never scan coordinates into Python.
     return {
-        node: [lon, lat]
+        node: [round(lon, 6), round(lat, 6)]
         for node, lat, lon in connection.execute(
             "SELECT node_id, lat, lon FROM road_nodes WHERE node_id IN (SELECT unnest(?))",
             [sorted(ids)],
@@ -138,7 +168,11 @@ def write_geojson(payload: dict, old_db: Path, new_db: Path, out: Path) -> int:
     """Write affected routes and confirmed culprits, returning the feature count."""
     paths = []
     needed: dict[str, set[int]] = {"old": set(), "new": set()}
-    for trip in payload["trips"]:
+    selected = sorted(
+        payload["trips"],
+        key=lambda t: (t["status"] != "broken", -t.get("weight", 0), t["trip_id"]),
+    )[:MAP_MAX_TRIPS]
+    for trip in selected:
         for snapshot in ("old", "new"):
             segments = trip[f"{snapshot}_path"]
             if not segments:
@@ -155,12 +189,17 @@ def write_geojson(payload: dict, old_db: Path, new_db: Path, out: Path) -> int:
                     },
                 )
             )
-    way_ids = {c["id"] for c in payload["culprits"] if not _node_edit(c)}
+    culprits = [
+        {**member, "trips": culprit["trips"]}
+        for culprit in payload["culprits"]
+        for member in (culprit["members"] if culprit["kind"] == "run" else [culprit])
+    ]
+    way_ids = {c["id"] for c in culprits if not _node_edit(c)}
     with _connect(old_db) as old, _connect(new_db) as new:
         old_ways = _way_nodes(old, way_ids)
         new_ways = _way_nodes(new, way_ids - old_ways.keys())
         ways = old_ways | new_ways
-        for culprit in payload["culprits"]:
+        for culprit in culprits:
             node = _node_edit(culprit)
             snapshot = "old" if node or culprit["id"] in old_ways else "new"
             nodes = [culprit["id"]] if node else ways[culprit["id"]]
@@ -208,10 +247,12 @@ def write_geojson(payload: dict, old_db: Path, new_db: Path, out: Path) -> int:
             {
                 "type": "FeatureCollection",
                 "snapshots": {"old": payload.get("old"), "new": payload.get("new")},
+                "trips_shown": len(selected),
+                "trips_total": len(payload["trips"]),
                 "features": features,
             },
             allow_nan=False,
-            indent=2,
+            separators=(",", ":"),
         )
         + "\n",
         encoding="utf-8",
@@ -222,5 +263,7 @@ def write_geojson(payload: dict, old_db: Path, new_db: Path, out: Path) -> int:
 def write_report(payload: dict, out_dir: Path, old_db: Path, new_db: Path) -> None:
     """Write the Markdown summary and map layer while snapshot databases exist."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "report.md").write_text(render_markdown(payload), encoding="utf-8")
+    (out_dir / "report.md").write_text(
+        render_markdown(payload, out_dir / "impact.geojson"), encoding="utf-8"
+    )
     write_geojson(payload, old_db, new_db, out_dir / "impact.geojson")

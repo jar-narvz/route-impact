@@ -7,7 +7,13 @@ from scipy.sparse import csr_matrix
 
 from route_impact.graph import Edge, Graph, Segment, restored_seconds, route_pairs
 from route_impact.impact import compute_impact
-from route_impact.rootcause import WayInfo, candidate_edits, explain_trips, load_way_info
+from route_impact.rootcause import (
+    WayInfo,
+    candidate_edits,
+    changed_runs,
+    explain_trips,
+    load_way_info,
+)
 
 
 def graph(runs: list[tuple[int, list[int], list[float]]]) -> Graph:
@@ -63,6 +69,7 @@ def record(
         "old_seconds": before.seconds,
         "status": "broken" if after.seconds == inf else "slowed",
         "reason": "unreachable" if after.seconds == inf else "slower",
+        "old_path": [[s.a, s.b, s.way_id] for s in before.segments],
         "changed_segments": [
             [s.a, s.b, s.way_id] for s in before.segments if costs.get((s.a, s.b), inf) > s.seconds
         ],
@@ -152,8 +159,8 @@ def test_midway_attachment() -> None:
 
 def test_independent_slowdowns_are_joint() -> None:
     # Each residual slowdown alone meets the threshold, so neither restore recovers.
-    old = graph([(1, [1, 2], [1]), (2, [2, 3], [1])])
-    new = graph([(1, [1, 2], [11]), (2, [2, 3], [11])])
+    old = graph([(1, [1, 2], [1]), (3, [2, 4], [1]), (2, [4, 3], [1])])
+    new = graph([(1, [1, 2], [11]), (3, [2, 4], [1]), (2, [4, 3], [11])])
     row = record(old, new, 1, 3)
     culprits, candidates = explain_trips([row], old, new, info(old), info(new), 10)
     assert row["cause"] == "joint"
@@ -185,8 +192,8 @@ def test_no_candidate_is_unexplained(with_candidate: bool) -> None:
 
 @pytest.mark.parametrize("delay,label", [(9, "confirmed"), (10, "candidate"), (11, "candidate")])
 def test_restored_delay_boundary(delay: float, label: str, monkeypatch: pytest.MonkeyPatch) -> None:
-    old = graph([(1, [1, 2], [1]), (2, [2, 3], [1])])
-    new = graph([(1, [1, 2], [11]), (2, [2, 3], [1 + delay])])
+    old = graph([(1, [1, 2], [1]), (3, [2, 4], [0]), (2, [4, 3], [1])])
+    new = graph([(1, [1, 2], [11]), (3, [2, 4], [0]), (2, [4, 3], [1 + delay])])
     limits = []
 
     def bounded_restore(*args, limit: float = inf) -> float:
@@ -271,3 +278,28 @@ def test_multiple_attachments_and_reverse_direction() -> None:
     assert restored_seconds(new, old.edges, touching, 4, 1) == 8
     assert restored_seconds(new, old.edges, touching, 9, 5) == 7
     assert restored_seconds(new, old.edges, touching, 4, 5) == inf
+
+
+def test_changed_runs_split_on_unchanged():
+    path = [[1, 2, 10], [2, 3, 11], [3, 4, 12], [4, 5, 13]]
+    assert changed_runs({"old_path": path, "changed_segments": [path[0], path[1], path[3]]}) == [
+        [(1, 2, 10), (2, 3, 11)],
+        [(4, 5, 13)],
+    ]
+
+
+def test_run_aggregates_and_ranks():
+    old = graph([(1, [1, 2], [1]), (2, [2, 3], [1]), (4, [4, 5], [1])])
+    new = graph([(1, [1, 2], [11]), (2, [2, 3], [11]), (4, [4, 5], [20])])
+    rows = [
+        record(old, new, 1, 3, "a", 2),
+        record(old, new, 1, 3, "b", 3),
+        record(old, new, 4, 5, "c", 1),
+    ]
+    culprits, _ = explain_trips(rows, old, new, info(old), info(new), 10)
+    assert [c["edit"] for c in culprits] == ["run/way_changed/1+way_changed/2", "way_changed/4"]
+    assert culprits[0]["trips"] == ["a", "b"]
+    assert culprits[0]["weight"] == 5
+    assert culprits[0]["kind"] == "run"
+    assert culprits[0]["url"] is None
+    assert [m["edit"] for m in culprits[0]["members"]] == ["way_changed/1", "way_changed/2"]

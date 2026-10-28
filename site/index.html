@@ -79,7 +79,9 @@
         throw new Error('The map file must be a GeoJSON FeatureCollection.');
       }
       const synthetic = data.snapshots && !/^[0-9]{6}$/.test(data.snapshots.old);
-      const notice = synthetic ? 'Synthetic test town — not real roads. ' : '';
+      const coverage = data.trips_shown < data.trips_total
+        ? `Showing ${data.trips_shown} of ${data.trips_total} affected trips. ` : '';
+      const notice = coverage + (synthetic ? 'Synthetic test town — not real roads. ' : '');
       const legend = L.control({position: 'bottomright'});
       legend.onAdd = () => {
         const box = L.DomUtil.create('div');

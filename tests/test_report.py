@@ -218,3 +218,155 @@ def test_geometry_uses_each_snapshot_and_way_fallback(tmp_path: Path, empty_old_
         connection.execute("UPDATE roads SET node_refs = [1] WHERE way_id = 20")
     with pytest.raises(ValueError, match="A LineString needs at least two coordinates"):
         write_geojson(payload, *databases, out)
+
+
+def test_geojson_budget(towns, payload, tmp_path, monkeypatch):
+    monkeypatch.setattr("route_impact.report.MAP_MAX_TRIPS", 1)
+    # Broken must beat even an overwhelmingly heavier slowed trip.
+    for trip in payload["trips"]:
+        trip["weight"] = 1 if trip["status"] == "broken" else 1000
+    out = tmp_path / "impact.geojson"
+    write_geojson(payload, towns["db"]["town_v1"], towns["db"]["town_v2"], out)
+    data = json.loads(out.read_text())
+    assert data["trips_shown"] == 1
+    assert data["trips_total"] == 5
+    routes = [f for f in data["features"] if f["properties"]["role"] != "culprit"]
+    assert {f["properties"]["trip_id"] for f in routes} == {"T5"}
+    assert {f["properties"]["status"] for f in routes} == {"broken"}
+    assert len([f for f in data["features"] if f["properties"]["role"] == "culprit"]) == 5
+    assert "\n" not in out.read_text().rstrip("\n")
+    for feature in data["features"]:
+        geometry = feature["geometry"]
+        coordinates = (
+            [geometry["coordinates"]] if geometry["type"] == "Point" else geometry["coordinates"]
+        )
+        assert all(value == round(value, 6) for point in coordinates for value in point)
+
+
+def test_geojson_weight_and_id_order(towns, payload, tmp_path, monkeypatch):
+    monkeypatch.setattr("route_impact.report.MAP_MAX_TRIPS", 2)
+    payload["trips"] = [t for t in payload["trips"] if t["status"] == "slowed"]
+    for trip in payload["trips"]:
+        trip["weight"] = 3 if trip["trip_id"] in {"T2", "T4"} else 1
+    payload["trips"].reverse()
+    out = tmp_path / "impact.geojson"
+    write_geojson(payload, towns["db"]["town_v1"], towns["db"]["town_v2"], out)
+    data = json.loads(out.read_text())
+    assert data["trips_shown"] == 2
+    assert data["trips_total"] == 4
+    assert [
+        f["properties"]["trip_id"]
+        for f in data["features"]
+        if f["properties"]["role"] == "old_path"
+    ] == ["T2", "T4"]
+
+
+def test_run_report_and_geometry(towns, thresholds, tmp_path, monkeypatch):
+    from urllib.parse import parse_qs, unquote, urlsplit
+
+    from route_impact.faults import Fault, apply_faults
+    from route_impact.impact import serialisable
+
+    old_db = towns["db"]["town_v1"]
+    new_db = apply_faults(
+        old_db, [Fault("delete_way", way_id=w) for w in (50, 51)], tmp_path / "new.duckdb"
+    )
+    payload = compute_impact(
+        old_db, new_db, towns["rows"], thresholds, old_label="town_v1", new_label="town_v1+what-if"
+    )
+    payload["culprits"][0]["members"][0]["before_tags"]["name"] = "West Bridge"
+    monkeypatch.setattr("route_impact.report.MAP_MAX_TRIPS", 0)
+    output = tmp_path / "custom run"
+    write_report(payload, output, old_db, new_db)
+    report = (output / "report.md").read_text()
+    assert "town_v1 → town_v1+what-if" in report
+    run_line = next(line for line in report.splitlines() if line.startswith("- run"))
+    assert 'way_deleted 50 "West Bridge"' in run_line
+    assert "way_deleted 51" in run_line
+    for way in (50, 51):
+        assert f"https://www.openstreetmap.org/way/{way}" in run_line
+    map_url = next(
+        line.removeprefix("Map: ") for line in report.splitlines() if line.startswith("Map: ")
+    )
+    parsed = urlsplit(map_url)
+    site = (output / unquote(parsed.path)).resolve()
+    assert site == Path(__file__).resolve().parents[1] / "site"
+    source = parse_qs(parsed.query)["src"][0]
+    assert (site / source).resolve() == output / "impact.geojson"
+    assert render_markdown(serialisable(payload), output / "impact.geojson") == report
+    data = json.loads((output / "impact.geojson").read_text())
+    assert data["trips_shown"] == 0
+    assert data["trips_total"] == 1
+    assert {f["properties"]["edit"] for f in data["features"]} == {
+        "way_deleted/50",
+        "way_deleted/51",
+    }
+    assert {f["properties"]["role"] for f in data["features"]} == {"culprit"}
+
+
+def test_cli_impact_strips_paths_and_report_renders(towns, tmp_path):
+    from route_impact.impact import serialisable
+
+    fixture_dir = Path(__file__).parent / "fixtures"
+    for date, version in (("261001", "town_v1"), ("261002", "town_v2")):
+        shutil.copyfile(fixture_dir / f"{version}.osm.pbf", tmp_path / f"norcal-{date}.osm.pbf")
+    thresholds = tmp_path / "thresholds.toml"
+    thresholds.write_text(
+        Path("config/thresholds.toml")
+        .read_text()
+        .replace("slow_seconds = 120", "slow_seconds = 10")
+    )
+    results = tmp_path / "results"
+    assert (
+        main(
+            [
+                "impact",
+                "--old",
+                "261001",
+                "--new",
+                "261002",
+                "--data-dir",
+                str(tmp_path),
+                "--results-dir",
+                str(results),
+                "--trips",
+                str(fixture_dir / "town_trips.csv"),
+                "--thresholds",
+                str(thresholds),
+            ]
+        )
+        == 1
+    )
+    directory = results / "2026-10-02"
+    payload = json.loads((directory / "impact.json").read_text())
+    assert len(payload["trips"]) == 5
+    assert serialisable(payload) == payload
+    for trip in payload["trips"]:
+        assert not {"old_path", "new_path", "changed_segments"} & trip.keys()
+        assert trip["changed_segment_count"] > 0
+    original = (directory / "report.md").read_text()
+    (directory / "report.md").unlink()
+    assert main(["report", "--date", "2026-10-02", "--results-dir", str(results)]) == 0
+    assert (directory / "report.md").read_text() == original
+
+
+def test_serialisable_preserves_payload(payload):
+    from copy import deepcopy
+
+    from route_impact.impact import serialisable
+
+    before = deepcopy(payload)
+    saved = serialisable(payload)
+    assert payload == before
+    assert len(saved["trips"]) == len(payload["trips"])
+    for trip, original in zip(saved["trips"], payload["trips"], strict=True):
+        assert trip["changed_segment_count"] == len(original["changed_segments"])
+        assert trip["edits"] == original["edits"]
+        assert trip == {
+            **{
+                k: v
+                for k, v in original.items()
+                if k not in {"old_path", "new_path", "changed_segments"}
+            },
+            "changed_segment_count": len(original["changed_segments"]),
+        }
