@@ -2,10 +2,10 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–7 all committed (Step 7 = `9668a71`, review + pointers = `c7d017c`).
-- **Next up:** Step 8 — Report, GeoJSON, results map (Claude writes the Codex brief from PLAN Step 8).
-  - **Read to resume (one call):** `grep -n "### Step 8" PLAN.md` then read that step plus DESIGN §5.8–5.9; `grep -n "^def " src/route_impact/rootcause.py src/route_impact/impact.py; git status --short`
-  - **Fold into the Step 8 brief:** `impact.json` now has per-trip `cause` (`confirmed` | `joint` | `unexplained`) and `edits`, plus top-level `culprits` and `candidates`. `before_tags`/`after_tags`/`*_nodes` are a single dict for way edits but a way-id → value map for node edits; the report must handle both.
+- **Done:** design, plan critique, Steps 0–7 committed (Step 7 = `9668a71`). Step 8 reviewed and done; awaiting Jared's commit.
+- **Next up:** Step 9 — Faults + what-if (Claude writes the Codex brief from PLAN Step 9).
+  - **Read to resume (one call):** `grep -n "### Step 9" PLAN.md` then read that step plus DESIGN §5.9, §6.2; `grep -n "^def " src/route_impact/rootcause.py src/route_impact/impact.py; git status --short`
+  - **Fold into the Step 9 brief:** `report.write_report(payload, out_dir, old_db, new_db)` writes report.md + impact.geojson and needs both DBs alive; fault/what-if runs can reuse it for demo maps (`site/?src=`). Pages must publish the repo root (map lives at `/route-impact/site/`) — Step 11.
   - **Watch:**
     - Peak RSS ≈ 8 GB for a full impact run (two graphs); root cause adds one O(E) CSR copy per candidate check plus one Python pass over OLD roads and NEW edges per run — unmeasured on NorCal. Time both in Step 11.
     - Two independent slowdowns that each exceed `slow_seconds` are labelled `joint` (DESIGN §5.7 as written). Revisit only if Jared changes the confirmation rule.
@@ -34,6 +34,48 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 8: review fix-up
+- **Agent:** Codex
+- **Did:** Addressed Claude's review findings 1–3: corrected the report map URL to `/route-impact/site/`, skipped empty trip paths in GeoJSON while retaining the error for culprit ways with fewer than two nodes, and formatted popup delay minutes to one decimal while preserving unreachable for null. Added exact map-link and empty-old-path regression assertions, including written feature counts, roles, coordinates, and malformed culprit rejection.
+- **Changed:** `src/route_impact/report.py`, `site/index.html`, `tests/test_report.py`, `PROGRESS.md`.
+- **Verify:** Final actual output; both commands exited 0:
+
+```text
+$ PYENV_VERSION=3.11.14 .venv/bin/python -m pytest -q
+........................................................................ [ 97%]
+..                                                                       [100%]
+74 passed in 6.97s
+$ .venv/bin/ruff check . && .venv/bin/ruff format --check .
+All checks passed!
+26 files already formatted
+```
+
+- **Review (Claude, 2026-10-28):** Verify rerun: 74 passed, ruff clean. `report.py:105` link now `/route-impact/site/?date=`; `report.py:142` skips empty paths; `index.html:48` uses `toFixed(1)`. All three findings closed. Step 8 done.
+- **Gotchas:** Initial formatting check required wrapping the exact-link assertion; formatted the allowed test file and reran both Verify commands successfully. No browser check performed for popup formatting. Only the four authorized files were edited; existing Step 8 changes in other files were preserved. No staging or commit performed; PLAN.md and docs/DESIGN.md were not edited.
+
+### 2026-10-28 — Step 8: Report, GeoJSON, results map
+- **Agent:** Codex
+- **Did:** Added pure Markdown rendering, batched snapshot geometry export, report generation inside the impact temporary-database lifetime, and a Markdown-only report CLI. Added Makefile report/map targets and corrected the what-if stub to Step 9. Added the static Leaflet map with pinned CDN assets and SRI, relative source/date validation, safe DOM popups, OSM attribution, route/culprit styling, bounds fitting, and load/empty messages. Added offline fixture, tag-shape, CLI preservation, and exact snapshot/fallback geometry checks.
+- **Changed:** `src/route_impact/report.py` (new), `src/route_impact/cli.py`, `Makefile`, `site/index.html` (new), `tests/test_report.py` (new), `PROGRESS.md`.
+- **Verify:** Final actual output, offline, both commands exited 0:
+
+```text
+$ PYENV_VERSION=3.11.14 .venv/bin/python -m pytest -q
+........................................................................ [ 98%]
+.                                                                        [100%]
+73 passed in 6.76s
+$ .venv/bin/ruff check . && .venv/bin/ruff format --check .
+All checks passed!
+26 files already formatted
+```
+
+- **Review (Claude, 2026-10-28):** Verify rerun: 73 passed, ruff clean. Manual map check in the in-app browser, fixture town_v1→town_v2 served over `http.server`: 14 features drawn (5 old paths, 4 new, 4 culprit ways, 1 node point), Leaflet SRI loads, culprit popups show before/after tags and the OSM link, trip popups show status and delay, `?src=//example.com/…` and a missing `?date=` show the error box. Findings:
+  1. `src/route_impact/report.py:105` — the map link `…/route-impact/?date=` points at the Pages root, but `site/index.html:73` fetches `../results/<date>/`, which only resolves when the page is at `/route-impact/site/`. Fix the link to `…/route-impact/site/?date=`; Step 11 publishes the repo root to Pages.
+  2. `src/route_impact/report.py:192-193` — an affected trip with an empty path (both ends snapped to one OLD vertex) raises, which makes the whole `impact` run exit 2 after impact.json is written. Skip that feature instead.
+  3. `site/index.html:48` — the delay isn't rounded (`1.529 min`). Show one decimal.
+  4. (accepted) The mockup's graph V/E and ways added/deleted lines are omitted because impact.json lacks them. Add them when a step touches `impact.py`.
+- **Gotchas:** Graph vertex/edge counts and ways added/deleted/modified are omitted because impact.json does not contain those measurements. Null delay for a broken trip is displayed as unreachable rather than a numeric minute value. The first lint run found two ISC004 string-concatenation style errors, corrected before the final verification above. `ROUTE_IMPACT_DUMP_DIR` optionally copies the fixture impact.geojson to a stable directory for manual map checks; default is off (run `ROUTE_IMPACT_DUMP_DIR=<directory> PYENV_VERSION=3.11.14 .venv/bin/python -m pytest -q tests/test_report.py::test_fixture_report`, then serve a root containing that directory and use `site/?src=<relative-path>/impact.geojson`). Leaflet and map tiles require browser network access; no browser/network validation was performed in the sandbox. No changes to PLAN.md, docs/DESIGN.md, impact.py, rootcause.py, or expected.json; no staging or commit performed.
 
 ### 2026-10-28 — Step 7: review fix-up
 - **Agent:** Codex

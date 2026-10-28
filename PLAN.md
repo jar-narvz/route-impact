@@ -90,7 +90,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Files:** `src/route_impact/report.py`, `src/route_impact/cli.py`, `Makefile`, `site/index.html`, `tests/test_report.py`
 - **Do:** From `impact.json` write `report.md` (layout in DESIGN §6.1) and `impact.geojson` (affected trips' old/new paths + culprit segments only); `impact` calls the report step. `site/index.html` (**protected**): static Leaflet page (pinned CDN version, OSM tiles + attribution) that loads `results/<date>/impact.geojson` from a `?date=` parameter; click a culprit → tags + link.
 - **Verify:** `make test` → report for `town_v1 → town_v2` contains the expected risk line and confirmed culprit ids; GeoJSON parses and its feature count equals `expected.json`; open `site/index.html` locally against the fixture output → routes and culprits draw.
-- **Status:** todo
+- **Status:** done (2026-10-28)
 
 ### Step 9 — Faults + what-if
 - **Owner:** Codex (fault catalog and scoring reviewed by Claude)
