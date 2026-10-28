@@ -6,7 +6,7 @@ PYTHON ?= python
 help:
 	@echo "help      List available targets"
 	@echo "setup     Install the DuckDB spatial extension (requires network)"
-	@echo "download  Download a snapshot (stub)"
+	@echo "download  Download a checksum-verified snapshot (DATE=YYMMDD; default latest)"
 	@echo "extract   Extract snapshot tables (stub)"
 	@echo "impact    Compare routing impact (stub)"
 	@echo "what-if   Evaluate a hypothetical edit (stub)"
@@ -19,7 +19,7 @@ setup:
 	$(PYTHON) -c "import duckdb; c = duckdb.connect(config={'memory_limit': '1GB', 'threads': 1}); c.execute('INSTALL spatial'); c.close()"
 
 download:
-	@echo "not implemented yet (Step 2)"
+	@bash scripts/download.sh "$(DATE)"
 
 extract:
 	@echo "not implemented yet (Step 3)"

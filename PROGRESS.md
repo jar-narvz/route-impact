@@ -2,8 +2,8 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Step 0, Step 1 (fixtures + oracle; not yet committed).
-- **Next up:** Step 2 (see PLAN.md). Read to resume: PLAN.md Step 2 only, plus `docs/FIXTURES.md` §3 and §6 if a test needs fixture ids.
+- **Done:** design, plan critique, Steps 0–2 (Step 2 not yet committed).
+- **Next up:** Step 3 (see PLAN.md). Read to resume: PLAN.md Step 3 only, plus `docs/FIXTURES.md` §3 and §6 if a test needs fixture ids.
   - **Decided so far:** fixture travel times come from `scripts/fixture_oracle.py` (independent, stdlib only). The motorway and ramps are covered structurally only (no named trip uses them).
 - **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
 - **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial` installed). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, checksums verified. Run `codex exec` with `< /dev/null`.
@@ -23,6 +23,14 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 2: Download with integrity check
+- **Agent:** Codex (implementation), Claude (review + network Verify)
+- **Did:** `scripts/download.sh` fetches the `.md5` first (404 → "not published"), resumes the pbf into a `.part` file, verifies, then moves it into place. Dated files skip the network when valid; `latest` always re-fetches its `.md5`.
+- **Changed:** `scripts/download.sh`, `Makefile`
+- **Verify:** `make download DATE=261026` ×2 → `norcal-261026.osm.pbf already present, checksum OK` (exit 0 both times). `make download DATE=991231` → `norcal-991231.osm.pbf not published on Geofabrik`, exit 2 via make (script exit 1), no stray files. `make download DATE=12ab` → `DATE must be 6 digits`. `make download` (latest, remote md5 = local) → `already present, checksum OK`.
+- **Review:** Claude — approved. Accepted risk: a stale `.part` from an older `latest` gets resumed, fails the checksum, and is deleted, which wastes one download but is never wrong.
+- **Gotchas:** Codex's sandbox has no network, so Claude ran the 404 and latest checks.
 
 ### 2026-10-28 — Step 1: Test fixtures with known answers
 - **Agent:** Claude (design `docs/FIXTURES.md`), Codex (implementation)

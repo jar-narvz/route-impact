@@ -48,7 +48,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Files:** `scripts/download.sh`, `Makefile`
 - **Do:** `make download DATE=YYMMDD` → `curl` `norcal-YYMMDD.osm.pbf` + `.md5` into `data/`, resume partial files (`curl -C -`), verify checksum (`md5sum` on Linux, `md5 -q` on macOS — script detects), skip if present and valid, non-zero exit with a clear message if the file isn't published or the checksum fails. `DATE` omitted → latest.
 - **Verify:** `make download DATE=261026 && make download DATE=261026` → both print "already present, checksum OK" (file exists locally); `make download DATE=991231` → non-zero exit, "not published".
-- **Status:** todo
+- **Status:** done (2026-10-28)
 
 ### Step 3 — Extract roads, nodes, places
 - **Owner:** Codex
