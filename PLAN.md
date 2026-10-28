@@ -55,7 +55,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Files:** `sql/extract/drivable.sql`, `sql/extract/build_tables.sql`, `src/route_impact/extract.py`, `config/speeds.toml`, `tests/test_extract.py`
 - **Do:** Per DESIGN §5.2–5.3, two phases over `ST_ReadOSM`: (1) drivable ways → staging with full `tags` MAP and ordered `node_refs` (repeats kept); (2) nodes filtered to referenced ids + `place` nodes. Build `data/<snapshot>.duckdb` with `roads`, `road_nodes`, `places`. Drivable list only in `drivable.sql` (no `service`); access by precedence `motorcar → motor_vehicle → vehicle → access` (exclude `no`/`private`); car ferries included; `oneway` normalised to −1/0/1 with implied one-way for `motorway` and `junction=roundabout|circular`; `maxspeed` parsed (`"NN mph"` → mph, bare → km/h, non-positive/unparseable → NULL), `speed_kph` filled from `config/speeds.toml`; `content_hash` = hash of key-sorted tags + ordered refs. Fail with an error if any ref lacks a coordinate. Connection sets `threads`, `memory_limit`, `temp_directory`.
 - **Verify:** `pytest tests/test_extract.py` → on `town_v1`: row counts, kept/excluded way ids (incl. both access-precedence cases), oneway values (roundabout = 1, `-1` street = −1) equal `expected.json`; a fixture with a missing node ref raises.
-- **Status:** todo
+- **Status:** done (2026-10-28)
 
 ### Step 4 — Road graph + feasibility on the full graph
 - **Owner:** Codex (graph construction reviewed by Claude); full-graph check run locally on `data/norcal-latest.osm.pbf`

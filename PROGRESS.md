@@ -2,14 +2,16 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–2, all committed (last commit `e0432b7`).
-- **Next up:** Step 3 — Extract roads, nodes, places (Codex implements, Claude reviews and runs Verify).
-  - **Read to resume (one call):** `sed -n 53,58p PLAN.md; sed -n 118,149p docs/DESIGN.md; sed -n 22,45p docs/FIXTURES.md`
-  - **Then:** write the Codex brief straight from those lines and launch it (no separate design doc needed for Step 3).
-  - **Decided so far / watch in review:**
-    - `expected.json` has no per-way `oneway` values. `tests/test_extract.py` should assert them from FIXTURES.md §3 (way 40 roundabout → 1, way 23 → −1, way 30 → 1, grid streets → 0).
-    - Missing-node-ref test: build a tiny XML in `tmp_path` and convert with `osmium cat`. Don't add a new committed fixture.
-    - Fixture times come from `scripts/fixture_oracle.py` (haversine R = 6,371,008.8 m, mph maxspeeds). Step 4's graph must use the same R to match within 0.05 s.
+- **Done:** design, plan critique, Steps 0–3. Step 3 reviewed and approved, **not committed yet** (last commit `e0432b7`).
+- **Next up:** Step 4 — Road graph + feasibility on the full graph (Codex implements, Claude reviews and runs Verify).
+  - **Read to resume (one call):** `sed -n 60,65p PLAN.md; sed -n 139,149p docs/DESIGN.md; sed -n 5,9p docs/FIXTURES.md; sed -n 89,120p docs/FIXTURES.md`
+  - **Then:** write the Codex brief from those lines and launch it.
+  - **Watch in review:**
+    - Fixture times use haversine R = 6,371,008.8 m (`scripts/fixture_oracle.py`); Step 4 must use the same R to match within 0.05 s.
+    - Step 3 can leave `speed_kph` NULL if a drivable class is missing from `config/speeds.toml`. Step 4 should fail loudly on a NULL or non-positive speed rather than produce NaN times.
+    - DESIGN §5.4 says zero/unparseable maxspeeds are *counted*. Step 3 doesn't count them; Step 4 (or the report) should, from `maxspeed_raw IS NOT NULL` vs parsed.
+    - `extract()` fails if the output DB already has the tables. The CLI step must delete/rebuild the snapshot DB (or skip if present).
+    - `extract()` finds `sql/` and `config/` via the source checkout (`parents[2]`), so it needs the editable install (the CI workflow must use `pip install -e`).
     - The motorway and ramps are on no named trip, so they're covered structurally only.
 - **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
 - **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial`). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, verified; `make download` works.
@@ -30,6 +32,24 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 3: Extract roads, nodes, places
+- **Agent:** Codex
+- **Did:** Added two-phase ST_ReadOSM extraction into roads, road_nodes, and places, with full tags/ordered refs, access precedence, car ferries, normalized direction, parsed/default speeds, canonical SHA256 content hashes, and transactional failure for missing references. Connection explicitly sets threads, memory_limit, and temp_directory; only LOAD spatial is used, with no download.
+- **Changed:** `sql/extract/drivable.sql`, `sql/extract/build_tables.sql`, `src/route_impact/extract.py`, `config/speeds.toml`, `tests/test_extract.py`, `PROGRESS.md` (this required log/state update).
+- **Verify:** Actual final output:
+
+```text
+$ .venv/bin/pytest tests/test_extract.py -q
+......                                                                   [100%]
+6 passed in 1.29s
+$ .venv/bin/ruff check . && .venv/bin/ruff format --check .
+All checks passed!
+13 files already formatted
+```
+
+- **Review:** Claude, 2026-10-28 — approved. Reran Verify: `6 passed in 1.52s`, ruff clean, full suite `7 passed`. Findings (none blocking): (1) no guard against NULL `speed_kph` if a class is missing from speeds.toml; (2) unparseable/zero maxspeeds not counted (DESIGN §5.4), deferred to Step 4; (3) `maxspeed` like `25mph` (no space) or `50 km/h` falls back to default; (4) rerunning into an existing DB raises, CLI must handle; (5) spill dir `.<stem>-tmp` is never cleaned up; (6) `content_hash` relies on DuckDB `TO_JSON` formatting, so old/new snapshots should be built with the same DuckDB version.
+- **Gotchas:** Initial coordinate equality assertions exposed ST_ReadOSM floating-point decoding noise (37.8 becomes 37.800000000000004); coordinate checks now use absolute tolerance 1e-10 with zero relative tolerance. Initial Ruff import-order errors were fixed before the final Verify above. Alternating/reversible direction is treated as two-way. Population uses TRY_CAST to BIGINT (invalid/missing → NULL). SQL/config paths assume a source checkout; no packaging or CLI changes made. Missing-reference inputs are generated/converted with osmium in tmp_path, and the test also confirms persistent tables roll back. No full-size snapshot run and no commit.
 
 ### 2026-10-28 — Step 2: Download with integrity check
 - **Agent:** Codex (implementation), Claude (review + network Verify)
