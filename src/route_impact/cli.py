@@ -10,6 +10,7 @@ from tempfile import TemporaryDirectory
 
 from route_impact.extract import extract
 from route_impact.impact import compute_impact, read_trips
+from route_impact.report import render_markdown, write_report
 from route_impact.risk import load_thresholds
 from route_impact.trips import generate
 
@@ -31,6 +32,9 @@ def main(argv: list[str] | None = None) -> int:
     impact.add_argument("--data-dir", type=Path, default=Path("data"))
     impact.add_argument("--results-dir", type=Path, default=Path("results"))
     impact.add_argument("--full", action="store_true")
+    report = subparsers.add_parser("report", help="Re-render an existing impact summary")
+    report.add_argument("--date", required=True)
+    report.add_argument("--results-dir", type=Path, default=Path("results"))
     for command in ("what-if", "faults"):
         subparsers.add_parser(command, help="not implemented yet")
     args = parser.parse_args(argv)
@@ -62,18 +66,31 @@ def main(argv: list[str] | None = None) -> int:
                     new_label=args.new,
                     full=args.full,
                 )
-            output = args.results_dir / dates[1].strftime("%Y-%m-%d") / "impact.json"
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(
-                json.dumps(payload, sort_keys=True, indent=2, allow_nan=False) + "\n",
-                encoding="utf-8",
-            )
+                output = args.results_dir / dates[1].strftime("%Y-%m-%d") / "impact.json"
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(
+                    json.dumps(payload, sort_keys=True, indent=2, allow_nan=False) + "\n",
+                    encoding="utf-8",
+                )
+                write_report(payload, output.parent, *databases)
             print(
                 f"{payload['risk']['level']} {payload['risk']['rule']} broken={payload['metrics']['broken']} slowed={payload['metrics']['slowed']} output={output}"
             )
             return payload["exit_code"]
         except Exception as error:  # noqa: BLE001 — every impact failure must exit 2.
             print(f"impact: {error}", file=sys.stderr)
+            return 2
+    if args.command == "report":
+        try:
+            date = datetime.strptime(args.date, "%Y-%m-%d")
+            if date.strftime("%Y-%m-%d") != args.date:
+                raise ValueError("date must be YYYY-MM-DD")
+            directory = args.results_dir / args.date
+            payload = json.loads((directory / "impact.json").read_text(encoding="utf-8"))
+            (directory / "report.md").write_text(render_markdown(payload), encoding="utf-8")
+            return 0
+        except Exception as error:  # noqa: BLE001 — report failures are tool errors.
+            print(f"report: {error}", file=sys.stderr)
             return 2
     if args.command == "trips":
         if args.snapshot != "latest" and (

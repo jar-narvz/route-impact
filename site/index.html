@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>route-impact map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    body { font-family: system-ui, sans-serif; }
+    #message { position: absolute; top: 12px; left: 55px; z-index: 1000;
+      background: white; padding: 10px 14px; border-radius: 4px; max-width: 32rem;
+      box-shadow: 0 1px 5px #777; }
+    .leaflet-popup-content pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="Affected routes and confirmed edits"></div>
+  <div id="message" role="status">Loading routes…</div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const message = document.getElementById('message');
+    function popup(feature) {
+      const p = feature.properties;
+      const box = document.createElement('div');
+      function line(text) {
+        const element = document.createElement('pre');
+        element.textContent = text;
+        box.append(element);
+      }
+      if (p.role === 'culprit') {
+        line(`${p.kind} ${p.id}`);
+        line(`Before: ${JSON.stringify(p.before_tags, null, 2)}`);
+        line(`After: ${JSON.stringify(p.after_tags, null, 2)}`);
+        // Only OSM object URLs may become clickable links, including custom src files.
+        if (/^https:\/\/www\.openstreetmap\.org\/(way|node)\/\d+$/.test(p.url)) {
+          const link = document.createElement('a');
+          link.href = p.url;
+          link.textContent = 'View on OpenStreetMap';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          box.append(link);
+        }
+      } else {
+        line(`Trip ${p.trip_id}: ${p.status}`);
+        line(p.delay_s === null ? 'Delay: unreachable' : `Delay: ${(p.delay_s / 60).toFixed(1)} min`);
+      }
+      return box;
+    }
+    async function load() {
+      if (typeof L === 'undefined') throw new Error('The map library could not load.');
+      const map = L.map('map').setView([38, -122], 7);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+      }).addTo(map);
+      const params = new URLSearchParams(location.search);
+      let source;
+      if (params.has('src')) {
+        source = params.get('src');
+        // Backslashes and leading slashes can also resolve to absolute URLs in browsers.
+        if (!source || source !== source.trim() || /^[a-z][a-z0-9+.-]*:/i.test(source)
+            || source.startsWith('/') || /[\\\x00-\x20\x7f]/.test(source)) {
+          throw new Error('src must be a relative path.');
+        }
+      } else {
+        const date = params.get('date');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
+          throw new Error('Use ?date=YYYY-MM-DD or ?src=relative/path/impact.geojson.');
+        }
+        source = `../results/${date}/impact.geojson`;
+      }
+      const response = await fetch(source);
+      if (!response.ok) throw new Error(`Could not load map data (${response.status}).`);
+      const data = await response.json();
+      if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
+        throw new Error('The map file must be a GeoJSON FeatureCollection.');
+      }
+      if (!data.features.length) {
+        message.textContent = 'No affected routes or confirmed culprits in this file.';
+        return;
+      }
+      const layer = L.geoJSON(data, {
+        style: feature => feature.properties.role === 'culprit'
+          ? {color: '#d52222', weight: 7}
+          : feature.properties.role === 'old_path'
+            ? {color: '#777', weight: 3, dashArray: '7 6'}
+            : {color: '#1675d1', weight: 4},
+        pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+          color: '#d52222', fillColor: '#d52222', fillOpacity: 0.85, radius: 7, weight: 3
+        }),
+        onEachFeature: (feature, layer) => layer.bindPopup(() => popup(feature))
+      }).addTo(map);
+      map.fitBounds(layer.getBounds(), {padding: [24, 24]});
+      message.textContent = 'Old routes: grey dashed · New routes: blue · Culprits: red';
+    }
+    load().catch(error => { message.textContent = `Map unavailable: ${error.message}`; });
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@ SNAPSHOT ?= latest
 SEED ?= 2027
 
 .DEFAULT_GOAL := help
-.PHONY: help setup download extract trips impact what-if faults bench test lint
+.PHONY: help setup download extract trips impact report map what-if faults bench test lint
 
 help:
 	@echo "help      List available targets"
@@ -12,6 +12,8 @@ help:
 	@echo "extract   Extract snapshot tables (stub)"
 	@echo "trips     Generate fixed trips (SNAPSHOT=latest SEED=2027)"
 	@echo "impact    Compare routing impact (OLD=YYMMDD NEW=YYMMDD)"
+	@echo "report    Re-render report wording (DATE=YYYY-MM-DD)"
+	@echo "map       Serve the results map at http://localhost:8000/site/"
 	@echo "what-if   Evaluate a hypothetical edit (stub)"
 	@echo "faults    Run injected faults (stub)"
 	@echo "bench     Benchmark the pipeline (stub)"
@@ -33,8 +35,15 @@ trips:
 impact:
 	route-impact impact --old $(OLD) --new $(NEW)
 
+report:
+	route-impact report --date $(DATE)
+
+map:
+	@echo "http://localhost:8000/site/?date=$(DATE)"
+	$(PYTHON) -m http.server 8000
+
 what-if:
-	@echo "not implemented yet (Step 8)"
+	@echo "not implemented yet (Step 9)"
 
 faults:
 	@echo "not implemented yet (Step 9)"
