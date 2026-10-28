@@ -37,7 +37,10 @@ def risk_level(metrics: Mapping[str, Any], thresholds: Thresholds) -> tuple[str,
     if intercity["broken"] >= 1:
         return "HIGH", f"HIGH: {intercity['broken']} intercity trip broken"
     if metrics["gravity_share_high"] >= thresholds.high_slowed_share:
-        return "HIGH", "HIGH: gravity share of broken or severely slowed intercity trips"
+        return "HIGH", (
+            f"HIGH: gravity share {metrics['gravity_share_high']:g} of broken or severely "
+            f"slowed intercity trips ≥ {thresholds.high_slowed_share:g}"
+        )
     if local["broken"] >= thresholds.high_local_broken:
         return "HIGH", f"HIGH: {local['broken']} local trips broken"
     if metrics["broken"]:

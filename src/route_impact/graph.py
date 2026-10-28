@@ -224,3 +224,82 @@ def route_pairs(
                 result[source, target] = Route(seconds if path is not None else inf, path)
         del distances, predecessors
     return result
+
+
+def restored_seconds(
+    graph: Graph,
+    restored: list[Edge],
+    touching: dict[int, list[Edge]],
+    origin: int | None,
+    destination: int | None,
+    limit: float = inf,
+) -> float:
+    """Route once over NEW union OLD, reconnecting compressed interior nodes.
+
+    Union is deliberately permissive: restoring a flipped one-way also retains
+    its NEW direction. Full NEW runs remain valid alongside their split runs.
+    Only small candidate edge sets are walked in Python; CSR copying is O(E).
+    """
+    if origin is None or destination is None:
+        return inf
+    added_nodes = sorted({n for e in restored for n in (e.u, e.v)} - graph.indices.keys())
+    extra_indices = {node: len(graph.vertices) + i for i, node in enumerate(added_nodes)}
+
+    def index(node: int) -> int:
+        return graph.indices[node] if node in graph.indices else extra_indices[node]
+
+    if any(n not in graph.indices and n not in extra_indices for n in (origin, destination)):
+        return inf
+    size = len(graph.vertices) + len(added_nodes)
+    matrix = csr_matrix(
+        (
+            graph.matrix.data.copy(),
+            graph.matrix.indices.copy(),
+            np.concatenate(
+                (graph.matrix.indptr, np.full(len(added_nodes), graph.matrix.indptr[-1]))
+            ),
+        ),
+        shape=(size, size),
+    )
+    extras: dict[tuple[int, int], float] = {}
+
+    def add(u: int, v: int, seconds: float) -> None:
+        pair = index(u), index(v)
+        extras[pair] = min(extras.get(pair, inf), seconds)
+
+    split_edges = {id(e): e for n in added_nodes for e in touching.get(n, [])}
+    for edge in split_edges.values():
+        start, seconds = edge.u, 0.0
+        for segment in edge.segments:
+            seconds += segment.seconds
+            if segment.b in extra_indices or segment.b == edge.v:
+                add(start, segment.b, seconds)
+                start, seconds = segment.b, 0.0
+    for edge in restored:
+        add(edge.u, edge.v, edge.seconds)
+    # Locate existing entries explicitly: absent entries and zero-cost edges
+    # must remain distinguishable. Batch assignment avoids repeated CSR copies.
+    rows, cols, costs = [], [], []
+    for (row, col), cost in extras.items():
+        lo, hi = matrix.indptr[row : row + 2]
+        position = np.searchsorted(matrix.indices[lo:hi], col) + lo
+        if position < hi and matrix.indices[position] == col:
+            matrix.data[position] = min(matrix.data[position], cost)
+        else:
+            rows.append(row)
+            cols.append(col)
+            costs.append(cost)
+    if rows:
+        # Sparse addition can drop explicit zero entries, so concatenate only
+        # the small additions and convert once; pairs are disjoint here.
+        base = matrix.tocoo()
+        matrix = csr_matrix(
+            (
+                np.concatenate((base.data, costs)),
+                (np.concatenate((base.row, rows)), np.concatenate((base.col, cols))),
+            ),
+            shape=(size, size),
+        )
+    return float(
+        dijkstra(matrix, directed=True, indices=index(origin), limit=limit)[index(destination)]
+    )

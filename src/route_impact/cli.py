@@ -54,7 +54,14 @@ def main(argv: list[str] | None = None) -> int:
                 ):
                     folder = Path(directory) / label
                     databases.append(extract(pbf, folder / f"{value}.duckdb"))
-                payload = compute_impact(*databases, rows, thresholds, full=args.full)
+                payload = compute_impact(
+                    *databases,
+                    rows,
+                    thresholds,
+                    old_label=args.old,
+                    new_label=args.new,
+                    full=args.full,
+                )
             output = args.results_dir / dates[1].strftime("%Y-%m-%d") / "impact.json"
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(

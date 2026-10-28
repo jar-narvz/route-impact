@@ -13,6 +13,7 @@ from scipy.spatial import cKDTree
 
 from route_impact.graph import Graph, Route, Segment, build_graph, route_pairs
 from route_impact.risk import Thresholds, exit_code, risk_level
+from route_impact.rootcause import explain_trips, load_way_info
 
 
 def read_trips(path: Path) -> list[dict[str, Any]]:
@@ -99,11 +100,23 @@ def prepare_trips(trips: Iterable[Mapping[str, Any]], old_snapper: Snapper) -> l
         seen.add(trip["trip_id"])
         if trip["kind"] not in {"intercity", "local"}:
             raise ValueError("kind must be intercity or local")
-        for key in ("o_lat", "o_lon", "d_lat", "d_lon", "weight"):
+        for key in ("o_lat", "o_lon", "d_lat", "d_lon"):
             trip[key] = float(trip[key])
             if not isfinite(trip[key]):
                 raise ValueError(f"{key} must be finite")
-        if trip["weight"] <= 0 or any(
+        raw_weight = trip["weight"]
+        try:
+            weight = int(raw_weight)
+        except (ValueError, TypeError, OverflowError) as error:
+            raise ValueError("weight must be a positive integer") from error
+        if (
+            isinstance(raw_weight, bool)
+            or weight <= 0
+            or (not isinstance(raw_weight, str) and weight != raw_weight)
+        ):
+            raise ValueError("weight must be a positive integer")
+        trip["weight"] = weight
+        if any(
             abs(trip[k]) > limit
             for k, limit in (("o_lat", 90), ("d_lat", 90), ("o_lon", 180), ("d_lon", 180))
         ):
@@ -280,6 +293,8 @@ def compute_impact(
     trips: Iterable[Mapping[str, Any]],
     thresholds: Thresholds,
     *,
+    old_label: str,
+    new_label: str,
     full: bool = False,
     batch: int = 32,
     threads: int = 2,
@@ -304,10 +319,18 @@ def compute_impact(
         for r in records
         if r["status"] in {"broken", "slowed"}
     ]
+    culprits, candidates = explain_trips(
+        affected,
+        old_graph,
+        new_graph,
+        load_way_info(old_db, threads=threads, memory_limit=memory_limit),
+        load_way_info(new_db, threads=threads, memory_limit=memory_limit),
+        thresholds.slow_seconds,
+    )
     return json_safe(
         {
-            "old": old_db.stem.removeprefix("norcal-"),
-            "new": new_db.stem.removeprefix("norcal-"),
+            "old": old_label,
+            "new": new_label,
             "mode": "full" if full else "incremental",
             "thresholds": asdict(thresholds),
             "metrics": metrics,
@@ -315,5 +338,7 @@ def compute_impact(
             "exit_code": exit_code(level),
             "excluded_trip_ids": sorted(t["trip_id"] for t in excluded),
             "trips": affected,
+            "culprits": culprits,
+            "candidates": candidates,
         }
     )

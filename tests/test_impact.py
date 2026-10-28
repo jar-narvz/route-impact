@@ -6,63 +6,20 @@ import shutil
 from math import inf
 from pathlib import Path
 
-import duckdb
 import pytest
 from scipy.sparse import csr_matrix
 
 from route_impact.cli import main
-from route_impact.extract import extract
-from route_impact.graph import Edge, Graph, Segment, build_graph, route_pairs, shortest
+from route_impact.graph import Edge, Graph, Segment, route_pairs, shortest
 from route_impact.impact import (
     Snapper,
     compare_trips,
     compute_impact,
+    prepare_trips,
     segment_costs,
-    snapshot_nodes,
     summarize,
 )
 from route_impact.risk import Thresholds, exit_code, load_thresholds, risk_level
-
-
-@pytest.fixture
-def thresholds() -> Thresholds:
-    # Fixture delays are only 25–92 seconds, below the provisional default 120.
-    return Thresholds(10, 300, 0.005, 10, 200)
-
-
-@pytest.fixture(scope="module")
-def towns(tmp_path_factory: pytest.TempPathFactory) -> dict:
-    folder = tmp_path_factory.mktemp("impact")
-    fixtures = Path(__file__).parent / "fixtures"
-    expected = json.loads((fixtures / "expected.json").read_text())
-    databases = {
-        name: extract(fixtures / f"{name}.osm.pbf", folder / f"{name}.duckdb")
-        for name in expected["versions"]
-    }
-    graphs = {name: build_graph(db) for name, db in databases.items()}
-    nodes = {name: snapshot_nodes(db, graphs[name], 2, "2GB") for name, db in databases.items()}
-    with duckdb.connect(
-        str(databases["town_v1"]), config={"threads": 2, "memory_limit": "2GB"}
-    ) as connection:
-        coords = {
-            n: (lat, lon)
-            for n, lat, lon in connection.execute(
-                "SELECT node_id, lat, lon FROM road_nodes"
-            ).fetchall()
-        }
-    rows = [
-        {
-            "trip_id": name,
-            "kind": "intercity",
-            "weight": 1,
-            "o_lat": coords[t["from"]][0],
-            "o_lon": coords[t["from"]][1],
-            "d_lat": coords[t["to"]][0],
-            "d_lon": coords[t["to"]][1],
-        }
-        for name, t in expected["trips"].items()
-    ]
-    return {"db": databases, "graphs": graphs, "nodes": nodes, "rows": rows, "expected": expected}
 
 
 def comparison(
@@ -89,8 +46,16 @@ def test_fixture_impact(towns: dict, version: str, thresholds: Thresholds) -> No
         (r["trip_id"], r["status"], r["new_seconds"]) for r in full
     ]
     payload = compute_impact(
-        towns["db"]["town_v1"], towns["db"][version], towns["rows"], thresholds
+        towns["db"]["town_v1"],
+        towns["db"][version],
+        towns["rows"],
+        thresholds,
+        old_label="before",
+        new_label="after",
     )
+    assert payload["old"] == "before"
+    assert payload["new"] == "after"
+    assert all(type(r["weight"]) is int for r in payload["trips"])
     affected = {r["trip_id"]: r for r in payload["trips"]}
     for record in records:
         oracle = towns["expected"]["trips"][record["trip_id"]]
@@ -119,7 +84,14 @@ def test_fixture_impact(towns: dict, version: str, thresholds: Thresholds) -> No
         assert payload["trips"] == []
     first = json.dumps(payload, sort_keys=True, allow_nan=False).encode()
     second = json.dumps(
-        compute_impact(towns["db"]["town_v1"], towns["db"][version], towns["rows"], thresholds),
+        compute_impact(
+            towns["db"]["town_v1"],
+            towns["db"][version],
+            towns["rows"],
+            thresholds,
+            old_label="before",
+            new_label="after",
+        ),
         sort_keys=True,
         allow_nan=False,
     ).encode()
@@ -156,7 +128,7 @@ def test_route_pairs(towns: dict, version: str) -> None:
             10,
             1,
             "HIGH",
-            "HIGH: gravity share of broken or severely slowed intercity trips",
+            "HIGH: gravity share 0.005 of broken or severely slowed intercity trips ≥ 0.005",
         ),
         (0, 0.0049, 10, 1, "HIGH", "HIGH: 10 local trips broken"),
         (0, 0, 9, 1, "MEDIUM", "MEDIUM: trip broken"),
@@ -371,3 +343,9 @@ def test_cli(
     monkeypatch.setattr("route_impact.cli.compute_impact", crash)
     assert main(["impact", "--old", "261001", "--new", "261002", *common]) == 2
     assert "injected impact error" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("weight", [0, -1, 1.5, True, "1.5", "nan", "inf"])
+def test_invalid_weight(towns: dict, weight: object) -> None:
+    with pytest.raises(ValueError, match="weight"):
+        prepare_trips([{**towns["rows"][0], "weight": weight}], Snapper(towns["nodes"]["town_v1"]))
