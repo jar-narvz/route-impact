@@ -1,20 +1,18 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** —
-- **Done:** design, plan critique, Steps 0–8 committed (Step 8 = `0ed664f`, review + pointers = `884c986`).
-- **Next up:** Step 9 — Faults + what-if (Claude writes the Codex brief from PLAN Step 9).
-  - **Read to resume (one call):** `grep -n "### Step 9" PLAN.md` then read that step plus DESIGN §5.9, §6.2; `grep -n "^def " src/route_impact/rootcause.py src/route_impact/impact.py; git status --short`
-  - **Fold into the Step 9 brief:** `report.write_report(payload, out_dir, old_db, new_db)` writes report.md + impact.geojson and needs both DBs alive; fault/what-if runs can reuse it for demo maps (`site/?src=`). Pages must publish the repo root (map lives at `/route-impact/site/`) — Step 11.
-  - **Map follow-ups for the Step 9 brief (Jared, 2026-10-28; `site/index.html` must be added to Step 9's file list in PLAN.md):**
-    - Re-fit the map on resize. A page loaded in a hidden or resizing window zooms in too far and stays there.
-    - Add start/end markers for each trip and a small legend. When `?src=` points at fixture data, show a "synthetic test town" notice.
-    - Produce one real what-if demo, e.g. delete a Bay Bridge way on 261027. Write its `impact.geojson` under `results/faults/` and confirm in the browser that real routes follow the streets. Fixture routes are straight lines on a fake grid placed over West Oakland, so they can't show this.
+- **Working on:** Step 9 — reviewed; Verify passes. Uncommitted. Three findings from the real Bay Bridge what-if await Jared's decision (below).
+- **Done:** design, plan critique, Steps 0–8 committed (Step 8 = `0ed664f`, review + pointers = `884c986`). Step 9 implemented + review fixes (uncommitted).
+- **Next up:** Jared decides how to handle the Step 9 real-data findings, then commit Step 9, then Step 10/11.
+  - **Real-data what-if (Claude, 2026-10-28):** `route-impact what-if --snapshot 261027 --out <scratchpad> --delete-way` ×10 Bay Bridge ways → `Affected: 253 intercity · 96 local trips · 15% weighted travel`, `Root cause: way 661905446 ✔`; `/usr/bin/time -l`: 603.98 s real, 8549171200 bytes max RSS. Map preview (12 heaviest trips) drawn in the browser: detours follow real roads (Richmond–San Rafael and San Mateo bridges). Outputs left in the scratchpad, not `results/`.
+  - **Finding A — output size:** that run wrote impact.json 117,885,253 B and impact.geojson 110,577,262 B (349 trips × full paths). Too big to commit or load in the map; a bad real day would do the same. Needs a size cap (e.g. top-K trips in GeoJSON, paths out of the committed impact.json).
+  - **Finding B — multi-way edits read as "joint":** the bridge is 10 ways in series, so restoring any one way recovers nothing; 348 of 349 trips are `joint` (1 confirmed) and the top culprit has 1 trip. Correct per DESIGN §5.7, but the flagship demo looks like a miss. Option: when no single edit recovers a trip, try restoring all its candidates together and label the set "confirmed (group)".
+  - **Finding C — suite runtime:** one what-if = 604 s incl. one extract + two graph builds. The suite repeats copy + NEW graph + compare ×2 + root cause ~220 times; per-fault cost unmeasured. Profile one fault before Step 12; a 200-fault run may not fit Nov 3.
+  - Minor: report.md header/Map link use `date=261027+what-if` for what-if runs (link is broken there).
   - **Watch:**
     - Peak RSS ≈ 8 GB for a full impact run (two graphs); root cause adds one O(E) CSR copy per candidate check plus one Python pass over OLD roads and NEW edges per run — unmeasured on NorCal. Time both in Step 11.
     - Two independent slowdowns that each exceed `slow_seconds` are labelled `joint` (DESIGN §5.7 as written). Revisit only if Jared changes the confirmation rule.
     - `scripts/feasibility.py:31-32` still hardcodes the city filter. Switch it to `trips.filter_places` when a step names that file.
-    - `Makefile:2-3`: the SNAPSHOT/SEED defaults are global. Make them target-specific when faults/bench are implemented.
   - **Follow-ups (not blocking):** remove the unused `segments` temp table (`segments.sql:21-25`). Have Step 3 emit a `speed_source` column so `graph.py:70-80` stops duplicating the maxspeed parser.
   - **Still open from earlier reviews:**
     - `extract()` finds `sql/` and `config/` via the source checkout (`parents[2]`), so it needs the editable install (the CI workflow must use `pip install -e`).
@@ -38,6 +36,47 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 9: Faults + what-if
+- **Agent:** Codex
+- **Did:** Implemented all seven parameterized SQL mutations with target refusals, derived-column/hash consistency and configured default speeds. Added a reusable OLD graph/node/way entry point and cached OLD routing, seeded sampling across fault types/classes from OLD paths, consecutive distinct-target batches of ten, exact all-trip routing-result incremental/full comparisons before serialization rounds floats, and separate single/batch/joint scores with denominators. Added repeatable what-if flags, snapshot resolution, report output while both databases exist, three configured demos and Make targets. Added GeoJSON snapshot labels, synthetic notice, endpoint markers/legend and resize fitting. Added 33 offline fault tests including known-answer cases, the joint speed-fault batch, real seeded output-file determinism, CLI outputs and legacy report compatibility.
+- **Review fixes:** 1) Reuse one NEW graph/nodes/way-info load per run; full recompute calls only `compare_trips`, with a regression pinning one graph build and one root-cause pass per run. 2) Compare all raw trip records before serialization (including ok/improved results), omitting only the mode-dependent `rerouted` execution flag; regression catches a 1e-10-second difference on an unaffected trip. 3) Refuse downgrade_class unless the configured residential default is strictly slower, and bad_maxspeed unless current speed exceeds 5 mph; sampling uses the same eligibility rule, with equal/slower refusal tests. 4) Worst prints trip id/kind and one-decimal delay; pinned CLI assertion updated. 5) Move TOML demo parsing into `run_demos`, simplify Make target, and test exact configured Fault lists/output paths plus custom config with monkeypatched `run_what_if`.
+- **Changed:** `sql/faults/delete_way.sql`, `sql/faults/delete_bridge.sql`, `sql/faults/flip_oneway.sql`, `sql/faults/add_oneway.sql`, `sql/faults/disconnect_node.sql`, `sql/faults/bad_maxspeed.sql`, `sql/faults/downgrade_class.sql`, `src/route_impact/faults.py`, `src/route_impact/cli.py`, `src/route_impact/impact.py`, `src/route_impact/report.py`, `site/index.html`, `config/demo_faults.toml`, `Makefile`, `tests/fixtures/town_trips.csv`, `tests/test_faults.py`, `PROGRESS.md`.
+- **Verify:** Activated the existing venv with `PATH="$PWD/.venv/bin:$PATH"`; both commands exited 0, offline on fixtures only. Actual final output:
+
+```text
+$ make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 107 items
+
+tests/test_extract.py ......                                             [  5%]
+tests/test_faults.py .................................                   [ 36%]
+tests/test_graph.py .............                                        [ 48%]
+tests/test_impact.py .............................                       [ 75%]
+tests/test_report.py .....                                               [ 80%]
+tests/test_rootcause.py ..............                                   [ 93%]
+tests/test_smoke.py .                                                    [ 94%]
+tests/test_trips.py ......                                               [100%]
+
+============================= 107 passed in 13.61s =============================
+$ make lint
+ruff check . && ruff format --check .
+All checks passed!
+28 files already formatted
+```
+
+- **Review:** Claude — first pass found 5 issues (double NEW graph/root cause per fault; incremental==full compared only affected trips; no-op downgrade/maxspeed faults eligible; Worst printed node ids; Makefile one-liner); Codex fixed all 5, Claude re-checked: `make test` 107 passed, `make lint` clean. Real-data what-if run and map check by Claude; findings A–C in Current state. Codex's original note: No NorCal extraction, suite, demo or browser visual check was run. `make -n demos SNAPSHOT=261027` and `make -n faults SNAPSHOT=town_v1` produced the intended commands; dry runs only. No network calls.
+- **Gotchas:** Review-fix verification initially caught an incorrect new CLI expectation (+1.5 vs actual +1.2 min) and import ordering; corrected before the final passing checks above. The requested default-threshold CLI correctly prints no affected trips: only T1 uses way 51 on OLD (50→51→52), and its bridge detour does not reach 120 seconds. A separate CLI test uses slow_seconds=10 and pins `Trip T1: slowed` and the matching root cause, including nonempty report/GeoJSON output. Report date rendering needed a non-date label fallback for required `town_v1` / `+what-if` reports; GeoJSON accepts missing labels in legacy minimal test payloads. Initial full tests exposed that compatibility issue and it was fixed within report.py. Sampling refuses N when there are insufficient distinct eligible targets; no silent duplicates. Manually provided colliding targets close a batch early; sampled suites have globally distinct modified ways and thus full groups of ten except the remainder. No out-of-list source file was needed or edited. PROGRESS.md is updated as explicitly requested. Pre-existing PLAN.md changes were left untouched; docs/DESIGN.md was not edited. No staging or commits.
+- **Commit commands (Jared, after Claude review):**
+
+```sh
+git add sql/faults/delete_way.sql sql/faults/delete_bridge.sql sql/faults/flip_oneway.sql sql/faults/add_oneway.sql sql/faults/disconnect_node.sql sql/faults/bad_maxspeed.sql sql/faults/downgrade_class.sql src/route_impact/faults.py src/route_impact/cli.py src/route_impact/impact.py src/route_impact/report.py site/index.html config/demo_faults.toml Makefile tests/fixtures/town_trips.csv tests/test_faults.py PROGRESS.md
+git commit -m "Add fault injection suite and what-if routing"
+```
 
 ### 2026-10-28 — Step 8: review fix-up
 - **Agent:** Codex

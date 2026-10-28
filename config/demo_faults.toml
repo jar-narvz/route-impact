@@ -1,0 +1,17 @@
+# I-80 Bay Bridge: remove the connected bridge ways together.
+[demos.bay_bridge]
+type = "delete_way"
+target = "way_id"
+ids = [8921938, 23874736, 236348360, 236348361, 237731428, 497579295, 661905443, 661905446, 929579737, 1343738800]
+
+# Reverse the I-80 off-ramp to University Avenue in Berkeley.
+[demos.university_ramp]
+type = "flip_oneway"
+target = "way_id"
+ids = [6320410]
+
+# Separate ramp 6324048 from I-80 way 821503308 at Ashby Avenue.
+[demos.ashby_junction]
+type = "disconnect_node"
+target = "node_id"
+ids = [35833157]

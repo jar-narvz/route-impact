@@ -1,9 +1,7 @@
 PYTHON ?= python
-SNAPSHOT ?= latest
-SEED ?= 2027
 
 .DEFAULT_GOAL := help
-.PHONY: help setup download extract trips impact report map what-if faults bench test lint
+.PHONY: help setup download extract trips impact report map what-if faults demos bench test lint
 
 help:
 	@echo "help      List available targets"
@@ -14,8 +12,9 @@ help:
 	@echo "impact    Compare routing impact (OLD=YYMMDD NEW=YYMMDD)"
 	@echo "report    Re-render report wording (DATE=YYYY-MM-DD)"
 	@echo "map       Serve the results map at http://localhost:8000/site/"
-	@echo "what-if   Evaluate a hypothetical edit (stub)"
-	@echo "faults    Run injected faults (stub)"
+	@echo "what-if   Evaluate edits (SNAPSHOT=YYMMDD ARGS='--delete-way ID')"
+	@echo "faults    Run injected faults (SNAPSHOT=YYMMDD N=200 SEED=2027)"
+	@echo "demos     Run the three configured what-if demos (SNAPSHOT=261027)"
 	@echo "bench     Benchmark the pipeline (stub)"
 	@echo "test      Run pytest"
 	@echo "lint      Check code style and formatting"
@@ -29,6 +28,8 @@ download:
 extract:
 	@echo "not implemented yet (Step 3)"
 
+trips: SNAPSHOT ?= latest
+trips: SEED ?= 2027
 trips:
 	route-impact trips --snapshot $(SNAPSHOT) --seed $(SEED)
 
@@ -42,11 +43,19 @@ map:
 	@echo "http://localhost:8000/site/?date=$(DATE)"
 	$(PYTHON) -m http.server 8000
 
+what-if: SNAPSHOT ?= latest
 what-if:
-	@echo "not implemented yet (Step 9)"
+	route-impact what-if --snapshot $(SNAPSHOT) $(ARGS)
 
+faults: SNAPSHOT ?= latest
+faults: N ?= 200
+faults: SEED ?= 2027
 faults:
-	@echo "not implemented yet (Step 9)"
+	route-impact faults --snapshot $(SNAPSHOT) --n $(N) --seed $(SEED)
+
+demos: SNAPSHOT ?= 261027
+demos:
+	$(PYTHON) -c "from route_impact.faults import run_demos; run_demos('$(SNAPSHOT)')"
 
 bench:
 	@echo "not implemented yet (Step 12)"

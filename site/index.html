@@ -78,8 +78,24 @@
       if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
         throw new Error('The map file must be a GeoJSON FeatureCollection.');
       }
+      const synthetic = data.snapshots && !/^[0-9]{6}$/.test(data.snapshots.old);
+      const notice = synthetic ? 'Synthetic test town — not real roads. ' : '';
+      const legend = L.control({position: 'bottomright'});
+      legend.onAdd = () => {
+        const box = L.DomUtil.create('div');
+        box.style.cssText = 'background:white;padding:8px;line-height:1.6';
+        for (const [label, color] of [['Old route (dashed)', '#777'], ['New route', '#1675d1'],
+            ['Culprit', '#d52222'], ['Start', '#159447'], ['End', '#a329ba']]) {
+          const line = document.createElement('div');
+          line.style.color = color;
+          line.textContent = '● ' + label;
+          box.append(line);
+        }
+        return box;
+      };
+      legend.addTo(map);
       if (!data.features.length) {
-        message.textContent = 'No affected routes or confirmed culprits in this file.';
+        message.textContent = notice + 'No affected routes or confirmed culprits in this file.';
         return;
       }
       const layer = L.geoJSON(data, {
@@ -93,8 +109,31 @@
         }),
         onEachFeature: (feature, layer) => layer.bindPopup(() => popup(feature))
       }).addTo(map);
-      map.fitBounds(layer.getBounds(), {padding: [24, 24]});
-      message.textContent = 'Old routes: grey dashed · New routes: blue · Culprits: red';
+      const marked = new Set();
+      for (const feature of data.features) {
+        const p = feature.properties;
+        if (p.role !== 'old_path' || marked.has(p.trip_id)) continue;
+        marked.add(p.trip_id);
+        const coords = feature.geometry.coordinates;
+        for (const [coordinate, color, label] of [[coords[0], '#159447', 'Start'],
+            [coords[coords.length - 1], '#a329ba', 'End']]) {
+          const text = document.createElement('span');
+          text.textContent = `${label}: ${p.trip_id}`;
+          L.circleMarker([coordinate[1], coordinate[0]], {
+            radius: 4, color, fillColor: color, fillOpacity: 1, weight: 2
+          }).bindPopup(text).addTo(map);
+        }
+      }
+      function fit() {
+        const container = map.getContainer();
+        if (!container.clientWidth || !container.clientHeight) return;
+        map.invalidateSize();
+        map.fitBounds(layer.getBounds(), {padding: [24, 24]});
+      }
+      window.addEventListener('resize', fit);
+      new ResizeObserver(fit).observe(map.getContainer());
+      requestAnimationFrame(fit);
+      message.textContent = notice + 'Old routes: grey dashed · New routes: blue · Culprits: red';
     }
     load().catch(error => { message.textContent = `Map unavailable: ${error.message}`; });
   </script>

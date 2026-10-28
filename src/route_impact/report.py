@@ -8,7 +8,9 @@ import duckdb
 
 
 def _date(label: str) -> str:
-    return datetime.strptime("20" + label, "%Y%m%d").strftime("%Y-%m-%d")
+    if len(label) == 6 and label.isascii() and label.isdigit():
+        return datetime.strptime("20" + label, "%Y%m%d").strftime("%Y-%m-%d")
+    return _text(label)
 
 
 def _text(value: object) -> str:
@@ -202,7 +204,15 @@ def write_geojson(payload: dict, old_db: Path, new_db: Path, out: Path) -> int:
             }
         )
     out.write_text(
-        json.dumps({"type": "FeatureCollection", "features": features}, allow_nan=False, indent=2)
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "snapshots": {"old": payload.get("old"), "new": payload.get("new")},
+                "features": features,
+            },
+            allow_nan=False,
+            indent=2,
+        )
         + "\n",
         encoding="utf-8",
     )

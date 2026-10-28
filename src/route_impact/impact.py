@@ -13,7 +13,7 @@ from scipy.spatial import cKDTree
 
 from route_impact.graph import Graph, Route, Segment, build_graph, route_pairs
 from route_impact.risk import Thresholds, exit_code, risk_level
-from route_impact.rootcause import explain_trips, load_way_info
+from route_impact.rootcause import WayInfo, explain_trips, load_way_info
 
 
 def read_trips(path: Path) -> list[dict[str, Any]]:
@@ -164,6 +164,7 @@ def compare_trips(
     *,
     full: bool = False,
     batch: int = 32,
+    old_routes: Mapping[tuple[int, int], Route] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Return all routed records (including ok/improved trips) and excluded inputs.
 
@@ -174,14 +175,18 @@ def compare_trips(
     old_snapper = Snapper(n for n in old_nodes if n[0] in lscc)
     new_snapper = Snapper(new_nodes)
     prepared = prepare_trips(trips, old_snapper)
-    old_routes = route_pairs(
-        old_graph,
-        (
-            (t["old_origin"], t["old_destination"])
-            for t in prepared
-            if t["old_origin"] is not None and t["old_destination"] is not None
-        ),
-        batch,
+    old_routes = (
+        old_routes
+        if old_routes is not None
+        else route_pairs(
+            old_graph,
+            (
+                (t["old_origin"], t["old_destination"])
+                for t in prepared
+                if t["old_origin"] is not None and t["old_destination"] is not None
+            ),
+            batch,
+        )
     )
     costs = segment_costs(new_graph)
     records, excluded = [], []
@@ -301,16 +306,59 @@ def compute_impact(
     memory_limit: str = "2GB",
 ) -> dict:
     old_graph = build_graph(old_db, threads=threads, memory_limit=memory_limit)
-    new_graph = build_graph(new_db, threads=threads, memory_limit=memory_limit)
+    return impact_from_graphs(
+        old_graph,
+        snapshot_nodes(old_db, old_graph, threads, memory_limit),
+        load_way_info(old_db, threads=threads, memory_limit=memory_limit),
+        new_db,
+        trips,
+        thresholds,
+        old_label=old_label,
+        new_label=new_label,
+        full=full,
+        batch=batch,
+        threads=threads,
+        memory_limit=memory_limit,
+    )
+
+
+def impact_from_graphs(
+    old_graph: Graph,
+    old_nodes: list[tuple[int, float, float]],
+    old_ways: dict[int, WayInfo],
+    new_db: Path,
+    trips: Iterable[Mapping[str, Any]],
+    thresholds: Thresholds,
+    *,
+    old_label: str,
+    new_label: str,
+    full: bool = False,
+    batch: int = 32,
+    threads: int = 2,
+    memory_limit: str = "2GB",
+    old_routes: Mapping[tuple[int, int], Route] | None = None,
+    raw_trips: list[dict[str, Any]] | None = None,
+    new_graph: Graph | None = None,
+    new_nodes: list[tuple[int, float, float]] | None = None,
+    new_ways: dict[int, WayInfo] | None = None,
+) -> dict:
+    """Reuse supplied snapshot data; raw_trips receives all unrounded route records."""
+    if new_graph is None:
+        new_graph = build_graph(new_db, threads=threads, memory_limit=memory_limit)
+    if new_nodes is None:
+        new_nodes = snapshot_nodes(new_db, new_graph, threads, memory_limit)
+    if new_ways is None:
+        new_ways = load_way_info(new_db, threads=threads, memory_limit=memory_limit)
     records, excluded = compare_trips(
         old_graph,
         new_graph,
-        snapshot_nodes(old_db, old_graph, threads, memory_limit),
-        snapshot_nodes(new_db, new_graph, threads, memory_limit),
+        old_nodes,
+        new_nodes,
         trips,
         thresholds,
         full=full,
         batch=batch,
+        old_routes=old_routes,
     )
     metrics = summarize(records, excluded, thresholds)
     level, rule = risk_level(metrics, thresholds)
@@ -323,10 +371,12 @@ def compute_impact(
         affected,
         old_graph,
         new_graph,
-        load_way_info(old_db, threads=threads, memory_limit=memory_limit),
-        load_way_info(new_db, threads=threads, memory_limit=memory_limit),
+        old_ways,
+        new_ways,
         thresholds.slow_seconds,
     )
+    if raw_trips is not None:
+        raw_trips.extend(records)
     return json_safe(
         {
             "old": old_label,

@@ -9,6 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from route_impact.extract import extract
+from route_impact.faults import Fault, run_suite, run_what_if
 from route_impact.impact import compute_impact, read_trips
 from route_impact.report import render_markdown, write_report
 from route_impact.risk import load_thresholds
@@ -35,9 +36,46 @@ def main(argv: list[str] | None = None) -> int:
     report = subparsers.add_parser("report", help="Re-render an existing impact summary")
     report.add_argument("--date", required=True)
     report.add_argument("--results-dir", type=Path, default=Path("results"))
-    for command in ("what-if", "faults"):
-        subparsers.add_parser(command, help="not implemented yet")
+    what_if = subparsers.add_parser("what-if", help="Evaluate hypothetical edits")
+    faults = subparsers.add_parser("faults", help="Evaluate seeded faults")
+    for command in (what_if, faults):
+        command.add_argument("--snapshot", required=True)
+        command.add_argument("--data-dir", type=Path, default=Path("data"))
+        command.add_argument("--trips", type=Path, default=Path("config/trips.csv"))
+        command.add_argument("--thresholds", type=Path, default=Path("config/thresholds.toml"))
+    what_if.add_argument("--out", type=Path)
+    for flag in ("delete-way", "flip-oneway", "disconnect-node"):
+        what_if.add_argument(f"--{flag}", action="append", type=int, default=[])
+    faults.add_argument("--n", type=int, required=True)
+    faults.add_argument("--seed", type=int, required=True)
+    faults.add_argument("--results-dir", type=Path, default=Path("results"))
     args = parser.parse_args(argv)
+    if args.command in {"what-if", "faults"}:
+        try:
+            options = {
+                "data_dir": args.data_dir,
+                "trips_path": args.trips,
+                "thresholds_path": args.thresholds,
+            }
+            if args.command == "what-if":
+                injections = [
+                    Fault(kind, **{key: value})
+                    for kind, key, values in (
+                        ("delete_way", "way_id", args.delete_way),
+                        ("flip_oneway", "way_id", args.flip_oneway),
+                        ("disconnect_node", "node_id", args.disconnect_node),
+                    )
+                    for value in values
+                ]
+                payload = run_what_if(args.snapshot, injections, out=args.out, **options)
+                return payload["exit_code"]
+            run_suite(
+                args.snapshot, n=args.n, seed=args.seed, results_dir=args.results_dir, **options
+            )
+            return 0
+        except Exception as error:  # noqa: BLE001 — fault failures are tool errors.
+            print(f"{args.command}: {error}", file=sys.stderr)
+            return 2
     if args.command == "impact":
         try:
             dates = []
