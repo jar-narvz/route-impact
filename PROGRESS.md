@@ -2,20 +2,20 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–5, all committed (last commit `827a882`). `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
-- **Next up:** Step 6 — Impact (Claude writes the Codex brief from PLAN Step 6).
-  - **Read to resume (one call):** `grep -n "### Step 6" PLAN.md` then read that step; `grep -n "^def " src/route_impact/trips.py src/route_impact/graph.py; git status --short`
-  - **Watch in Step 6 review:**
-    - Step 6 snaps trip coordinates to the nearest vertex of each snapshot's graph (trips are coordinates, not node ids).
+- **Done:** design, plan critique, Steps 0–5 committed (last commit `827a882`). Step 6 (Impact) reviewed **PASS**, **not committed yet**. `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
+- **Next up:** Jared commits Step 6, then Step 7 — Root cause (Claude writes the Codex brief from PLAN Step 7).
+  - **Read to resume (one call):** `grep -n "### Step 7" PLAN.md` then read that step plus DESIGN §5.7; `grep -n "^def " src/route_impact/impact.py src/route_impact/risk.py; git status --short`
+  - **Fold into the Step 7 brief (from the Step 6 review):** write `weight` as an int (`impact.py:103`); state the share and the threshold in the HIGH share rule's message (`risk.py:41`); pass the old/new labels explicitly instead of taking them from the DB stem (`impact.py:309`). Root cause needs NEW tags and segments, so `compute_impact` must also keep both DBs/graphs available to `rootcause.py`.
+  - **Watch:**
+    - Peak RSS is ≈ 8 GB for a full impact run (two graphs). Check it against the runner's memory in Step 11.
     - `scripts/feasibility.py:31-32` still hardcodes the city filter. Switch it to `trips.filter_places` when a step names that file.
     - `Makefile:2-3`: the SNAPSHOT/SEED defaults are global. Make them target-specific when faults/bench are implemented.
   - **Follow-ups (not blocking):** remove the unused `segments` temp table (`segments.sql:21-25`). Have Step 3 emit a `speed_source` column so `graph.py:70-80` stops duplicating the maxspeed parser.
   - **Still open from earlier reviews:**
-    - `extract()` fails if the output DB already has the tables. The CLI step must delete/rebuild the snapshot DB (or skip if present).
     - `extract()` finds `sql/` and `config/` via the source checkout (`parents[2]`), so it needs the editable install (the CI workflow must use `pip install -e`).
     - The motorway and ramps are on no named trip, so they're covered structurally only.
 - **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
-- **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial`). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, verified; `make download` works.
+- **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial`). Snapshots 261023–261027 in `data/`, verified (261027 is an APFS clone of `norcal-latest`, same md5); `make download` works.
 - **Codex launch pattern:** `codex exec --sandbox workspace-write "<brief>" < /dev/null > /dev/null 2>&1` run in the background, then one check for a new file in `~/.codex/sessions/<yyyy>/<mm>/<dd>/`. Codex has no network, and its final message isn't captured, so Claude reruns Verify and reads `git diff`.
 - **Blockers:** none
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
@@ -33,6 +33,76 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Step 6: Impact
+- **Agent:** Codex
+- **Did:** Added requested-pair batched routing without changing `shortest`; coordinate snapping on OLD's LSCC, NEW node identity/full-graph routing and bounded fallback; directed segment cost diff over all NEW edges; incremental/full comparison, affected paths, split metrics, provisional thresholds, ordered risk rules and 0/1/2 CLI exits. CLI extracts each snapshot into a fresh temporary DB and writes sorted deterministic JSON. Added offline fixture, island, split, full/incremental, fallback, threshold-boundary, metrics, deterministic serialization and CLI error tests.
+- **Changed:** `src/route_impact/impact.py`, `src/route_impact/risk.py`, `config/thresholds.toml`, `src/route_impact/graph.py` (only added `route_pairs`), `src/route_impact/cli.py`, `Makefile` (impact target/help only), `tests/test_impact.py`, `PROGRESS.md`.
+- **Verify:** Actual output (venv prepended to PATH for Make):
+
+```text
+$ PATH="$PWD/.venv/bin:$PATH" make test && PATH="$PWD/.venv/bin:$PATH" make lint
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 48 items
+
+tests/test_extract.py ......                                             [ 12%]
+tests/test_graph.py .............                                        [ 39%]
+tests/test_impact.py ......................                              [ 85%]
+tests/test_smoke.py .                                                    [ 87%]
+tests/test_trips.py ......                                               [100%]
+
+============================== 48 passed in 5.30s ==============================
+ruff check . && ruff format --check .
+All checks passed!
+21 files already formatted
+$ .venv/bin/route-impact impact --old 261026 --new 261027; echo "exit=$?"
+impact: Snapshot file not found: data/norcal-261027.osm.pbf
+exit=2
+$ /usr/bin/time -l .venv/bin/route-impact impact --old 261026 --new 261027; echo "exit=$?"
+impact: Snapshot file not found: data/norcal-261027.osm.pbf
+        0.40 real         0.33 user         0.06 sys
+time: sysctl kern.clockrate: Operation not permitted
+exit=1
+$ cat data/norcal-261027.osm.pbf.md5 data/norcal-latest.osm.pbf.md5
+20ae2f1079e766989b07bd228297cf4d  norcal-261027.osm.pbf
+20ae2f1079e766989b07bd228297cf4d  norcal-latest.osm.pbf
+$ md5 -q data/norcal-latest.osm.pbf
+20ae2f1079e766989b07bd228297cf4d
+$ git diff --check
+```
+
+  Full-size comparison: invoked `.venv/bin/python -u` with temporary symlinks named `norcal-261026.osm.pbf` (to the dated OLD file) and `norcal-261027.osm.pbf` (to checksum-verified `norcal-latest.osm.pbf`). The wrapper called `main(["impact", "--old", "261026", "--new", "261027", "--data-dir", str(folder), "--results-dir", str(folder / "results")])`, timed the whole call using `time.perf_counter()`, and read `resource.getrusage(resource.RUSAGE_SELF).ru_maxrss`. Actual output:
+
+```text
+LOW LOW: no rule fired broken=0 slowed=0 output=/var/folders/4m/7y2d1r2x06vbmf36cx2vpzt80000gn/T/route-impact-verify-1hvsznc8/results/2026-10-27/impact.json
+exit=0
+wall_seconds=397.21
+peak_rss_bytes=7984971776
+```
+
+  The temporary input/output directory was cleaned up. A byte-for-byte copy of the actual output is retained at `/tmp/route-impact-step6-impact.json` (not a repository change). This verifies the checksum-identical 261026→261027 data, while the exact default-path command remains blocked by the missing dated filename. The requested `/usr/bin/time -l` peak-RSS measurement remains unavailable under the sandbox; the measured Python resource value above is the fallback, not output from `time -l`.
+- **Review (Claude, 2026-10-28):** **PASS.** Reran `make test` (48 passed) and `make lint` (clean) myself. The fixture tests cover every PLAN Verify item: T1–T4 slowed and T5 broken with reason `unreachable` (node 401 kept, full-graph routing, no fallback); split → 0 changed segments / LOW; self → LOW, exit 0; incremental == full over *all* trips on all three pairs; deterministic bytes. Codex's real run: 29 changed segments on trip paths, 142 trips rerouted of 5,660, 0 broken, 0 slowed → LOW. Findings (none blocking):
+  1. `data/norcal-261027.osm.pbf` was missing (only `norcal-latest`). Claude APFS-cloned it (`cp -c`, md5 `20ae2f10…` matches the `.md5`) and reran the exact Verify command:
+     ```text
+     $ /usr/bin/time -l .venv/bin/route-impact impact --old 261026 --new 261027; echo "exit=$?"
+     LOW LOW: no rule fired broken=0 slowed=0 output=results/2026-10-27/impact.json
+           386.67 real       412.20 user        13.18 sys
+               7811842048  maximum resident set size
+               8535332416  peak memory footprint
+     exit=0
+     ```
+     `results/2026-10-27/impact.json`: changed_segments=29, rerouted=142, broken=0, slowed=0. These match Codex's symlink run exactly.
+  2. Peak RSS ≈ 8.0 GB (two graphs plus KD-trees), up from 4.55 GB for one graph. Under the 12 GB budget, but check it against the GitHub runner's memory in Step 11.
+  3. `impact.py:103`: `weight` is parsed as a float, so `impact.json` writes gravity weights as floats (`5.7e10`-style). Emit ints. Fold into Step 7 (it edits `impact.json`).
+  4. `risk.py:41`: the HIGH share rule's message doesn't state the share or the threshold. Say e.g. "0.62% ≥ 0.50%". Fold into Step 7.
+  5. `impact.py:309`: `old`/`new` labels come from the DB file stem, which ties them to the CLI's naming. Pass the labels explicitly when Step 7/9 call `compute_impact`.
+  6. Incremental == full is checked on fixtures only, not on NorCal. Step 9 scores it on the real graph.
+  7. `risk.py:16`: `high_local_broken` is typed `int`, but the loader accepts 10.5. Trivial.
+- **Gotchas:** The exact requested dated input `data/norcal-261027.osm.pbf` is absent. Its checksum matches the actual MD5 of `norcal-latest.osm.pbf`; an additional full-size run uses temporary dated symlinks and temporary results, leaving `data/` unchanged. `/usr/bin/time -l` is blocked from `sysctl kern.clockrate` and exits 1 itself, without printing peak RSS; the unwrapped CLI correctly returns 2 for the missing file. The additional run measures `perf_counter()` wall time and macOS `resource.getrusage(RUSAGE_SELF).ru_maxrss` in bytes instead. No network. `PLAN.md` already had edits at task start and was not touched; `docs/DESIGN.md` was not touched. Metric totals are at the top level, with `intercity`/`local` count and delay breakdowns; `gravity_share_high` is the HIGH rule's share. Risk is evaluated before JSON's required two-decimal rounding. Improvements are counted among rerouted trips; full mode additionally observes improvements on trips incremental mode skips, as DESIGN §5.6 permits. No commit.
 
 ### 2026-10-28 — Step 5: Fixed trip set
 - **Agent:** Codex
