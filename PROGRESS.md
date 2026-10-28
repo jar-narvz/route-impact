@@ -2,7 +2,7 @@
 
 ## Current state
 - **Working on:** —
-- **Next up:** Codex plan critique (see PLAN.md → Review log), then Step 0 — Scaffold the repo
+- **Next up:** Step 0 — Scaffold the repo (Codex)
 - **Blockers:** none
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
@@ -19,6 +19,14 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-28 — Review: Codex plan critique
+- **Agent:** Codex (critique, read-only) · Claude (decisions + edits)
+- **Did:** Ran the plan critique; accepted 8 points in full and 2 in part (table in PLAN.md → Review log). Updated DESIGN.md §2, §5.1–5.7, §5.9, §5.11, §5.13 and PLAN.md Steps 0–12, cut order, and decision log; added `make setup` and the CLI-exit-code note to AGENTS.md.
+- **Changed:** `docs/DESIGN.md`, `PLAN.md`, `AGENTS.md`, `PROGRESS.md`
+- **Verify:** n/a (docs only)
+- **Review:** Claude weighed each Codex point against the design; Jared to confirm the revised cut order (map is now 2nd to cut).
+- **Gotchas:** scipy sums duplicate sparse entries; multi-source `dijkstra` returns dense matrices (batch it); `make` exits 2 on any recipe failure.
 
 ### 2026-10-28 — Design: pivot to route-impact
 - **Agent:** Claude (with Jared)

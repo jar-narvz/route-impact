@@ -16,9 +16,9 @@
   - `results/` — per-day `impact.json`, `report.md`, `impact.geojson`; `faults/`; benchmark `metrics.json` (small, committed)
 
 ## Commands
-- Install: `python3.11 -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"`
+- Install: `python3.11 -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]" && make setup` (`setup` installs the DuckDB `spatial` extension once; needs the network)
 - Download: `make download DATE=YYMMDD` (dated snapshot, checksum-verified) · `make download` (latest)
-- Impact: `make impact OLD=<YYMMDD> NEW=<YYMMDD>` (→ `results/<new-date>/`)
+- Impact: `make impact OLD=<YYMMDD> NEW=<YYMMDD>` (→ `results/<new-date>/`). Scripts and workflows that need the 0/1/2 exit code call `route-impact impact --old … --new …` directly — `make` turns any failure into exit 2.
 - What-if: `route-impact what-if --snapshot <YYMMDD> --delete-way <id>` (also `--flip-oneway`, `--disconnect-node`)
 - Faults: `make faults SNAPSHOT=<YYMMDD> N=200 SEED=2027` (→ `results/faults/<snapshot>/`)
 - Benchmark: `make bench SNAPSHOT=<YYMMDD>` (→ `results/<snapshot>/metrics.json`: rows, seconds, peak RSS)
