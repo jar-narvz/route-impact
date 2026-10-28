@@ -2,7 +2,10 @@
 
 ## Current state
 - **Working on:** —
-- **Next up:** Step 1 — Test fixtures with known answers (Codex; Claude reviews fixture design first)
+- **Done:** design (docs/DESIGN.md), Codex plan critique (PLAN.md → Review log), Step 0.
+- **Next up:** Step 1 — Test fixtures with known answers. Claude first writes/reviews the fixture design (which nodes/ways, which edits in `town_v2` and `town_v2_split`, the expected answers), then hands it to Codex.
+- **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
+- **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial` installed). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, checksums verified. Run `codex exec` with `< /dev/null`.
 - **Blockers:** none
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
