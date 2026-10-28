@@ -207,7 +207,7 @@ Faults are SQL mutations applied to a **copy of a snapshot's DuckDB tables** (on
 - **Random suite:** 200 faults, seeded, spread across types and road classes, **sampled only from edges that lie on at least one OLD trip path**. *Why:* a fault on a road no trip uses correctly changes nothing; counting it as a miss would make the score meaningless.
 - **Single and batch:** each fault alone (unambiguous culprit) and in batches of 10 (realistic — tests whether root cause picks the right edit among several).
 - **What is scored, and what each number means:**
-  - **Incremental = full recompute** on every fault (correctness of §5.6; expected 100% — anything less is a bug).
+  - **Incremental = full recompute** (correctness of §5.6; expected 100% — anything less is a bug), checked on every 10th run of the real suite and on every fixture run. *Why sampled:* on 261027 the full recompute was 73.6% of a 410.2 s run, so checking all 220 runs would take 25.2 h against 8.6 h sampled. The README reports it as a sample with its denominator.
   - **Root-cause accuracy:** of affected trips, % whose top-ranked **confirmed** culprit is a correct one — single faults and batches reported separately. This is the non-trivial number.
     - *Ground truth, single fault:* the one injected fault.
     - *Ground truth, batch:* the injected faults whose segments lie on that trip's OLD path **and** whose restoration alone recovers the trip (computed by the same counterfactual, independently of ranking). A confirmed contiguous run (§5.7) is correct if every member is an injected fault. Trips with no confirmed single edit or run are scored separately as joint-cause trips (correct if every listed candidate is an injected fault).

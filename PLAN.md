@@ -135,6 +135,24 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
     - trips are `joint`, which is correct: deleting both spans makes two separate runs per route, split by the undeleted Yerba Buena tunnel (Jared kept both spans, 2026-10-28);
     - the map draws in the browser.
   - Then Claude runs `route-impact faults --snapshot 261027 --n 10 --seed 2027 --results-dir <scratchpad>` with `/usr/bin/time -l`, records the per-fault seconds in PROGRESS, and Jared picks N for Step 12 from that.
+- **Status:** done (2026-10-28, `24eceb4`). n=10 timing: 410.2 s per run, full-recompute check 73.6% of it (PROGRESS 2026-10-28).
+
+### Step 9c — Sampled full check, resumable suite (then start the real run)
+- **Owner:** Codex (Claude reviews, rehearses and starts the real run)
+- **Why:** at the measured 410.2 s per run, N=200 (220 runs) is 25.2 h; the full-recompute check is 73.6% of it. It is a correctness check, not the score, and matched 11/11 on real data. Sampling every 10th run projects to 8.6 h. Separately, `scores.json` is only written at the end, so a crash at hour 7 loses everything. Jared, 2026-10-28: sample 1 in 10, save after every run, N=200, run as soon as possible.
+- **Files:** `src/route_impact/faults.py`, `src/route_impact/cli.py`, `Makefile`, `tests/test_faults.py`
+- **Do:**
+  - **Sampled check:** `faults --full-check-every K` (default 10; `1` = every run). Full recompute runs on run indices 0, K, 2K, … in suite order: singles first, then batches. The fault order is already seeded-random, so no extra randomness is needed. Each run records `"full_checked": bool`. `incremental_equals_full` counts only checked runs, so its denominator is the number checked. `scores.json` records `full_check_every`. Makefile: `FULL_CHECK_EVERY ?= 10` on the `faults` target.
+  - **Save after every run:** append one JSON line per finished run to `results/faults/<S>/progress.jsonl`: index, faults, full_checked, equal, the run's score contributions, affected trip ids and timings. Flush it each time. `scores.json` is built from `progress.jsonl` at the end.
+  - **Resume:** on start, if `progress.jsonl` exists, it must belong to the same run: `faults.json` has the same seed, N, fault list and `full_check_every`. If so, skip the runs already recorded and finish the rest. If not, stop with a clear error; never mix runs. `--fresh` deletes both files and starts over.
+- **Verify:**
+  - `make test` and `make lint` pass. New tests:
+    - K=1 reproduces today's scores on the fixture suite;
+    - K=3 checks exactly runs 0, 3, 6, …;
+    - a run that crashes partway (monkeypatched to raise on run 2), then restarts, skips runs 0–1 (counted calls to `apply_faults`) and ends with the same scores as an uninterrupted run, `seconds` excluded;
+    - a mismatched `faults.json` stops with an error.
+  - Then Claude rehearses `route-impact faults --snapshot 261027 --n 10 --seed 2027 --results-dir <scratchpad>` (exit 0, runs 0 and 10 checked, `progress.jsonl` has 11 lines).
+  - Then Claude starts `route-impact faults --snapshot 261027 --n 200 --seed 2027` in the background, writing to `results/faults/261027/`.
 - **Status:** todo
 
 ### Step 10 — CI (independent; any time after Step 0)
