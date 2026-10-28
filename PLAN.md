@@ -94,9 +94,18 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 
 ### Step 9 — Faults + what-if
 - **Owner:** Codex (fault catalog and scoring reviewed by Claude)
-- **Files:** `sql/faults/*.sql`, `src/route_impact/faults.py`, `src/route_impact/cli.py`, `config/demo_faults.toml`, `Makefile`, `tests/test_faults.py`
+- **Files:** `sql/faults/*.sql`, `src/route_impact/faults.py`, `src/route_impact/cli.py`, `src/route_impact/impact.py`, `src/route_impact/report.py`, `site/index.html`, `config/demo_faults.toml`, `Makefile`, `tests/fixtures/town_trips.csv`, `tests/test_faults.py`
 - **Do:** Per DESIGN §5.9: one `.sql` per fault type (7 types) applied to a copy of a snapshot DB; `route-impact what-if --snapshot S --delete-way|--flip-oneway|--disconnect-node ID`; `make faults SNAPSHOT=… N=200 SEED=2027` samples faults only from segments on OLD trip paths, runs single + batch-of-10, scores incremental == full recompute, root-cause top-1 confirmed accuracy (single, batch, joint-cause separately, ground truth per DESIGN §5.9), and impact rate; writes `results/faults/<snapshot>/`. `demo_faults.toml` holds the 3 demos (Bay Bridge, a freeway ramp, an I-80 intersection) with ids looked up in the real data.
-- **Verify:** `make test` → mini suite on `town_v1` with **all 7 fault types**, each with a known answer, scores 100% incremental == full and 100% root cause; one batch fixture with two interacting faults is scored as joint cause; `route-impact what-if --snapshot town_v1 --delete-way <bridge id>` prints the expected trips.
+  - **Decisions (Claude, 2026-10-28):**
+    - Faults mutate only `roads` (and `road_nodes` for `disconnect_node`); `build_graph` re-derives segments from them, so no graph table needs patching. Tag faults keep `tags`, the derived columns (`highway`, `maxspeed_raw`, `speed_kph`, `oneway`) and `content_hash` consistent, so a fault looks exactly like a re-extracted edit. Default speeds come from `config/speeds.toml` via a temp table, as in `extract.py`.
+    - `impact.py` gains a lower-level entry point that takes a prebuilt OLD graph, OLD nodes and OLD way info. *Why:* the suite runs ~220 NEW graphs against one OLD; rebuilding OLD each time doubles the cost. `compute_impact` keeps its signature and output.
+    - "Top-1" = among a trip's confirmed edits, the one ranked highest in `payload["culprits"]`. Expected edit key per fault: deletes → `way_deleted/<way>`, tag faults → `way_changed/<way>`, `disconnect_node` → `node_disconnected/<node>`.
+    - Faults in one batch touch distinct ways and nodes. Joint-cause trips = `cause == "joint"`.
+    - `--snapshot` takes `YYMMDD` (→ `<data-dir>/norcal-<S>.osm.pbf`) or a name (→ `<data-dir>/<S>.osm.pbf`), so fixtures run as `--data-dir tests/fixtures --snapshot town_v1`.
+    - `write_geojson` adds a top-level `"snapshots": {"old", "new"}` member; the map shows a "synthetic test town" notice when `old` is not `YYMMDD`.
+    - Map follow-ups (Jared, 2026-10-28): re-fit on resize, start/end markers per trip, small legend, synthetic notice.
+    - Makefile: SNAPSHOT/SEED/N defaults become target-specific.
+- **Verify:** `make test` → mini suite on `town_v1` with **all 7 fault types**, each with a known answer, scores 100% incremental == full and 100% root cause; one batch fixture with two interacting faults is scored as joint cause; `route-impact what-if --data-dir tests/fixtures --snapshot town_v1 --trips tests/fixtures/town_trips.csv --thresholds <slow_seconds=10 file> --delete-way 51` prints T1 slowed with root cause way 51 ✔ (pinned by `test_cli_fixture_thresholds`; with the default 120 s threshold the fixture detour is correctly not "slowed"). Then (Claude, on the real data) `route-impact what-if --snapshot 261027 --delete-way <Bay Bridge id> --out results/faults/261027/demo-bay-bridge` writes an `impact.geojson` whose routes follow real streets in `site/?src=`.
 - **Status:** todo
 
 ### Step 10 — CI (independent; any time after Step 0)
