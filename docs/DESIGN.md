@@ -326,5 +326,5 @@ Detailed steps with Verify commands live in [PLAN.md](../PLAN.md).
 - **Oct 29 – Nov 2 (build, Codex implements / Claude reviews; Jared ~10 min/day to run commit commands):** scaffold, fixtures, download, extract, graph, trips, impact, root cause, faults + what-if, report + map, CI, daily job.
 - **Nov 3 (Jared):** full-size benchmark, fault suite on real data, README with real numbers.
 - **Nov 4:** apply.
-- **MVP = all of the above.** If time runs short, cut in this order: (1) random fault suite 200 → 50 (n stated in README); (2) map popups (draw routes and culprits only). **Never cut:** routing impact, root cause, daily job, CI.
+- **MVP = all of the above.** If time runs short, cut in this order: (1) batch-of-10 fault runs; (2) random fault suite 200 → 50 (n stated in README); (3) map popups (draw routes and culprits only). **Never cut:** routing impact, root cause, daily job, CI, demo faults, the results map.
 - **Phase 2 (after Nov 4, optional):** in-browser fault playground on the Bay Area subgraph *(exploration: 224,023 vertices / 188,145 ways in lat 37.2–38.1, lon −122.6 to −121.7, no service roads, before the access filter)*; recalibrate thresholds from accumulated daily history.

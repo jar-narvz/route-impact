@@ -21,7 +21,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - Resume bullet (fill only with real numbers from `results/`):
   > Built a daily pipeline in Python and DuckDB that measures how OpenStreetMap edits change navigation across Northern California — routes [N] population-weighted trips over a [V]-intersection road graph built from [M] million map elements in [X] seconds, traces every broken or slowed route to the responsible edit, and names the correct culprit in [Y]% of [K] injected faults; runs daily in GitHub Actions.
 
-**Mandatory vertical slice** (must work end-to-end before anything secondary): Steps 0–7 on fixtures → Step 4's full-graph feasibility check → Step 11 daily job with `report.md`. **Secondary:** results map (Step 8's `site/`), random fault suite (Step 9's random part). Step 10 (CI) is independent and can land any time after Step 0.
+**Mandatory vertical slice** (must work end-to-end before anything secondary): Steps 0–7 on fixtures → Step 4's full-graph feasibility check → Step 11 daily job with `report.md`. **Secondary:** random fault suite (Step 9's random part). The results map (Step 8's `site/`) is **protected** — Jared's call, 2026-10-28. Step 10 (CI) is independent and can land any time after Step 0.
 
 ## Steps
 
@@ -88,7 +88,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 ### Step 8 — Report, GeoJSON, results map
 - **Owner:** Codex (report wording reviewed by Claude)
 - **Files:** `src/route_impact/report.py`, `src/route_impact/cli.py`, `Makefile`, `site/index.html`, `tests/test_report.py`
-- **Do:** From `impact.json` write `report.md` (layout in DESIGN §6.1) and `impact.geojson` (affected trips' old/new paths + culprit segments only); `impact` calls the report step. `site/index.html` (**secondary**): static Leaflet page (pinned CDN version, OSM tiles + attribution) that loads `results/<date>/impact.geojson` from a `?date=` parameter; click a culprit → tags + link.
+- **Do:** From `impact.json` write `report.md` (layout in DESIGN §6.1) and `impact.geojson` (affected trips' old/new paths + culprit segments only); `impact` calls the report step. `site/index.html` (**protected**): static Leaflet page (pinned CDN version, OSM tiles + attribution) that loads `results/<date>/impact.geojson` from a `?date=` parameter; click a culprit → tags + link.
 - **Verify:** `make test` → report for `town_v1 → town_v2` contains the expected risk line and confirmed culprit ids; GeoJSON parses and its feature count equals `expected.json`; open `site/index.html` locally against the fixture output → routes and culprits draw.
 - **Status:** todo
 
@@ -131,7 +131,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 In-browser Bay Area routing (static, no server): ship a compact Bay Area subgraph, click a road to delete/flip it, recompute routes in JS. Not planned in detail yet.
 
 ## Risks / open questions
-- **Scope vs time:** 14 steps in ~5 days. **Cut order (whole features, not trimming):** (1) batch-of-10 fault runs (single faults only); (2) the `site/` results map (keep `report.md` + `impact.geojson`); (3) random suite → demos + 50 random faults (n stated). **Never cut:** the mandatory vertical slice, CI, demo faults.
+- **Scope vs time:** 14 steps in ~5 days. **Cut order (whole features, not trimming):** (1) batch-of-10 fault runs (single faults only); (2) random suite → demos + 50 random faults (n stated); (3) map click-for-details popups (still draw routes and culprits). **Never cut:** the mandatory vertical slice, CI, demo faults, the results map.
 - **Graph correctness** is the biggest technical risk (vertex rule, segment identity, parallel-edge reduction, implied one-ways, snapping). Mitigated by the hand-computed fixtures, `town_v2_split`, the self-comparison test, and incremental == full recompute.
 - **Routing memory/time on the free runner** is checked in Step 4, not at the end. If it misses the 12 GB budget: smaller batches, then fewer local trips (stated in README). A distance `limit` is **not** an option (it fakes broken trips).
 - **Quiet real days:** expected (4 days of exploration showed almost no major-road change). The story rests on fault-suite numbers + "stays quiet on normal days".
@@ -142,7 +142,7 @@ In-browser Bay Area routing (static, no server): ship a compact Bay Area subgrap
 
 ## Decision log (2026-10-28 design session, Jared + Claude)
 1. Pivoted from data-quality checks to **routing impact** — checks were noisy or always 0 on real data, and the "verdict + reason" shape repeated posting-triage.
-2. **Daily automation is in the MVP**; dashboard and Tableau cut; **results map kept** (secondary in the cut order); fault playground → Phase 2; `what-if` CLI in MVP.
+2. **Daily automation is in the MVP**; dashboard and Tableau cut; **results map kept and protected from cuts**; fault playground → Phase 2; `what-if` CLI in MVP.
 3. **Linux sysadmin gap accepted**; runs on GitHub's Ubuntu runners.
 4. Results committed to `results/<date>/` by the daily workflow.
 5. Trips: 61 cities × 60 gravity-weighted + 2,000 seeded local trips; endpoints stored as coordinates.

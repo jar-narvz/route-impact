@@ -25,7 +25,7 @@ Template — copy above the newest entry:
 - **Did:** Ran the plan critique; accepted 8 points in full and 2 in part (table in PLAN.md → Review log). Updated DESIGN.md §2, §5.1–5.7, §5.9, §5.11, §5.13 and PLAN.md Steps 0–12, cut order, and decision log; added `make setup` and the CLI-exit-code note to AGENTS.md.
 - **Changed:** `docs/DESIGN.md`, `PLAN.md`, `AGENTS.md`, `PROGRESS.md`
 - **Verify:** n/a (docs only)
-- **Review:** Claude weighed each Codex point against the design; Jared to confirm the revised cut order (map is now 2nd to cut).
+- **Review:** Claude weighed each Codex point against the design; Jared chose to protect the results map; cut order is now batch faults → random suite to 50 → map popups.
 - **Gotchas:** scipy sums duplicate sparse entries; multi-source `dijkstra` returns dense matrices (batch it); `make` exits 2 on any recipe failure.
 
 ### 2026-10-28 — Design: pivot to route-impact
