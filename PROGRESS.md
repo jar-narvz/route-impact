@@ -2,8 +2,8 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–5. Step 5 was reviewed and approved but **not committed yet** (last commit `545f7cc`). `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
-- **Next up:** Jared commits Step 5. Then Step 6 — Impact (Claude writes the Codex brief from PLAN Step 6).
+- **Done:** design, plan critique, Steps 0–5, all committed (last commit `827a882`). `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
+- **Next up:** Step 6 — Impact (Claude writes the Codex brief from PLAN Step 6).
   - **Read to resume (one call):** `grep -n "### Step 6" PLAN.md` then read that step; `grep -n "^def " src/route_impact/trips.py src/route_impact/graph.py; git status --short`
   - **Watch in Step 6 review:**
     - Step 6 snaps trip coordinates to the nearest vertex of each snapshot's graph (trips are coordinates, not node ids).
