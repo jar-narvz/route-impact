@@ -4,6 +4,8 @@
 - **Working on:** —
 - **Done:** design (docs/DESIGN.md), Codex plan critique (PLAN.md → Review log), Step 0.
 - **Next up:** Step 1 — Test fixtures with known answers. Claude first writes/reviews the fixture design (which nodes/ways, which edits in `town_v2` and `town_v2_split`, the expected answers), then hands it to Codex.
+  - **Read to resume (only these):** PLAN.md Step 1 (`sed -n 35,44p PLAN.md`) · DESIGN §5.3–5.4 (`sed -n 133,149p docs/DESIGN.md`) · §5.13 (`sed -n 247,263p docs/DESIGN.md`).
+  - **Decided so far:** tag every fixture way with an explicit `maxspeed` so expected times are hand-computable before `config/speeds.toml` exists (Step 3); default-speed fill gets its own Step 3 test. `osmium` is installed (`/opt/homebrew/bin/osmium`).
 - **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
 - **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial` installed). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, checksums verified. Run `codex exec` with `< /dev/null`.
 - **Blockers:** none
