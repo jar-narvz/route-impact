@@ -2,8 +2,8 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–5 committed (last commit `827a882`). Step 6 (Impact) reviewed **PASS**, **not committed yet**. `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
-- **Next up:** Jared commits Step 6, then Step 7 — Root cause (Claude writes the Codex brief from PLAN Step 7).
+- **Done:** design, plan critique, Steps 0–6 all committed (Step 6 = `8e746c5`, review + first NorCal result = `b36769f`). `config/trips.csv` comes from 261027 with seed 2027: 61 places, 3,660 intercity and 2,000 local trips.
+- **Next up:** Step 7 — Root cause (Claude writes the Codex brief from PLAN Step 7).
   - **Read to resume (one call):** `grep -n "### Step 7" PLAN.md` then read that step plus DESIGN §5.7; `grep -n "^def " src/route_impact/impact.py src/route_impact/risk.py; git status --short`
   - **Fold into the Step 7 brief (from the Step 6 review):** write `weight` as an int (`impact.py:103`); state the share and the threshold in the HIGH share rule's message (`risk.py:41`); pass the old/new labels explicitly instead of taking them from the DB stem (`impact.py:309`). Root cause needs NEW tags and segments, so `compute_impact` must also keep both DBs/graphs available to `rootcause.py`.
   - **Watch:**
