@@ -73,10 +73,10 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 
 ### Step 6 — Impact (snap, route, segment diff, incremental reroute, risk)
 - **Owner:** Codex (correctness argument reviewed by Claude)
-- **Files:** `src/route_impact/impact.py`, `src/route_impact/risk.py`, `config/thresholds.toml`, `src/route_impact/cli.py`, `Makefile`, `tests/test_impact.py`
+- **Files:** `src/route_impact/impact.py`, `src/route_impact/risk.py`, `config/thresholds.toml`, `src/route_impact/graph.py` (add pair routing only), `src/route_impact/cli.py`, `Makefile`, `tests/test_impact.py`
 - **Do:** Per DESIGN §5.5, §5.6, §5.8: snap on OLD's LSCC; on NEW keep the same node id and route on the **full** NEW graph, fallback within 200 m, else broken; segment diff (missing or slower `(a → b)`); reroute only trips whose OLD path has a changed segment or whose endpoint needed a fallback; metrics (broken, slowed ≥ `slow_seconds`, gravity-weighted share, median/p95 delay); risk level + rule that fired; exit 0/1/2. `route-impact impact --old … --new …` (and `make impact`) writes `results/<new-date>/impact.json`. `thresholds.toml` notes it is provisional and calibrated on 261023–261027.
 - **Verify:** `make test` → `town_v1 → town_v2`: broken/slowed trips match `expected.json`, **including the island destination as broken**; `town_v1 → town_v2_split`: 0 changed segments, 0 broken, 0 slowed, LOW; `town_v1 → town_v1`: LOW, exit 0; incremental == full recompute on every fixture pair.
-- **Status:** todo
+- **Status:** done (2026-10-28, reviewed by Claude)
 
 ### Step 7 — Root cause with counterfactual confirmation
 - **Owner:** Codex
@@ -151,6 +151,7 @@ In-browser Bay Area routing (static, no server): ship a compact Bay Area subgrap
 8. Fault injection on DuckDB tables; demos + seeded random suite; scored as incremental==full, root-cause accuracy, impact rate (redundancy, not accuracy).
 9. Renamed `osm-validate` → `route-impact` (GitHub repo + local folder).
 10. After Codex critique: segments are the cross-snapshot identity; snapping keeps node ids and routes on the full NEW graph; root cause confirmed by counterfactual; access by OSM precedence; batched routing; workflow calls the CLI directly (see Review log).
+11. Step 6 adds `graph.route_pairs` (2026-10-28, Claude): `shortest()` returns the full origin × destination product, so 2,000 local origins would rebuild ~4M paths; pair routing keeps the same batched Dijkstra but rebuilds only the requested paths. Impact extracts each snapshot into a fresh temp DB (as `trips.generate` does) — no cached `.duckdb`, so no stale-cache risk and the "tables already exist" issue goes away.
 
 ## Review log
 ### 2026-10-28 — Codex plan critique (`codex exec --sandbox read-only`, 10 points)

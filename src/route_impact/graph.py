@@ -191,3 +191,36 @@ def shortest(
                 result[source, target] = Route(seconds if path is not None else inf, path)
         del distances, predecessors
     return result
+
+
+def route_pairs(
+    graph: Graph, pairs: Iterable[tuple[int, int]], batch: int = 32
+) -> dict[tuple[int, int], Route]:
+    """Route only requested pairs, batching Dijkstra by distinct origin."""
+    if batch <= 0:
+        raise ValueError("batch must be positive")
+    grouped: dict[int, list[int]] = {}
+    for source, target in dict.fromkeys(pairs):
+        for node in (source, target):
+            if node not in graph.indices:
+                raise ValueError(f"Node {node} is not a graph vertex")
+        grouped.setdefault(source, []).append(target)
+    origins = list(grouped)
+    result = {}
+    for offset in range(0, len(origins), batch):
+        chunk = origins[offset : offset + batch]
+        distances, predecessors = dijkstra(
+            graph.matrix,
+            directed=True,
+            indices=[graph.indices[n] for n in chunk],
+            return_predecessors=True,
+        )
+        for row, source in enumerate(chunk):
+            for target in grouped[source]:
+                seconds = float(distances[row, graph.indices[target]])
+                path = (
+                    _path(graph, predecessors[row], source, target) if isfinite(seconds) else None
+                )
+                result[source, target] = Route(seconds if path is not None else inf, path)
+        del distances, predecessors
+    return result

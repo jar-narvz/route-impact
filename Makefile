@@ -11,7 +11,7 @@ help:
 	@echo "download  Download a checksum-verified snapshot (DATE=YYMMDD; default latest)"
 	@echo "extract   Extract snapshot tables (stub)"
 	@echo "trips     Generate fixed trips (SNAPSHOT=latest SEED=2027)"
-	@echo "impact    Compare routing impact (stub)"
+	@echo "impact    Compare routing impact (OLD=YYMMDD NEW=YYMMDD)"
 	@echo "what-if   Evaluate a hypothetical edit (stub)"
 	@echo "faults    Run injected faults (stub)"
 	@echo "bench     Benchmark the pipeline (stub)"
@@ -31,7 +31,7 @@ trips:
 	route-impact trips --snapshot $(SNAPSHOT) --seed $(SEED)
 
 impact:
-	@echo "not implemented yet (Step 6)"
+	route-impact impact --old $(OLD) --new $(NEW)
 
 what-if:
 	@echo "not implemented yet (Step 8)"
