@@ -1,9 +1,10 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 9 — reviewed; Verify passes. Uncommitted. Three findings from the real Bay Bridge what-if await Jared's decision (below).
-- **Done:** design, plan critique, Steps 0–8 committed (Step 8 = `0ed664f`, review + pointers = `884c986`). Step 9 implemented + review fixes (uncommitted).
-- **Next up:** Jared decides how to handle the Step 9 real-data findings, then commit Step 9, then Step 10/11.
+- **Working on:** Step 9b — small outputs, contiguous-run culprits, fault timing (added to PLAN.md + DESIGN §5.7/§5.9/§5.10 by Claude, 2026-10-28; Jared chose a separate step).
+- **Done:** design, plan critique, Steps 0–9 committed (Step 9 = `a8c7c9a`).
+- **Next up:** Claude writes the Step 9b Codex brief from PLAN "### Step 9b", launches Codex, reviews, then reruns the Bay Bridge what-if and an n=10 timed suite on 261027 (scratchpad outputs). Then Step 10/11.
+  - **Read to resume (one call):** `grep -n "### Step 9b" PLAN.md` and read that step; `grep -n "def explain_trips\|def candidate_edits\|def write_geojson\|def render_markdown\|def evaluate_faults" src/route_impact/*.py; git status --short`. Previous Bay Bridge outputs + preview are in the session scratchpad; `.claude/launch.json` (untracked, local) serves that preview.
   - **Real-data what-if (Claude, 2026-10-28):** `route-impact what-if --snapshot 261027 --out <scratchpad> --delete-way` ×10 Bay Bridge ways → `Affected: 253 intercity · 96 local trips · 15% weighted travel`, `Root cause: way 661905446 ✔`; `/usr/bin/time -l`: 603.98 s real, 8549171200 bytes max RSS. Map preview (12 heaviest trips) drawn in the browser: detours follow real roads (Richmond–San Rafael and San Mateo bridges). Outputs left in the scratchpad, not `results/`.
   - **Finding A — output size:** that run wrote impact.json 117,885,253 B and impact.geojson 110,577,262 B (349 trips × full paths). Too big to commit or load in the map; a bad real day would do the same. Needs a size cap (e.g. top-K trips in GeoJSON, paths out of the committed impact.json).
   - **Finding B — multi-way edits read as "joint":** the bridge is 10 ways in series, so restoring any one way recovers nothing; 348 of 349 trips are `joint` (1 confirmed) and the top culprit has 1 trip. Correct per DESIGN §5.7, but the flagship demo looks like a miss. Option: when no single edit recovers a trip, try restoring all its candidates together and label the set "confirmed (group)".
@@ -11,7 +12,7 @@
   - Minor: report.md header/Map link use `date=261027+what-if` for what-if runs (link is broken there).
   - **Watch:**
     - Peak RSS ≈ 8 GB for a full impact run (two graphs); root cause adds one O(E) CSR copy per candidate check plus one Python pass over OLD roads and NEW edges per run — unmeasured on NorCal. Time both in Step 11.
-    - Two independent slowdowns that each exceed `slow_seconds` are labelled `joint` (DESIGN §5.7 as written). Revisit only if Jared changes the confirmation rule.
+    - Two independent slowdowns that each exceed `slow_seconds` are labelled `joint`; after Step 9b only if they are not contiguous on the OLD path (DESIGN §5.7).
     - `scripts/feasibility.py:31-32` still hardcodes the city filter. Switch it to `trips.filter_places` when a step names that file.
   - **Follow-ups (not blocking):** remove the unused `segments` temp table (`segments.sql:21-25`). Have Step 3 emit a `speed_source` column so `graph.py:70-80` stops duplicating the maxspeed parser.
   - **Still open from earlier reviews:**

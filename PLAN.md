@@ -106,6 +106,35 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
     - Map follow-ups (Jared, 2026-10-28): re-fit on resize, start/end markers per trip, small legend, synthetic notice.
     - Makefile: SNAPSHOT/SEED/N defaults become target-specific.
 - **Verify:** `make test` → mini suite on `town_v1` with **all 7 fault types**, each with a known answer, scores 100% incremental == full and 100% root cause; one batch fixture with two interacting faults is scored as joint cause; `route-impact what-if --data-dir tests/fixtures --snapshot town_v1 --trips tests/fixtures/town_trips.csv --thresholds <slow_seconds=10 file> --delete-way 51` prints T1 slowed with root cause way 51 ✔ (pinned by `test_cli_fixture_thresholds`; with the default 120 s threshold the fixture detour is correctly not "slowed"). Then (Claude, on the real data) `route-impact what-if --snapshot 261027 --delete-way <Bay Bridge id> --out results/faults/261027/demo-bay-bridge` writes an `impact.geojson` whose routes follow real streets in `site/?src=`.
+- **Status:** done (2026-10-28, `a8c7c9a`). Real-data run exposed findings A–C → Step 9b.
+
+### Step 9b — Small outputs, contiguous-run culprits, fault timing
+- **Owner:** Codex (root-cause rule and output budget reviewed by Claude)
+- **Why:** the real Bay Bridge what-if on 261027 (PROGRESS 2026-10-28) wrote a 117,885,253 B `impact.json` and a 110,577,262 B `impact.geojson`, labelled 348 of 349 trips `joint` because the bridge is 10 ways in series, and took 603.98 s with per-fault suite cost unmeasured.
+- **Files:** `src/route_impact/impact.py`, `src/route_impact/rootcause.py`, `src/route_impact/report.py`, `src/route_impact/faults.py`, `site/index.html`, `tests/test_rootcause.py`, `tests/test_report.py`, `tests/test_faults.py`
+- **Do:**
+  - **A — output budget (DESIGN §5.10):**
+    - `impact.json` keeps every per-trip scalar plus `edits`, but drops `old_path`, `new_path` and `changed_segments` (adds `changed_segment_count`). *Why:* they are the bulk, and nothing reads them back from disk; `report` re-renders from metrics and culprits only.
+    - `impact.geojson` draws at most `MAP_MAX_TRIPS = 25` affected trips (one constant in `report.py`), chosen broken first, then by weight descending, then trip_id; all confirmed culprit features are always drawn. Coordinates rounded to 6 decimals, written without indentation. Top-level `"trips_shown"` and `"trips_total"`; the map says "showing N of M affected trips" when they differ.
+    - `report.md`: for a non-date label, the header shows the label as-is, and the Map line becomes a relative `site/?src=` link to that run's GeoJSON (`write_report` passes the path).
+  - **B — contiguous-run culprits (DESIGN §5.7):**
+    - Single-edit confirmation is unchanged and runs first.
+    - Only for a trip with no confirmed single edit: split its changed OLD-path segments into maximal **runs**, consecutive in path order with no unchanged segment between them. Each run with ≥ 2 edits is a **run candidate**, keyed `run/<member edit keys sorted, joined by +>`. Restore that run's segments alone with the same counterfactual; if the trip recovers, the run is confirmed and the trip's cause is `confirmed` via that run.
+    - *Why runs, not "all candidates together":* restoring every changed segment on the OLD path rebuilds the OLD path, so it always passes and proves nothing. A run is one place on the road (a bridge deleted as several ways), so two far-apart slowdowns stay `joint`, as today.
+    - Runs rank with single edits by weight, then count, then key. A culprit entry lists its members with names and links.
+    - Scoring (`faults.py`): a confirmed run is correct iff every member is an injected fault.
+  - **C — fault timing:** `scores.json` gets `"seconds"`: extract, baseline, and per run (apply, new graph, compare incremental, compare full, root cause), plus the mean per single fault and per batch.
+- **Verify:**
+  - `make test` and `make lint` pass. New tests:
+    - a fixture where deleting two consecutive ways of one trip (e.g. 50 and 51 on T1) is labelled `confirmed` via `run/way_deleted/50+way_deleted/51`;
+    - the existing two-slowdowns case (`bad_maxspeed` on 50 and 51) is still `joint`, unless the two ways are consecutive. If they are, pick non-adjacent ways and note it in PROGRESS;
+    - GeoJSON is capped at `MAP_MAX_TRIPS`, with `trips_shown` and `trips_total` correct;
+    - `impact.json` has no path keys.
+  - Then Claude reruns the Bay Bridge what-if on 261027 into the scratchpad:
+    - both files are ≤ 5 MB;
+    - most affected trips are `confirmed` via run culprits, and the top culprit is a run of bridge ways;
+    - the map draws in the browser.
+  - Then Claude runs `route-impact faults --snapshot 261027 --n 10 --seed 2027 --results-dir <scratchpad>` with `/usr/bin/time -l`, records the per-fault seconds in PROGRESS, and Jared picks N for Step 12 from that.
 - **Status:** todo
 
 ### Step 10 — CI (independent; any time after Step 0)

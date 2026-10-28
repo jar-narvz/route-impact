@@ -171,7 +171,8 @@ Tables, built by SQL in `sql/extract/` in **two phases** over `ST_ReadOSM`:
 ### 5.7 Root cause
 - **Candidates:** for each broken or slowed trip, the changed segments on its OLD path, grouped into **edits**: a deleted or changed way (by its OLD way id), a disconnected node ("node 123 no longer connects way A and way B"), or a lost endpoint.
 - **Confirmation by counterfactual:** a changed segment on the path isn't proof — a trip can pass a 1-second slowdown on its way to a deleted bridge. For each candidate edit, restore just that edit's OLD segments into NEW and reroute the trip. If the trip recovers (no longer broken, or delay drops below `slow_seconds`), the edit is **confirmed**; otherwise it stays a **candidate**. The report shows confirmed culprits first and labels the rest as candidates. *Why affordable:* it runs only for affected trips × their few candidate edits, and each reroute is one Dijkstra.
-- If no single edit restores the trip, the trip is labelled **joint cause** and lists all candidates — two edits that only break a route together are reported honestly rather than forced into one culprit.
+- **Contiguous runs:** if no single edit restores the trip, its changed OLD-path segments are split into maximal runs, consecutive in path order with no unchanged segment between them. Each run of ≥ 2 edits is tested with the same counterfactual (restore only that run). A recovering run is a confirmed culprit (`run/<members>`). *Why:* one real-world change is often several ways. The Bay Bridge is 10 ways in series, so restoring any one way recovers nothing. Before this rule, 348 of 349 affected trips in the 261027 what-if were `joint`. *Why not restore all candidates together:* that rebuilds the OLD path and always passes, so it proves nothing. A run is one place on the road.
+- If neither a single edit nor a run restores the trip, the trip is labelled **joint cause** and lists all candidates. Two separate edits that only break a route together are reported honestly rather than forced into one culprit.
 - Culprits are ranked by the gravity weight + count of trips they affect, so one bad edit that breaks 40 trips appears once at the top.
 - Each culprit lists before/after tags and node count, and links to `openstreetmap.org/way/<id>` / `node/<id>`.
 - *Why graph-based, not way-based:* a disconnected intersection leaves both ways present with valid tags; only comparing the graph finds it.
@@ -209,14 +210,15 @@ Faults are SQL mutations applied to a **copy of a snapshot's DuckDB tables** (on
   - **Incremental = full recompute** on every fault (correctness of §5.6; expected 100% — anything less is a bug).
   - **Root-cause accuracy:** of affected trips, % whose top-ranked **confirmed** culprit is a correct one — single faults and batches reported separately. This is the non-trivial number.
     - *Ground truth, single fault:* the one injected fault.
-    - *Ground truth, batch:* the injected faults whose segments lie on that trip's OLD path **and** whose restoration alone recovers the trip (computed by the same counterfactual, independently of ranking). Trips where no single fault recovers the trip are scored separately as joint-cause trips (correct if every listed candidate is an injected fault).
+    - *Ground truth, batch:* the injected faults whose segments lie on that trip's OLD path **and** whose restoration alone recovers the trip (computed by the same counterfactual, independently of ranking). A confirmed contiguous run (§5.7) is correct if every member is an injected fault. Trips with no confirmed single edit or run are scored separately as joint-cause trips (correct if every listed candidate is an injected fault).
   - **Impact rate:** % of faults that broke or slowed ≥ 1 trip past `slow_seconds`. This describes the **network's redundancy**, not tool accuracy, and is labelled that way.
 - **Honesty:** reported as "on 200 injected faults", never as a real-world catch rate. The seeded fault list is committed so anyone can rerun it.
 
 ### 5.10 Outputs
-- `results/<date>/impact.json` — source of truth (metrics, risk level, rule that fired, culprits, trip-level deltas for affected trips).
+- `results/<date>/impact.json` — source of truth (metrics, risk level, rule that fired, culprits, trip-level deltas for affected trips). Per-trip paths are **not** stored: they made a 10-way Bay Bridge what-if 117,885,253 B, and nothing reads them back from disk.
 - `results/<date>/report.md` — human summary GitHub renders in the repo; also written to the Actions job summary.
-- `results/<date>/impact.geojson` — only affected trips' old/new paths and culprit edges (small).
+- `results/<date>/impact.geojson` — at most 25 affected trips (broken first, then by weight) plus every confirmed culprit, with coordinates at 6 decimals. The file records `trips_shown` / `trips_total`. *Why a cap:* uncapped, the same what-if was 110,577,262 B, too big to commit or draw. The full trip list stays in `impact.json`.
+- **Budget:** each committed output file ≤ 5 MB (the repo's limit for checked-in data). Checked in Step 12.
 - `results/faults/` — fault suite results and demo outputs.
 - `results/<snapshot>/metrics.json` — benchmark.
 - **Results map:** one static page (`site/index.html`, Leaflet from a CDN, OSM tiles with the required attribution) that loads a day's or a demo's GeoJSON. Published with GitHub Pages. *Why static:* no server (AGENTS.md); routing already happened in the pipeline, the page only draws it.
