@@ -30,7 +30,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Files:** `pyproject.toml`, `Makefile`, `.gitignore`, `README.md` (stub), `src/route_impact/__init__.py`, `src/route_impact/cli.py` (stub), `tests/test_smoke.py`
 - **Do:** Package `route-impact` (console script `route-impact`), Python ≥ 3.11, deps `duckdb`, `numpy`, `scipy`; dev extras `pytest`, `ruff`. Makefile targets `help, setup, download, extract, impact, what-if, faults, bench, test, lint` (stubs that echo for now, except `setup`). `make setup` runs `INSTALL spatial` once via Python duckdb (the only target that needs the network apart from `download`). `.gitignore` covers `data/`, `*.duckdb`, `.venv/`, `*.osm.pbf` except `tests/fixtures/*.osm.pbf`. Smoke test imports duckdb + scipy and runs `LOAD spatial` (no `INSTALL`).
 - **Verify:** `python3.11 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" && make setup && make help && make test` → target list prints; `1 passed`.
-- **Status:** todo
+- **Status:** done 2026-10-28 (see PROGRESS.md)
 
 ### Step 1 — Test fixtures with known answers
 - **Owner:** Codex (fixture design reviewed by Claude before code that uses it)

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "route-impact"
+version = "0.1.0"
+description = "Measure how OpenStreetMap edits change navigation in Northern California."
+requires-python = ">=3.11"
+dependencies = ["duckdb", "numpy", "scipy"]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+route-impact = "route_impact.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
