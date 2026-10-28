@@ -2,10 +2,14 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–7 committed (Step 7 = `9668a71`). Step 8 reviewed and done; awaiting Jared's commit.
+- **Done:** design, plan critique, Steps 0–8 committed (Step 8 = `0ed664f`, review + pointers = `884c986`).
 - **Next up:** Step 9 — Faults + what-if (Claude writes the Codex brief from PLAN Step 9).
   - **Read to resume (one call):** `grep -n "### Step 9" PLAN.md` then read that step plus DESIGN §5.9, §6.2; `grep -n "^def " src/route_impact/rootcause.py src/route_impact/impact.py; git status --short`
   - **Fold into the Step 9 brief:** `report.write_report(payload, out_dir, old_db, new_db)` writes report.md + impact.geojson and needs both DBs alive; fault/what-if runs can reuse it for demo maps (`site/?src=`). Pages must publish the repo root (map lives at `/route-impact/site/`) — Step 11.
+  - **Map follow-ups for the Step 9 brief (Jared, 2026-10-28; `site/index.html` must be added to Step 9's file list in PLAN.md):**
+    - Re-fit the map on resize. A page loaded in a hidden or resizing window zooms in too far and stays there.
+    - Add start/end markers for each trip and a small legend. When `?src=` points at fixture data, show a "synthetic test town" notice.
+    - Produce one real what-if demo, e.g. delete a Bay Bridge way on 261027. Write its `impact.geojson` under `results/faults/` and confirm in the browser that real routes follow the streets. Fixture routes are straight lines on a fake grid placed over West Oakland, so they can't show this.
   - **Watch:**
     - Peak RSS ≈ 8 GB for a full impact run (two graphs); root cause adds one O(E) CSR copy per candidate check plus one Python pass over OLD roads and NEW edges per run — unmeasured on NorCal. Time both in Step 11.
     - Two independent slowdowns that each exceed `slow_seconds` are labelled `joint` (DESIGN §5.7 as written). Revisit only if Jared changes the confirmation rule.
