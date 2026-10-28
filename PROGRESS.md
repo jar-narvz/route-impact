@@ -1,15 +1,20 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 9c — implementation verified offline; awaits Claude review, rehearsal and the real suite run.
-- **Done:** design, plan critique, Steps 0–9 committed (Step 9 = `a8c7c9a`).
-- **Next up:** Claude reviews Step 9c, rehearses the n=10 suite with default K=10 in a scratch directory (11 progress lines, runs 0 and 10 checked), then starts the n=200 real suite. Then Step 10/11.
-  - **Read to resume:** PLAN "### Step 9c", the newest log entry below, and the allowed-file diff. No Step 9c real-data run has been performed by Codex.
-  - **Real-data what-if (Claude, 2026-10-28):** `route-impact what-if --snapshot 261027 --out <scratchpad> --delete-way` ×10 Bay Bridge ways → `Affected: 253 intercity · 96 local trips · 15% weighted travel`, `Root cause: way 661905446 ✔`; `/usr/bin/time -l`: 603.98 s real, 8549171200 bytes max RSS. Map preview (12 heaviest trips) drawn in the browser: detours follow real roads (Richmond–San Rafael and San Mateo bridges). Outputs left in the scratchpad, not `results/`.
-  - **Finding A — output size:** that run wrote impact.json 117,885,253 B and impact.geojson 110,577,262 B (349 trips × full paths). Too big to commit or load in the map; a bad real day would do the same. Needs a size cap (e.g. top-K trips in GeoJSON, paths out of the committed impact.json).
-  - **Finding B — multi-way edits read as "joint":** the bridge is 10 ways in series, so restoring any one way recovers nothing; 348 of 349 trips are `joint` (1 confirmed) and the top culprit has 1 trip. Correct per DESIGN §5.7, but the flagship demo looks like a miss. Option: when no single edit recovers a trip, try restoring all its candidates together and label the set "confirmed (group)".
-  - **Finding C — suite runtime:** one what-if = 604 s incl. one extract + two graph builds. The suite repeats copy + NEW graph + compare ×2 + root cause ~220 times; per-fault cost unmeasured. Profile one fault before Step 12; a 200-fault run may not fit Nov 3.
-  - Minor: report.md header/Map link use `date=261027+what-if` for what-if runs (link is broken there).
+- **Working on:** Step 12's real fault suite (N=200, seed 2027, full check every 10th run). The Claude session that built Step 9c starts it after the n=10 rehearsal passes (~16:15, 2026-10-28) and then records the launch below. Until that "Fault run started" line appears, other sessions must not edit PROGRESS.md.
+- **Done:** design, plan critique, Steps 0–9c committed (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`). Step 9b findings A–C (output size, joint bridge, runtime) are resolved or measured; details under "Step 9b real-data checks" below.
+- **Next up (can run in parallel with the fault suite):**
+  - **Step 10 — CI.** Not blocked. Read PLAN "### Step 10"; write the Codex brief from it.
+  - **Step 11 — Daily job.** Not blocked. Read PLAN "### Step 11". GitHub's runner memory vs the ~7.8–8.5 GB peak of one real impact run is unverified, so check it in Step 11's first dispatch.
+  - **Step 12 — code only.** `metrics.py`, `scripts/bench.sh` and `scripts/check_outputs.py` can be written now.
+  - **Step 13 — README text.** Can be drafted now, with fault numbers left blank.
+  - **While the fault suite runs, do not:** run `make bench` or the four impact runs (they skew both timings; run them after it finishes); edit `faults.py`, `impact.py`, `rootcause.py`, `graph.py`, `extract.py` or `sql/` (a crash-resume would mix code versions); commit `results/faults/261027/` before `scores.json` exists.
+  - **Fault run started (Claude, 2026-10-28 16:09:54):** `nohup caffeinate -i /usr/bin/time -l .venv/bin/route-impact faults --snapshot 261027 --n 200 --seed 2027 --full-check-every 10 > data/fault-run-261027.log 2>&1 &` from code `3200567`. Writes `results/faults/261027/{faults.json,progress.jsonl,scores.json}`. Other sessions may edit PROGRESS.md again.
+    - **Check progress:** `pgrep -fl "route-impact faults"` (running?) and `wc -l results/faults/261027/progress.jsonl` (done at 220). Done when `scores.json` exists and the log ends with `/usr/bin/time` output.
+    - **Expected finish:** about 23:00–00:30. Estimated from the rehearsal (setup 330.3 s; unchecked run ~85 s; a full check adds ~300 s, ×22). Not measured.
+    - **If it died:** rerun the same command without `--fresh`; it resumes from `progress.jsonl`. If the last progress line is truncated, delete that one line first.
+    - **Rehearsal that passed (n=10, scratchpad):** 1889.29 s real, 12461473792 B max RSS; full-checked runs [0, 10], incremental==full 2/2, root cause single 8/8, batch 8/8, impact rate 1/10.
+    - **After it finishes:** record `scores.json` numbers here, commit `results/faults/261027/`, then run `make bench` and the four impact runs (Step 12).
   - **Step 9b real-data checks (Claude, 2026-10-28; outputs in the session scratchpad, not `results/`):**
     - Bay Bridge what-if (10 ways): 667.68 s real, 7794311168 B max RSS; impact.json 374,105 B, impact.geojson 1,942,107 B (25 of 349 trips). Still 348 joint / 1 confirmed: the undeleted Yerba Buena tunnel splits each route into two separate runs. Jared, 2026-10-28: keep both spans. DESIGN §5.7 and the PLAN 9b Verify now note this.
     - `route-impact faults --snapshot 261027 --n 10 --seed 2027`: 4873.03 s real, 12240011264 B max RSS, 11 runs (10 single + 1 batch). Setup: extract 17.9 s, baseline 307.4 s. Per run mean 410.2 s, of which compare_full 73.6%, new_graph 17.9%; apply 0.1–0.3 s; root cause ≤ 5.7 s. Scores: incremental==full 11/11, root cause single 8/8 and batch 8/8 (all 8 trips from one fault), impact rate 1/10.
