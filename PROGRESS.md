@@ -2,11 +2,18 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–2 (Step 2 not yet committed).
-- **Next up:** Step 3 (see PLAN.md). Read to resume: PLAN.md Step 3 only, plus `docs/FIXTURES.md` §3 and §6 if a test needs fixture ids.
-  - **Decided so far:** fixture travel times come from `scripts/fixture_oracle.py` (independent, stdlib only). The motorway and ramps are covered structurally only (no named trip uses them).
+- **Done:** design, plan critique, Steps 0–2, all committed (last commit `e0432b7`).
+- **Next up:** Step 3 — Extract roads, nodes, places (Codex implements, Claude reviews and runs Verify).
+  - **Read to resume (one call):** `sed -n 53,58p PLAN.md; sed -n 118,149p docs/DESIGN.md; sed -n 22,45p docs/FIXTURES.md`
+  - **Then:** write the Codex brief straight from those lines and launch it (no separate design doc needed for Step 3).
+  - **Decided so far / watch in review:**
+    - `expected.json` has no per-way `oneway` values. `tests/test_extract.py` should assert them from FIXTURES.md §3 (way 40 roundabout → 1, way 23 → −1, way 30 → 1, grid streets → 0).
+    - Missing-node-ref test: build a tiny XML in `tmp_path` and convert with `osmium cat`. Don't add a new committed fixture.
+    - Fixture times come from `scripts/fixture_oracle.py` (haversine R = 6,371,008.8 m, mph maxspeeds). Step 4's graph must use the same R to match within 0.05 s.
+    - The motorway and ramps are on no named trip, so they're covered structurally only.
 - **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
-- **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial` installed). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, checksums verified. Run `codex exec` with `< /dev/null`.
+- **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial`). Snapshots 261023–261026 + `norcal-latest` (= 261027) in `data/`, verified; `make download` works.
+- **Codex launch pattern:** `codex exec --sandbox workspace-write "<brief>" < /dev/null > /dev/null 2>&1` run in the background, then one check for a new file in `~/.codex/sessions/<yyyy>/<mm>/<dd>/`. Codex has no network, and its final message isn't captured, so Claude reruns Verify and reads `git diff`.
 - **Blockers:** none
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
