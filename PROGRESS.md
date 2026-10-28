@@ -2,7 +2,7 @@
 
 ## Current state
 - **Working on:** —
-- **Done:** design, plan critique, Steps 0–7 (Step 7 reviewed and approved 2026-10-28; awaiting Jared's commit).
+- **Done:** design, plan critique, Steps 0–7 all committed (Step 7 = `9668a71`, review + pointers = `c7d017c`).
 - **Next up:** Step 8 — Report, GeoJSON, results map (Claude writes the Codex brief from PLAN Step 8).
   - **Read to resume (one call):** `grep -n "### Step 8" PLAN.md` then read that step plus DESIGN §5.8–5.9; `grep -n "^def " src/route_impact/rootcause.py src/route_impact/impact.py; git status --short`
   - **Fold into the Step 8 brief:** `impact.json` now has per-trip `cause` (`confirmed` | `joint` | `unexplained`) and `edits`, plus top-level `culprits` and `candidates`. `before_tags`/`after_tags`/`*_nodes` are a single dict for way edits but a way-id → value map for node edits; the report must handle both.
