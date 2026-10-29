@@ -51,7 +51,7 @@
   "thresholds": {
     "high_local_broken": 10,
     "high_slow_seconds": 300,
-    "high_slowed_share": 0.01,
+    "high_slowed_share": 0.005,
     "slow_seconds": 120,
     "snap_fallback_m": 200
   },
