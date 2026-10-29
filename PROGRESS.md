@@ -1,12 +1,15 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 12 — code reviewed and uncommitted; Jared to commit, then run the bench on the Mac (2026-10-29 ~01:25).
-- **Done:** design, plan critique, Steps 0–11 (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`, 10 = `c72c53c` + `eaf1149`, 11 = `6813151`, verified 2026-10-29). Fault suite committed (`0c73497`). Step 12 code + follow-up written by Codex, reviewed (170 passed, lint clean).
+- **Working on:** Step 13 — README drafted 2026-10-29, waiting on Jared's read-through/approval. Step 12 done (verified 2026-10-29).
+- **Done:** design, plan critique, Steps 0–12. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact runs 23→27 + Verify uncommitted (see log).
 - **Next session, in order:**
-  1. **Step 12 runs (Jared, Mac, nothing else heavy running):** after committing Step 12 code and `git pull` (bot commit `76d814b`), run `make bench SNAPSHOT=261027` and `route-impact impact --old 2610xx --new 2610yy` for 23→24, 24→25, 25→26, 26→27 (26→27 overwrites `results/2026-10-27/` — check its diff). Verify: `python scripts/check_outputs.py results/ --expect-impact 4` and metrics.json has `git_dirty: false`.
-  2. **Step 13.** README with real numbers from `results/` (fault numbers below; daily-run timing in the Step 11 Verify log entry).
-  3. Close test issues #1 and #2 when convenient.
+  1. **Jared commits** the Step 12 results and the Step 13 README (commands in the session's final message; nothing committed by Claude).
+  2. **Step 13 approval:** Jared reads `README.md`; then mark PLAN Step 13 done. Not yet verified: `make setup && make test` from a *fresh clone* (only run in the existing `.venv`: 170 passed).
+  3. **Bug fix step (new, needs a PLAN entry):** `json_safe` rounds every float to 2 dp (`impact.py:290`), so `high_slowed_share` 0.005 is written as 0.01 and small gravity shares as 0.0. Details in the Step 12 Verify log entry.
+  4. Close test issues #1 and #2 (ask Jared first — outward action).
+  5. Resume bullet: draft from README numbers once Jared approves the README.
+- **Bench result (`results/2026-10-27/metrics.json`, commit `0beac5d`, git_dirty false, M3 Max, 36 GB, threads 2, memory_limit 2GB):** wall 448.46 s, pipeline total 438.23 s, peak RSS 9797926912 B. Phases: extract 18.31/18.85, graph 26.33/30.20, prepare 23.88/20.76, route 299.54, diff 0.34, root_cause ~0 (nothing affected), count 5.92 (outside total). 655 MB pbf; 79670984 nodes, 7763376 ways, 85234 relations; 535394 drivable ways; graph 726182 vertices / 1660020 edges; LSCC 716812. LOW, 0 broken, 0 slowed of 5660 trips.
 - **Fault suite result (`results/faults/261027/scores.json`, N=200, seed 2027, full check every 10th run):** incremental==full 22/22; root cause single 355/355 and batch 355/355 trips; joint 0/0; impact rate 19/200 (9.5%, "network redundancy, not accuracy"). 220 runs (200 single + 20 batches of 10). Setup: extract 18.19 s, baseline 309.80 s; mean run 125.96 s single / 125.05 s batch. Log: 29322.42 s real, 13977993216 B max RSS. README caveat: the 355 trips come from only 19 faults, so the trips aren't independent tests; batch and single share the same 355 because the batches regroup the same 200 faults.
 - **Earlier notes (kept for reference):**
   - **Step 10 — CI.** Done 2026-10-29: run 40838310758 green (`132 passed in 49.57s`), badge shows "passing". Commits `c72c53c` + `eaf1149`.
@@ -51,6 +54,30 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-29 — Step 13: README draft
+- **Agent:** Claude (drafted; Jared approves)
+- **Did:** Rewrote `README.md`: what/why (release sign-off), quickstart, how it works, real-snapshot results table (five days), benchmark, US 199 example, fault-suite scores with per-type breakdown and caveats, limitations, layout.
+- **Changed:** `README.md`, `PLAN.md` (Step 13 status), `PROGRESS.md`.
+- **Verify:**
+  - Number trace: script extracted 83 numeric tokens from README and searched `results/**/*.json`, `results/**/*.md`, `config/*.toml`; 26 not found directly, each accounted for: computed from `scores.json` (`seconds.runs` mean compare_full 290.41 / compare_incremental 28.50 over the 22 checked runs; per-fault affected-trip counts 103, 99, 61, 43 → top four = 306; per-type counts 134/105), `ram_bytes` 38654705664 = 36 GiB, cron `0 6 * * *`, 61 places from `trips.csv`, 0.5% = toml 0.005, 9 min 15 s from the Step 11 Verify entry, 16 GB = GitHub runner spec; rest are snapshot ids, list numbers, Python version, "US 199", "~650 MB" (input 654,880,314 B).
+  - US 199: scratchpad script using `extract` + `build_graph` + `segment_costs` on 261026/261027 → `OLD segments on [1566890644, 1566890645]: 2; ways still in NEW: []`, both segments present in NEW at same cost, `changed segments: 0`.
+  - `make test` → `170 passed in 34.50s` (existing `.venv`, not a fresh clone); `make lint` → `All checks passed!`, `37 files already formatted`.
+- **Review:** pending Jared's read-through.
+- **Gotchas:** Dropped the fault suite's total wall time and RSS from the README: they only exist in `data/fault-run-261027.log` (gitignored), not in `results/`. `bad_maxspeed` and `downgrade_class` affected 0 trips out of 28 each — stated in README.
+
+### 2026-10-29 — Step 12 Verify: impact runs 23→27 + output check
+- **Agent:** Claude (ran the impact runs on Jared's Mac; Jared ran the bench earlier)
+- **Did:** The four impact runs had not actually started in the earlier session (no process, no outputs). Ran them in sequence under `caffeinate -i` + `/usr/bin/time -l`, log `data/impact-runs-1029.log`. Then ran the Step 12 output check and diffed the 26→27 rerun against the committed file.
+- **Changed:** new `results/2026-10-2{4,5,6}/` (impact.json, report.md, impact.geojson); `results/2026-10-27/impact.json` (rerun), new `results/2026-10-27/{report.md,impact.geojson}`; `PLAN.md` (Step 12 status).
+- **Verify:**
+  - Runs (all `LOW LOW: no rule fired broken=0 slowed=0`, `exit=0`): 23→24 415.01 s real, 9776594944 B max RSS · 24→25 408.16 s, 9609805824 B · 25→26 410.36 s, 9952739328 B · 26→27 419.91 s, 10008182784 B.
+  - `python scripts/check_outputs.py results/ --expect-impact 4` → `OK` for impact.json 24–28, metrics.json 27, scores.json (n = 200); `Summary: metrics=1 impact=5 scores=1 failures=0`; exit 0.
+  - `git diff results/2026-10-27/impact.json`: only `"candidates": []` and `"culprits": []` added (keys introduced by Step 7 after the Step 6 file was committed). Metrics identical (LOW, 0/0, rerouted 142, changed_segments 29).
+- **Review:** n/a (no code change). Step 12 code was reviewed in the entry below.
+- **Gotchas:**
+  - **Bug found (not fixed — `impact.py` is outside this step):** `json_safe` (`src/route_impact/impact.py:290`) rounds *every* float to 2 decimals. Every impact.json records `high_slowed_share: 0.01` while `config/thresholds.toml` and `load_thresholds` give 0.005, and a real `gravity_share_*` below 0.005 would be written as 0.0. The risk decision is unaffected (it uses unrounded in-memory values); all five committed days have shares of exactly 0.0, so no committed result is wrong. Fix: round only seconds/metres, or keep full precision for shares and thresholds. Needs its own step + a test.
+  - Peak RSS for one impact run on the Mac is ~9.6–10.0 GB (not the ~8 GB noted earlier).
 
 ### 2026-10-29 — Step 11 Verify: GitHub dispatches
 - **Agent:** Claude (Jared dispatched)

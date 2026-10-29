@@ -175,14 +175,14 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Files:** `src/route_impact/metrics.py`, `scripts/bench.sh`, `scripts/check_outputs.py`, `Makefile`, `tests/test_metrics.py`, `tests/test_check_outputs.py`
 - **Do:** `make bench SNAPSHOT=… [OLD=…]` (OLD defaults to the day before SNAPSHOT; route / diff / root cause are timed on the real OLD→SNAPSHOT comparison, since a self-comparison has nothing to diff) records input size, rows per `kind`, drivable ways, graph vertices/edges, LSCC size, seconds per phase (extract / graph / route / diff / root cause / total), peak RSS (`/usr/bin/time -v` on Linux, `-l` on macOS — record which), DuckDB version, threads, memory_limit, CPU, RAM. Then `make faults` on 261027 and `route-impact impact` for 23→24, 24→25, 25→26, 26→27. `scripts/check_outputs.py` validates every output against its required fields.
 - **Verify:** `python scripts/check_outputs.py results/` → every `metrics.json` field present and non-null with the right type; `results/faults/261027/` has all score fields and n = 200 (or the reduced n, stated); four `results/<date>/impact.json` files each carry a risk level and exit code.
-- **Status:** todo
+- **Status:** done 2026-10-29 (bench `533b05b`; four impact runs 23→27 all LOW / exit 0; `check_outputs.py --expect-impact 4` → failures=0; see PROGRESS)
 
 ### Step 13 — README with real numbers (MVP done)
 - **Owner:** Claude drafts, Jared approves
 - **Files:** `README.md`
 - **Do:** What it does and why (release sign-off), quickstart, how it works (segments, trips, snapping, incremental reroute, counterfactual root cause), real results table from `results/`, fault-suite results with what each number means, the US 199 false-alarm example (only if the 26→27 run confirms zero changed segments for it), map link, CI badge, limitations (no turn restrictions/traffic, provisional thresholds, injected ≠ real-world catch rate, reversible roads treated as two-way). Fill the resume bullet from the same files.
 - **Verify:** every number in README `grep`s back to a value in `results/`; a fresh clone runs `make setup && make test` green.
-- **Status:** todo
+- **Status:** drafted 2026-10-29, waiting on Jared's approval (numbers traced; `make test` green in existing venv, fresh clone not yet run)
 
 ### Phase 2 (after Nov 4, optional) — Fault playground
 In-browser Bay Area routing (static, no server): ship a compact Bay Area subgraph, click a road to delete/flip it, recompute routes in JS. Not planned in detail yet.
