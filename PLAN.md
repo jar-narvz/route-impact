@@ -191,7 +191,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Files:** `README.md`
 - **Do:** What it does and why (release sign-off), quickstart, how it works (segments, trips, snapping, incremental reroute, counterfactual root cause), real results table from `results/`, fault-suite results with what each number means, the US 199 false-alarm example (only if the 26→27 run confirms zero changed segments for it), map link, CI badge, limitations (no turn restrictions/traffic, provisional thresholds, injected ≠ real-world catch rate, reversible roads treated as two-way). Fill the resume bullet from the same files.
 - **Verify:** every number in README `grep`s back to a value in `results/`; a fresh clone runs `make setup && make test` green.
-- **Status:** drafted 2026-10-29, waiting on Jared's approval (numbers traced; `make test` green in existing venv, fresh clone not yet run)
+- **Status:** done 2026-10-29 — Jared approved the README; numbers traced; fresh clone 181 passed; CI run 40961646981 green. **MVP done.**
 
 ### Phase 2 (after Nov 4, optional) — Fault playground
 In-browser Bay Area routing (static, no server): ship a compact Bay Area subgraph, click a road to delete/flip it, recompute routes in JS. Not planned in detail yet.
