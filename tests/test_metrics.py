@@ -181,7 +181,7 @@ def test_run(tmp_path: Path, request: pytest.FixtureRequest) -> None:
     assert all(value >= 0 for value in seconds.values())
     # Count is outside the pipeline total and is excluded from this sum.
     assert seconds["total"] + 1e-9 >= sum(seconds[key] for key in pipeline_phases)
-    assert list(data.iterdir()) == sorted(data.glob("*.osm.pbf"))
+    assert sorted(data.iterdir()) == sorted(data.glob("*.osm.pbf"))
     log = tmp_path / "time.log"
     log.write_text("1.25 real\n123 maximum resident set size\n")
     assert main(["add-rss", "--out", str(out), "--log", str(log)]) == 0
