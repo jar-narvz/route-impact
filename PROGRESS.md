@@ -61,6 +61,7 @@ Template — copy above the newest entry:
 - **Changed:** `.github/workflows/ci.yml` (new), `README.md` (badge line).
 - **Verify:** Local only so far (the real Verify needs a push). `ruby -ryaml -e 'YAML.load_file(".github/workflows/ci.yml")'` → parses. `nice -n 19 make lint` → `All checks passed!` / `28 files already formatted`. `nice -n 19 make test` → `132 passed in 34.42s` (run at low priority while the fault suite was at run 213/220). Pending: Actions run green + badge renders after Jared pushes.
 - **Review:** Claude — approved; diff limited to the two named files, no secrets, no data downloads.
+- **First push (run 40838010314, 2026-10-29):** failed at Test, `3 failed, 129 passed`: `test_extract.py` builds PBFs with the `osmium` binary, which the runner lacks. Claude added an apt `osmium-tool` step to `ci.yml`; re-verify on the next push.
 - **Gotchas:** duckdb is unpinned, so the extension cache key uses `pyproject.toml`; a DuckDB version bump just misses the cache (extension dirs are versioned) and `make setup` reinstalls. Codex was told not to run tests while the fault suite ran.
 
 ### 2026-10-28 — Step 9c: sampled full checks and resumable fault suite

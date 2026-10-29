@@ -30,6 +30,8 @@ jobs:
           key: duckdb-ext-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             duckdb-ext-${{ runner.os }}-
+      - name: Install osmium-tool (tests build small PBFs with it)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends osmium-tool
       - name: Install dependencies
         run: pip install -e ".[dev]"
       - name: Install DuckDB spatial extension
