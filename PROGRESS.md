@@ -2,9 +2,9 @@
 
 ## Current state
 - **Working on:** Step 13 — README drafted 2026-10-29, waiting on Jared's read-through/approval. Step 12 done (verified 2026-10-29).
-- **Done:** design, plan critique, Steps 0–12. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact runs 23→27 + Verify uncommitted (see log).
+- **Done:** design, plan critique, Steps 0–12. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact results 23→27, README draft and Step 12 Verify committed 2026-10-29.
 - **Next session, in order:**
-  1. **Jared commits** the Step 12 results and the Step 13 README (commands in the session's final message; nothing committed by Claude).
+  1. ~~Jared commits Step 12 results + README~~ — done 2026-10-29.
   2. **Step 13 approval:** Jared reads `README.md`; then mark PLAN Step 13 done. Not yet verified: `make setup && make test` from a *fresh clone* (only run in the existing `.venv`: 170 passed).
   3. **Bug fix step (new, needs a PLAN entry):** `json_safe` rounds every float to 2 dp (`impact.py:290`), so `high_slowed_share` 0.005 is written as 0.01 and small gravity shares as 0.0. Details in the Step 12 Verify log entry.
   4. ~~Close test issues #1 and #2~~ — closed 2026-10-29 with a comment (Jared approved).
