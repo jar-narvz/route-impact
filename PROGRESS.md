@@ -4,7 +4,7 @@
 - **Working on:** Step 12's real fault suite (N=200, seed 2027, full check every 10th run). The Claude session that built Step 9c starts it after the n=10 rehearsal passes (~16:15, 2026-10-28) and then records the launch below. Until that "Fault run started" line appears, other sessions must not edit PROGRESS.md.
 - **Done:** design, plan critique, Steps 0–9c committed (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`). Step 9b findings A–C (output size, joint bridge, runtime) are resolved or measured; details under "Step 9b real-data checks" below.
 - **Next up (can run in parallel with the fault suite):**
-  - **Step 10 — CI.** Written and reviewed, local lint/test pass (2026-10-29). Waiting on Jared: commit + push, then confirm the Actions run is green and the badge renders. That is Step 10's Verify; mark it done only after that.
+  - **Step 10 — CI.** Done 2026-10-29: run 40838310758 green (`132 passed in 49.57s`), badge shows "passing". Commits `c72c53c` + `eaf1149`.
   - **Step 11 — Daily job.** Written and reviewed, offline checks pass (2026-10-29). Waiting on Jared: commit + push, set Settings → Pages → Source = GitHub Actions, then the three dispatches in PLAN Step 11 Verify (a: 2026-10-28, then 2026-10-27 → "already done"; b: test_high; c: 2099-01-01). In dispatch (a), read the run's duration and confirm it wasn't OOM-killed: GitHub's 16 GB runner vs the ~7.8–8.5 GB peak is still unverified.
   - **Step 12 — code only.** `metrics.py`, `scripts/bench.sh` and `scripts/check_outputs.py` can be written now.
   - **Step 13 — README text.** Can be drafted now, with fault numbers left blank.
@@ -62,6 +62,7 @@ Template — copy above the newest entry:
 - **Verify:** Local only so far (the real Verify needs a push). `ruby -ryaml -e 'YAML.load_file(".github/workflows/ci.yml")'` → parses. `nice -n 19 make lint` → `All checks passed!` / `28 files already formatted`. `nice -n 19 make test` → `132 passed in 34.42s` (run at low priority while the fault suite was at run 213/220). Pending: Actions run green + badge renders after Jared pushes.
 - **Review:** Claude — approved; diff limited to the two named files, no secrets, no data downloads.
 - **First push (run 40838010314, 2026-10-29):** failed at Test, `3 failed, 129 passed`: `test_extract.py` builds PBFs with the `osmium` binary, which the runner lacks. Claude added an apt `osmium-tool` step to `ci.yml`; re-verify on the next push.
+- **Verify (GitHub):** run 40838310758 (`eaf1149`) → green in 1m22s; Lint `All checks passed!`, Test `132 passed in 49.57s`; README badge SVG reads "passing". **Step 10 done.**
 - **Gotchas:** duckdb is unpinned, so the extension cache key uses `pyproject.toml`; a DuckDB version bump just misses the cache (extension dirs are versioned) and `make setup` reinstalls. Codex was told not to run tests while the fault suite ran.
 
 ### 2026-10-28 — Step 9c: sampled full checks and resumable fault suite
