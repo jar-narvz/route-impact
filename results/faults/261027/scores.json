@@ -1,0 +1,6301 @@
+{
+  "full_check_every": 10,
+  "impact_rate": {
+    "correct": 19,
+    "denominator": 200,
+    "description": "Network redundancy, not accuracy",
+    "percent": 9.5
+  },
+  "incremental_equals_full": {
+    "correct": 22,
+    "denominator": 22,
+    "percent": 100.0
+  },
+  "root_cause_batch": {
+    "correct": 355,
+    "denominator": 355,
+    "percent": 100.0
+  },
+  "root_cause_joint": {
+    "correct": 0,
+    "denominator": 0,
+    "percent": null
+  },
+  "root_cause_single": {
+    "correct": 355,
+    "denominator": 355,
+    "percent": 100.0
+  },
+  "runs": [
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 396846215
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00249",
+        "ic-00369",
+        "ic-00429",
+        "ic-00489",
+        "ic-00545",
+        "ic-00547",
+        "ic-00548",
+        "ic-00549"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 909862691
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 530973776
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 517835762
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 4975841386,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 266682601
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 675499012
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 10502992
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31712677
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 431918835
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01603"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 442700809
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 671845924,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 43667733
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 960939029
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 745494999
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 27145834
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 35150388
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 119496329
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 56019378,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 1134224042
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 417895398
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1383745628
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 24204349
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 92357621
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01806"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1119902643
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 62318210,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 8916993
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 416949241
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 16150471
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 1043774170
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 307386049
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1271262292
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 13260413806,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 68833157
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 415460008
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 448434234
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01666"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 38854510
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00118",
+        "ic-00132",
+        "ic-00134",
+        "ic-00144",
+        "ic-00148",
+        "ic-00152",
+        "ic-00160",
+        "ic-00166",
+        "ic-00170",
+        "ic-00177",
+        "ic-00178",
+        "ic-00793",
+        "ic-00794",
+        "ic-00804",
+        "ic-00808",
+        "ic-00812",
+        "ic-00820",
+        "ic-00826",
+        "ic-00830",
+        "ic-00837",
+        "ic-00838",
+        "ic-01393",
+        "ic-01395",
+        "ic-01404",
+        "ic-01408",
+        "ic-01412",
+        "ic-01420",
+        "ic-01426",
+        "ic-01430",
+        "ic-01437",
+        "ic-01438",
+        "ic-01618",
+        "ic-02053",
+        "ic-02055",
+        "ic-02065",
+        "ic-02069",
+        "ic-02073",
+        "ic-02080",
+        "ic-02086",
+        "ic-02090",
+        "ic-02097",
+        "ic-02098",
+        "ic-02233",
+        "ic-02235",
+        "ic-02245",
+        "ic-02249",
+        "ic-02253",
+        "ic-02260",
+        "ic-02266",
+        "ic-02270",
+        "ic-02278",
+        "ic-02713",
+        "ic-02715",
+        "ic-02725",
+        "ic-02729",
+        "ic-02733",
+        "ic-02741",
+        "ic-02746",
+        "ic-02750",
+        "ic-02757",
+        "ic-02758",
+        "ic-03073",
+        "ic-03075",
+        "ic-03089",
+        "ic-03093",
+        "ic-03101",
+        "ic-03107",
+        "ic-03111",
+        "ic-03118",
+        "ic-03133",
+        "ic-03149",
+        "ic-03153",
+        "ic-03161",
+        "ic-03167",
+        "ic-03171",
+        "ic-03178",
+        "ic-03193",
+        "ic-03227",
+        "ic-03238",
+        "ic-03253",
+        "ic-03255",
+        "ic-03265",
+        "ic-03269",
+        "ic-03273",
+        "ic-03281",
+        "ic-03287",
+        "ic-03291",
+        "ic-03298",
+        "ic-03373",
+        "ic-03389",
+        "ic-03393",
+        "ic-03401",
+        "ic-03407",
+        "ic-03411",
+        "ic-03418",
+        "lo-00328",
+        "lo-00337",
+        "lo-00399",
+        "lo-00872"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 744491976
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 183198827
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 369641685,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 30125100
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 546258239
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 366867799
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 1311666355
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 490321800
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1006336182
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 1106992514,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 60725989
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 27628560
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1385723200
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31345457
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 417722989
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 33783051
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 7070552529,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 417316804
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1318324810
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00264",
+        "ic-00297",
+        "ic-00384",
+        "ic-00417",
+        "ic-00444",
+        "ic-00477",
+        "ic-00504",
+        "ic-00537",
+        "ic-00564",
+        "ic-00597",
+        "ic-00624",
+        "ic-00657",
+        "ic-00744",
+        "ic-00777",
+        "ic-00984",
+        "ic-01017",
+        "ic-01284",
+        "ic-01317",
+        "ic-01525",
+        "ic-01557",
+        "ic-01705",
+        "ic-01737",
+        "ic-01765",
+        "ic-01797",
+        "ic-01945",
+        "ic-01977",
+        "ic-02305",
+        "ic-02337",
+        "ic-02425",
+        "ic-02457",
+        "ic-02545",
+        "ic-02577",
+        "ic-02785",
+        "ic-02817",
+        "ic-02845",
+        "ic-02877",
+        "ic-03025",
+        "ic-03057",
+        "ic-03565",
+        "ic-03598",
+        "ic-03625",
+        "ic-03658",
+        "lo-01173"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 48017712
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 39846662
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 47378472
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 8917746
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01974"
+      ],
+      "faults": [
+        {
+          "node_id": 4178828492,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 613951350
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 417085712
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-00055"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 729980062
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 183343417
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 370509367
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1346077717
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 1211585321,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 22719504
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 185568339
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 7875701
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00061",
+        "ic-00071",
+        "ic-00075",
+        "ic-00087",
+        "ic-00095",
+        "ic-00104",
+        "ic-00115",
+        "ic-00121",
+        "ic-00125",
+        "ic-00131",
+        "ic-00135",
+        "ic-00147",
+        "ic-00155",
+        "ic-00164",
+        "ic-00175",
+        "ic-00781",
+        "ic-00786",
+        "ic-00795",
+        "ic-00835",
+        "ic-01201",
+        "ic-01204",
+        "ic-01205",
+        "ic-01206",
+        "ic-01207",
+        "ic-01208",
+        "ic-01209",
+        "ic-01210",
+        "ic-01211",
+        "ic-01212",
+        "ic-01213",
+        "ic-01215",
+        "ic-01216",
+        "ic-01217",
+        "ic-01218",
+        "ic-01219",
+        "ic-01220",
+        "ic-01221",
+        "ic-01224",
+        "ic-01225",
+        "ic-01227",
+        "ic-01228",
+        "ic-01229",
+        "ic-01230",
+        "ic-01231",
+        "ic-01232",
+        "ic-01233",
+        "ic-01235",
+        "ic-01236",
+        "ic-01238",
+        "ic-01239",
+        "ic-01240",
+        "ic-01241",
+        "ic-01242",
+        "ic-01243",
+        "ic-01244",
+        "ic-01246",
+        "ic-01247",
+        "ic-01248",
+        "ic-01249",
+        "ic-01250",
+        "ic-01255",
+        "ic-01257",
+        "ic-01259",
+        "ic-01260",
+        "ic-02041",
+        "ic-02046",
+        "ic-02052",
+        "ic-02056",
+        "ic-02068",
+        "ic-02075",
+        "ic-02084",
+        "ic-02095",
+        "ic-02221",
+        "ic-02275",
+        "ic-02706",
+        "ic-02716",
+        "ic-02755",
+        "ic-03061",
+        "ic-03076",
+        "ic-03115",
+        "ic-03121",
+        "ic-03136",
+        "ic-03175",
+        "ic-03181",
+        "ic-03196",
+        "ic-03235",
+        "ic-03241",
+        "ic-03246",
+        "ic-03256",
+        "ic-03295",
+        "ic-03361",
+        "ic-03376",
+        "ic-03416",
+        "lo-00003",
+        "lo-00033",
+        "lo-00447",
+        "lo-00511",
+        "lo-00631",
+        "lo-01014",
+        "lo-01022",
+        "lo-01190",
+        "lo-01461",
+        "lo-01877"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 583791565
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 536408703
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 10467795
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 4176758057,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 619117732
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 405292592
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 996866082
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00892",
+        "ic-01492",
+        "ic-03117",
+        "ic-03135",
+        "ic-03145",
+        "ic-03176",
+        "ic-03177",
+        "ic-03413",
+        "ic-03472",
+        "ic-03473"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 206231778
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 415861316
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 184867245
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 4168126867,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 366792150
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 588706849
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 208884190
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31764845
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-00217"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 888768763
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 60725986
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 65432999,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 238899346
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 261439906
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1187494797
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 620216065
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 27807297
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 685472297
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 89323651,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 34717011
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 965541109
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00241",
+        "ic-00242",
+        "ic-00243",
+        "ic-00244",
+        "ic-00245",
+        "ic-00246",
+        "ic-00247",
+        "ic-00248",
+        "ic-00250",
+        "ic-00252",
+        "ic-00253",
+        "ic-00254",
+        "ic-00255",
+        "ic-00256",
+        "ic-00257",
+        "ic-00258",
+        "ic-00259",
+        "ic-00260",
+        "ic-00261",
+        "ic-00262",
+        "ic-00263",
+        "ic-00264",
+        "ic-00265",
+        "ic-00266",
+        "ic-00267",
+        "ic-00268",
+        "ic-00269",
+        "ic-00270",
+        "ic-00271",
+        "ic-00272",
+        "ic-00273",
+        "ic-00274",
+        "ic-00275",
+        "ic-00276",
+        "ic-00277",
+        "ic-00278",
+        "ic-00279",
+        "ic-00280",
+        "ic-00281",
+        "ic-00282",
+        "ic-00283",
+        "ic-00284",
+        "ic-00285",
+        "ic-00286",
+        "ic-00287",
+        "ic-00288",
+        "ic-00289",
+        "ic-00290",
+        "ic-00291",
+        "ic-00292",
+        "ic-00293",
+        "ic-00294",
+        "ic-00295",
+        "ic-00296",
+        "ic-00297",
+        "ic-00298",
+        "ic-00299",
+        "ic-00300",
+        "ic-00547",
+        "ic-00548",
+        "ic-00549"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1233755391
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 118632685
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 1206515809
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1356788349
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 5567999532,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 507203881
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 894572039
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 8956069
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 499329491
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 1475005402
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 7700816
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 249069107,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 10746687
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1313719935
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 242632647
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 217151063
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 394442673
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1490267239
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 1103465123,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 376627244
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 418533933
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 186082341
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 22563651
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 937740711
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 10503015
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 313866910,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 162114261
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 279504037
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1455916065
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 1203027636
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 1030330651
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 948129315
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 4939164004,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 1071904172
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 442792442
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 10476650
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 109187427
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 22729996
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 461743452
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 65593612,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 416932648
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 966336790
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 396949695
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 495234289
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 276702518
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1392436204
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-02277",
+        "ic-03117",
+        "ic-03177",
+        "ic-03237",
+        "ic-03417"
+      ],
+      "faults": [
+        {
+          "node_id": 89489275,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 230067122
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 39864882
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 8929513
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 118632648
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 10746504
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 370758591
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 1081556104,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 850746591
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1349064035
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 731598168
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-02277",
+        "ic-03117",
+        "ic-03135",
+        "ic-03145",
+        "ic-03177",
+        "ic-03195",
+        "ic-03205",
+        "ic-03237",
+        "ic-03375",
+        "ic-03385",
+        "ic-03417"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 239089452
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 416175685
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 62150001
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 313115072,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 405292734
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1445309699
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 24620194
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 772766540
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 499231842
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-00036",
+        "lo-00102"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 765837084
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01785"
+      ],
+      "faults": [
+        {
+          "node_id": 685134970,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 999484121
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 162871078
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 269867401
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01516"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31985919
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 24164433
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01348"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 26662560
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 5055985107,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 721044169
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 10296470
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 398435536
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 28665690
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 31799131
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00545",
+        "ic-00547",
+        "ic-00548",
+        "ic-00549"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1313712001
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 65284851,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 1079155556
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 737911630
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 345656510
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 157781963
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 705431519
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 28317884
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 65327522,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 536511988
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1078411618
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 665130866
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 956216297
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 54601351
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 28714481
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 57787851,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 726194010
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 415456107
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 415861328
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 532642889
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 442864121
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1553285194
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": true
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00249",
+        "ic-00369",
+        "ic-00429",
+        "ic-00489",
+        "ic-00545",
+        "ic-00547",
+        "ic-00548",
+        "ic-00549"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 396846215
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 909862691
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 530973776
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 517835762
+        },
+        {
+          "node_id": 4975841386,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 266682601
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 675499012
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 10502992
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31712677
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 431918835
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01603"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 442700809
+        },
+        {
+          "node_id": 671845924,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 43667733
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 960939029
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 745494999
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 27145834
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 35150388
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 119496329
+        },
+        {
+          "node_id": 56019378,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 1134224042
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "lo-01806"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 417895398
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1383745628
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 24204349
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 92357621
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1119902643
+        },
+        {
+          "node_id": 62318210,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 8916993
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 416949241
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 16150471
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 1043774170
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00118",
+        "ic-00132",
+        "ic-00134",
+        "ic-00144",
+        "ic-00148",
+        "ic-00152",
+        "ic-00160",
+        "ic-00166",
+        "ic-00170",
+        "ic-00177",
+        "ic-00178",
+        "ic-00793",
+        "ic-00794",
+        "ic-00804",
+        "ic-00808",
+        "ic-00812",
+        "ic-00820",
+        "ic-00826",
+        "ic-00830",
+        "ic-00837",
+        "ic-00838",
+        "ic-01393",
+        "ic-01395",
+        "ic-01404",
+        "ic-01408",
+        "ic-01412",
+        "ic-01420",
+        "ic-01426",
+        "ic-01430",
+        "ic-01437",
+        "ic-01438",
+        "ic-01618",
+        "ic-02053",
+        "ic-02055",
+        "ic-02065",
+        "ic-02069",
+        "ic-02073",
+        "ic-02080",
+        "ic-02086",
+        "ic-02090",
+        "ic-02097",
+        "ic-02098",
+        "ic-02233",
+        "ic-02235",
+        "ic-02245",
+        "ic-02249",
+        "ic-02253",
+        "ic-02260",
+        "ic-02266",
+        "ic-02270",
+        "ic-02278",
+        "ic-02713",
+        "ic-02715",
+        "ic-02725",
+        "ic-02729",
+        "ic-02733",
+        "ic-02741",
+        "ic-02746",
+        "ic-02750",
+        "ic-02757",
+        "ic-02758",
+        "ic-03073",
+        "ic-03075",
+        "ic-03089",
+        "ic-03093",
+        "ic-03101",
+        "ic-03107",
+        "ic-03111",
+        "ic-03118",
+        "ic-03133",
+        "ic-03149",
+        "ic-03153",
+        "ic-03161",
+        "ic-03167",
+        "ic-03171",
+        "ic-03178",
+        "ic-03193",
+        "ic-03227",
+        "ic-03238",
+        "ic-03253",
+        "ic-03255",
+        "ic-03265",
+        "ic-03269",
+        "ic-03273",
+        "ic-03281",
+        "ic-03287",
+        "ic-03291",
+        "ic-03298",
+        "ic-03373",
+        "ic-03389",
+        "ic-03393",
+        "ic-03401",
+        "ic-03407",
+        "ic-03411",
+        "ic-03418",
+        "lo-00328",
+        "lo-00337",
+        "lo-00399",
+        "lo-00872",
+        "lo-01666"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 307386049
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1271262292
+        },
+        {
+          "node_id": 13260413806,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 68833157
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 415460008
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 448434234
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 38854510
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 744491976
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 183198827
+        },
+        {
+          "node_id": 369641685,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 30125100
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 546258239
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 366867799
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 1311666355
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 490321800
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1006336182
+        },
+        {
+          "node_id": 1106992514,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 60725989
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 27628560
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1385723200
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00264",
+        "ic-00297",
+        "ic-00384",
+        "ic-00417",
+        "ic-00444",
+        "ic-00477",
+        "ic-00504",
+        "ic-00537",
+        "ic-00564",
+        "ic-00597",
+        "ic-00624",
+        "ic-00657",
+        "ic-00744",
+        "ic-00777",
+        "ic-00984",
+        "ic-01017",
+        "ic-01284",
+        "ic-01317",
+        "ic-01525",
+        "ic-01557",
+        "ic-01705",
+        "ic-01737",
+        "ic-01765",
+        "ic-01797",
+        "ic-01945",
+        "ic-01977",
+        "ic-02305",
+        "ic-02337",
+        "ic-02425",
+        "ic-02457",
+        "ic-02545",
+        "ic-02577",
+        "ic-02785",
+        "ic-02817",
+        "ic-02845",
+        "ic-02877",
+        "ic-03025",
+        "ic-03057",
+        "ic-03565",
+        "ic-03598",
+        "ic-03625",
+        "ic-03658",
+        "lo-01173"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31345457
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 417722989
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 33783051
+        },
+        {
+          "node_id": 7070552529,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 417316804
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1318324810
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 48017712
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 39846662
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 47378472
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 8917746
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "lo-00055",
+        "lo-01974"
+      ],
+      "faults": [
+        {
+          "node_id": 4178828492,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 613951350
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 417085712
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 729980062
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 183343417
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 370509367
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1346077717
+        },
+        {
+          "node_id": 1211585321,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 22719504
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 185568339
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00061",
+        "ic-00071",
+        "ic-00075",
+        "ic-00087",
+        "ic-00095",
+        "ic-00104",
+        "ic-00115",
+        "ic-00121",
+        "ic-00125",
+        "ic-00131",
+        "ic-00135",
+        "ic-00147",
+        "ic-00155",
+        "ic-00164",
+        "ic-00175",
+        "ic-00781",
+        "ic-00786",
+        "ic-00795",
+        "ic-00835",
+        "ic-00892",
+        "ic-01201",
+        "ic-01204",
+        "ic-01205",
+        "ic-01206",
+        "ic-01207",
+        "ic-01208",
+        "ic-01209",
+        "ic-01210",
+        "ic-01211",
+        "ic-01212",
+        "ic-01213",
+        "ic-01215",
+        "ic-01216",
+        "ic-01217",
+        "ic-01218",
+        "ic-01219",
+        "ic-01220",
+        "ic-01221",
+        "ic-01224",
+        "ic-01225",
+        "ic-01227",
+        "ic-01228",
+        "ic-01229",
+        "ic-01230",
+        "ic-01231",
+        "ic-01232",
+        "ic-01233",
+        "ic-01235",
+        "ic-01236",
+        "ic-01238",
+        "ic-01239",
+        "ic-01240",
+        "ic-01241",
+        "ic-01242",
+        "ic-01243",
+        "ic-01244",
+        "ic-01246",
+        "ic-01247",
+        "ic-01248",
+        "ic-01249",
+        "ic-01250",
+        "ic-01255",
+        "ic-01257",
+        "ic-01259",
+        "ic-01260",
+        "ic-01492",
+        "ic-02041",
+        "ic-02046",
+        "ic-02052",
+        "ic-02056",
+        "ic-02068",
+        "ic-02075",
+        "ic-02084",
+        "ic-02095",
+        "ic-02221",
+        "ic-02275",
+        "ic-02706",
+        "ic-02716",
+        "ic-02755",
+        "ic-03061",
+        "ic-03076",
+        "ic-03115",
+        "ic-03117",
+        "ic-03121",
+        "ic-03135",
+        "ic-03136",
+        "ic-03145",
+        "ic-03175",
+        "ic-03176",
+        "ic-03177",
+        "ic-03181",
+        "ic-03196",
+        "ic-03235",
+        "ic-03241",
+        "ic-03246",
+        "ic-03256",
+        "ic-03295",
+        "ic-03361",
+        "ic-03376",
+        "ic-03413",
+        "ic-03416",
+        "ic-03472",
+        "ic-03473",
+        "lo-00003",
+        "lo-00033",
+        "lo-00447",
+        "lo-00511",
+        "lo-00631",
+        "lo-01014",
+        "lo-01022",
+        "lo-01190",
+        "lo-01461",
+        "lo-01877"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 7875701
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 583791565
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 536408703
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 10467795
+        },
+        {
+          "node_id": 4176758057,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 619117732
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 405292592
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 996866082
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 206231778
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 415861316
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "lo-00217"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 184867245
+        },
+        {
+          "node_id": 4168126867,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 366792150
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 588706849
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 208884190
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31764845
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 888768763
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 60725986
+        },
+        {
+          "node_id": 65432999,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 238899346
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00241",
+        "ic-00242",
+        "ic-00243",
+        "ic-00244",
+        "ic-00245",
+        "ic-00246",
+        "ic-00247",
+        "ic-00248",
+        "ic-00250",
+        "ic-00252",
+        "ic-00253",
+        "ic-00254",
+        "ic-00255",
+        "ic-00256",
+        "ic-00257",
+        "ic-00258",
+        "ic-00259",
+        "ic-00260",
+        "ic-00261",
+        "ic-00262",
+        "ic-00263",
+        "ic-00264",
+        "ic-00265",
+        "ic-00266",
+        "ic-00267",
+        "ic-00268",
+        "ic-00269",
+        "ic-00270",
+        "ic-00271",
+        "ic-00272",
+        "ic-00273",
+        "ic-00274",
+        "ic-00275",
+        "ic-00276",
+        "ic-00277",
+        "ic-00278",
+        "ic-00279",
+        "ic-00280",
+        "ic-00281",
+        "ic-00282",
+        "ic-00283",
+        "ic-00284",
+        "ic-00285",
+        "ic-00286",
+        "ic-00287",
+        "ic-00288",
+        "ic-00289",
+        "ic-00290",
+        "ic-00291",
+        "ic-00292",
+        "ic-00293",
+        "ic-00294",
+        "ic-00295",
+        "ic-00296",
+        "ic-00297",
+        "ic-00298",
+        "ic-00299",
+        "ic-00300",
+        "ic-00547",
+        "ic-00548",
+        "ic-00549"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 261439906
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1187494797
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 620216065
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 27807297
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 685472297
+        },
+        {
+          "node_id": 89323651,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 34717011
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 965541109
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1233755391
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 118632685
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 1206515809
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1356788349
+        },
+        {
+          "node_id": 5567999532,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 507203881
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 894572039
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 8956069
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 499329491
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 1475005402
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 7700816
+        },
+        {
+          "node_id": 249069107,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": true,
+      "incremental_equals_full": true,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 10746687
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1313719935
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 242632647
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 217151063
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 394442673
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1490267239
+        },
+        {
+          "node_id": 1103465123,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 376627244
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 418533933
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 186082341
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 22563651
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 937740711
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 10503015
+        },
+        {
+          "node_id": 313866910,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 162114261
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 279504037
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 1455916065
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 1203027636
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 1030330651
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 948129315
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": 4939164004,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 1071904172
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 442792442
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 10476650
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 109187427
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 22729996
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 461743452
+        },
+        {
+          "node_id": 65593612,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 416932648
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 966336790
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "ic-02277",
+        "ic-03117",
+        "ic-03177",
+        "ic-03237",
+        "ic-03417"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 396949695
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 495234289
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 276702518
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1392436204
+        },
+        {
+          "node_id": 89489275,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 230067122
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 39864882
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 8929513
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 118632648
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 10746504
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "ic-02277",
+        "ic-03117",
+        "ic-03135",
+        "ic-03145",
+        "ic-03177",
+        "ic-03195",
+        "ic-03205",
+        "ic-03237",
+        "ic-03375",
+        "ic-03385",
+        "ic-03417"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 370758591
+        },
+        {
+          "node_id": 1081556104,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 850746591
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1349064035
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 731598168
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 239089452
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 416175685
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 62150001
+        },
+        {
+          "node_id": 313115072,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 405292734
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "lo-00036",
+        "lo-00102",
+        "lo-01516",
+        "lo-01785"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1445309699
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 24620194
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 772766540
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 499231842
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 765837084
+        },
+        {
+          "node_id": 685134970,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 999484121
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 162871078
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 269867401
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 31985919
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [
+        "ic-00545",
+        "ic-00547",
+        "ic-00548",
+        "ic-00549",
+        "lo-01348"
+      ],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 24164433
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 26662560
+        },
+        {
+          "node_id": 5055985107,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 721044169
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 10296470
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 398435536
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 28665690
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 31799131
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1313712001
+        },
+        {
+          "node_id": 65284851,
+          "type": "disconnect_node",
+          "way_id": null
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 1079155556
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 737911630
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 345656510
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 157781963
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 705431519
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 28317884
+        },
+        {
+          "node_id": 65327522,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 536511988
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 1078411618
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 665130866
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    },
+    {
+      "affected_trip_ids": [],
+      "faults": [
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 956216297
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 54601351
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 28714481
+        },
+        {
+          "node_id": 57787851,
+          "type": "disconnect_node",
+          "way_id": null
+        },
+        {
+          "node_id": null,
+          "type": "bad_maxspeed",
+          "way_id": 726194010
+        },
+        {
+          "node_id": null,
+          "type": "downgrade_class",
+          "way_id": 415456107
+        },
+        {
+          "node_id": null,
+          "type": "delete_way",
+          "way_id": 415861328
+        },
+        {
+          "node_id": null,
+          "type": "delete_bridge",
+          "way_id": 532642889
+        },
+        {
+          "node_id": null,
+          "type": "flip_oneway",
+          "way_id": 442864121
+        },
+        {
+          "node_id": null,
+          "type": "add_oneway",
+          "way_id": 1553285194
+        }
+      ],
+      "full_checked": false,
+      "incremental_equals_full": null,
+      "single": false
+    }
+  ],
+  "seconds": {
+    "baseline": 309.79905245802365,
+    "extract": 18.192327791824937,
+    "mean_batch": 125.05416419997346,
+    "mean_single": 125.95992096789182,
+    "runs": [
+      {
+        "apply": 0.11722287489101291,
+        "compare_full": 277.6208831658587,
+        "compare_incremental": 23.508446249878034,
+        "new_graph": 57.23366108397022,
+        "root_cause": 6.166053935885429e-06,
+        "total": 359.17440116684884
+      },
+      {
+        "apply": 0.10428412491455674,
+        "compare_full": 0.0,
+        "compare_incremental": 27.22692666691728,
+        "new_graph": 51.985322249820456,
+        "root_cause": 4.933438708074391,
+        "total": 84.28693083394319
+      },
+      {
+        "apply": 0.1214961251243949,
+        "compare_full": 0.0,
+        "compare_incremental": 26.601856959052384,
+        "new_graph": 53.55522037507035,
+        "root_cause": 7.2910916060209274e-06,
+        "total": 80.28676658403128
+      },
+      {
+        "apply": 0.11795520898886025,
+        "compare_full": 0.0,
+        "compare_incremental": 15.76637504203245,
+        "new_graph": 60.33254966698587,
+        "root_cause": 2.8125010430812836e-05,
+        "total": 76.22355625010096
+      },
+      {
+        "apply": 0.1422156251501292,
+        "compare_full": 0.0,
+        "compare_incremental": 18.38667858298868,
+        "new_graph": 68.06417554197833,
+        "root_cause": 4.233303479850292e-05,
+        "total": 86.60058587510139
+      },
+      {
+        "apply": 0.10914608300663531,
+        "compare_full": 0.0,
+        "compare_incremental": 19.17643320816569,
+        "new_graph": 80.84606870799325,
+        "root_cause": 2.6124995201826096e-05,
+        "total": 100.13862695801072
+      },
+      {
+        "apply": 0.10973862488754094,
+        "compare_full": 0.0,
+        "compare_incremental": 26.22316329111345,
+        "new_graph": 57.94089754181914,
+        "root_cause": 5.291076377034187e-06,
+        "total": 84.27891058288515
+      },
+      {
+        "apply": 0.08824354107491672,
+        "compare_full": 0.0,
+        "compare_incremental": 25.8064862920437,
+        "new_graph": 60.229473708895966,
+        "root_cause": 1.3042008504271507e-05,
+        "total": 86.13031541602686
+      },
+      {
+        "apply": 0.10776070784777403,
+        "compare_full": 0.0,
+        "compare_incremental": 29.902365082874894,
+        "new_graph": 54.633597834035754,
+        "root_cause": 2.1249987185001373e-05,
+        "total": 84.6492687498685
+      },
+      {
+        "apply": 0.1071648329962045,
+        "compare_full": 0.0,
+        "compare_incremental": 26.858739707851782,
+        "new_graph": 55.21245929202996,
+        "root_cause": 7.2498805820941925e-06,
+        "total": 82.18453050008975
+      },
+      {
+        "apply": 0.09683745796792209,
+        "compare_full": 276.9609387079254,
+        "compare_incremental": 13.558973375009373,
+        "new_graph": 66.28095408389345,
+        "root_cause": 4.471316541079432,
+        "total": 362.6107206658926
+      },
+      {
+        "apply": 0.1718452088534832,
+        "compare_full": 0.0,
+        "compare_incremental": 17.104583082953468,
+        "new_graph": 68.90521379210986,
+        "root_cause": 3.8082944229245186e-05,
+        "total": 86.19055666704662
+      },
+      {
+        "apply": 0.10352550004608929,
+        "compare_full": 0.0,
+        "compare_incremental": 18.10354124987498,
+        "new_graph": 72.6437150419224,
+        "root_cause": 1.6750069335103035e-05,
+        "total": 90.85749716707505
+      },
+      {
+        "apply": 0.11387233296409249,
+        "compare_full": 0.0,
+        "compare_incremental": 18.743996166158468,
+        "new_graph": 73.76574504189193,
+        "root_cause": 2.787495031952858e-05,
+        "total": 92.63084716605954
+      },
+      {
+        "apply": 0.11290433304384351,
+        "compare_full": 0.0,
+        "compare_incremental": 19.824655167059973,
+        "new_graph": 77.2207919168286,
+        "root_cause": 5.2167102694511414e-05,
+        "total": 97.16677412507124
+      },
+      {
+        "apply": 0.10863637505099177,
+        "compare_full": 0.0,
+        "compare_incremental": 18.18524554092437,
+        "new_graph": 77.19265950005502,
+        "root_cause": 3.800005652010441e-05,
+        "total": 95.49397704098374
+      },
+      {
+        "apply": 0.11379433306865394,
+        "compare_full": 0.0,
+        "compare_incremental": 20.69814100000076,
+        "new_graph": 74.13119929190725,
+        "root_cause": 5.7666096836328506e-05,
+        "total": 94.95075166714378
+      },
+      {
+        "apply": 0.13554220786318183,
+        "compare_full": 0.0,
+        "compare_incremental": 17.421638916013762,
+        "new_graph": 72.26415487495251,
+        "root_cause": 5.749985575675964e-06,
+        "total": 89.8279915410094
+      },
+      {
+        "apply": 0.14830966596491635,
+        "compare_full": 0.0,
+        "compare_incremental": 17.38349770894274,
+        "new_graph": 73.59993154113181,
+        "root_cause": 8.958159014582634e-06,
+        "total": 91.13822999992408
+      },
+      {
+        "apply": 0.11469437507912517,
+        "compare_full": 0.0,
+        "compare_incremental": 17.186860791873187,
+        "new_graph": 71.98674562503584,
+        "root_cause": 1.2625008821487427e-05,
+        "total": 89.29483391717076
+      },
+      {
+        "apply": 0.11503862496465445,
+        "compare_full": 294.3685411659535,
+        "compare_incremental": 19.193263165885583,
+        "new_graph": 86.09087083279155,
+        "root_cause": 1.950003206729889e-05,
+        "total": 401.53555549983867
+      },
+      {
+        "apply": 0.1717663339804858,
+        "compare_full": 0.0,
+        "compare_incremental": 34.268391750054434,
+        "new_graph": 63.517443333985284,
+        "root_cause": 4.0416838601231575e-05,
+        "total": 97.96718199993484
+      },
+      {
+        "apply": 0.13215095782652497,
+        "compare_full": 0.0,
+        "compare_incremental": 30.95856058294885,
+        "new_graph": 63.83953449991532,
+        "root_cause": 9.082956239581108e-06,
+        "total": 94.93696062499657
+      },
+      {
+        "apply": 0.1195996250025928,
+        "compare_full": 0.0,
+        "compare_incremental": 19.230457958066836,
+        "new_graph": 67.26423433306627,
+        "root_cause": 1.9167084246873856e-05,
+        "total": 86.62076941691339
+      },
+      {
+        "apply": 0.11592454090714455,
+        "compare_full": 0.0,
+        "compare_incremental": 20.386954500107095,
+        "new_graph": 76.79025183292106,
+        "root_cause": 4.632416583131999,
+        "total": 101.9399697498884
+      },
+      {
+        "apply": 0.2588066658936441,
+        "compare_full": 0.0,
+        "compare_incremental": 19.485405333107337,
+        "new_graph": 79.33315800013952,
+        "root_cause": 2.654106356203556e-05,
+        "total": 99.08804341591895
+      },
+      {
+        "apply": 0.11471279198303819,
+        "compare_full": 0.0,
+        "compare_incremental": 31.14779454190284,
+        "new_graph": 62.91449112514965,
+        "root_cause": 1.4042016118764877e-05,
+        "total": 94.18494620802812
+      },
+      {
+        "apply": 0.10835008299909532,
+        "compare_full": 0.0,
+        "compare_incremental": 32.659305416978896,
+        "new_graph": 65.64830937492661,
+        "root_cause": 8.415896445512772e-06,
+        "total": 98.42252645804547
+      },
+      {
+        "apply": 0.10415133298374712,
+        "compare_full": 0.0,
+        "compare_incremental": 41.09513425012119,
+        "new_graph": 63.27826129202731,
+        "root_cause": 2.6582973077893257e-05,
+        "total": 104.48524162499234
+      },
+      {
+        "apply": 0.10601316718384624,
+        "compare_full": 0.0,
+        "compare_incremental": 44.14615850010887,
+        "new_graph": 64.70846195914783,
+        "root_cause": 4.0584011003375053e-05,
+        "total": 108.96884825010784
+      },
+      {
+        "apply": 0.11831191601231694,
+        "compare_full": 284.58105241693556,
+        "compare_incremental": 26.16123191593215,
+        "new_graph": 60.2796414589975,
+        "root_cause": 1.2249918654561043e-05,
+        "total": 372.8783469579648
+      },
+      {
+        "apply": 0.12696862500160933,
+        "compare_full": 0.0,
+        "compare_incremental": 30.295002459082752,
+        "new_graph": 63.65869874996133,
+        "root_cause": 8.792150765657425e-06,
+        "total": 94.08686916716397
+      },
+      {
+        "apply": 0.12558095785789192,
+        "compare_full": 0.0,
+        "compare_incremental": 17.800625041825697,
+        "new_graph": 63.66735849995166,
+        "root_cause": 4.758313298225403e-05,
+        "total": 81.60484420787543
+      },
+      {
+        "apply": 0.10766779212281108,
+        "compare_full": 0.0,
+        "compare_incremental": 20.238258249824867,
+        "new_graph": 69.6029714581091,
+        "root_cause": 4.866695962846279e-05,
+        "total": 89.95566820795648
+      },
+      {
+        "apply": 0.09918812499381602,
+        "compare_full": 0.0,
+        "compare_incremental": 17.805005374830216,
+        "new_graph": 77.36567329103127,
+        "root_cause": 2.4833017960190773e-05,
+        "total": 95.27653004112653
+      },
+      {
+        "apply": 0.1089045419357717,
+        "compare_full": 0.0,
+        "compare_incremental": 19.325043459190056,
+        "new_graph": 76.73107962496579,
+        "root_cause": 3.891694359481335e-05,
+        "total": 96.17257379204966
+      },
+      {
+        "apply": 0.11090750014409423,
+        "compare_full": 0.0,
+        "compare_incremental": 34.55784120806493,
+        "new_graph": 61.87334308284335,
+        "root_cause": 4.12782391696237,
+        "total": 100.67968025011942
+      },
+      {
+        "apply": 0.12405308405868709,
+        "compare_full": 0.0,
+        "compare_incremental": 35.93150983285159,
+        "new_graph": 65.38038104190491,
+        "root_cause": 14.801130915991962,
+        "total": 116.57417650008574
+      },
+      {
+        "apply": 0.11813445901498199,
+        "compare_full": 0.0,
+        "compare_incremental": 36.77917500003241,
+        "new_graph": 68.35949879093096,
+        "root_cause": 8.33394005894661e-06,
+        "total": 105.29689933406189
+      },
+      {
+        "apply": 0.14064512494951487,
+        "compare_full": 0.0,
+        "compare_incremental": 30.81267441692762,
+        "new_graph": 62.519061082974076,
+        "root_cause": 9.416835382580757e-06,
+        "total": 93.47957533295266
+      },
+      {
+        "apply": 0.11159829190000892,
+        "compare_full": 292.5504353749566,
+        "compare_incremental": 35.468949791044,
+        "new_graph": 64.54258479201235,
+        "root_cause": 2.8207898139953613e-05,
+        "total": 394.65321645792574
+      },
+      {
+        "apply": 0.14228337514214218,
+        "compare_full": 0.0,
+        "compare_incremental": 36.2222088330891,
+        "new_graph": 71.42896954203025,
+        "root_cause": 6.0208141803741455e-05,
+        "total": 107.80456141615286
+      },
+      {
+        "apply": 0.1073799158912152,
+        "compare_full": 0.0,
+        "compare_incremental": 33.834557624999434,
+        "new_graph": 61.28982041706331,
+        "root_cause": 6.582820788025856e-06,
+        "total": 95.23920212499797
+      },
+      {
+        "apply": 0.1061995830386877,
+        "compare_full": 0.0,
+        "compare_incremental": 33.45342841697857,
+        "new_graph": 69.61768120806664,
+        "root_cause": 6.1248429119586945e-06,
+        "total": 103.18407662492245
+      },
+      {
+        "apply": 0.11455208412371576,
+        "compare_full": 0.0,
+        "compare_incremental": 38.61801395798102,
+        "new_graph": 73.79913454200141,
+        "root_cause": 1.6709091141819954e-05,
+        "total": 112.53821699996479
+      },
+      {
+        "apply": 0.11036358308047056,
+        "compare_full": 0.0,
+        "compare_incremental": 33.03221233305521,
+        "new_graph": 69.39721008297056,
+        "root_cause": 2.8749927878379822e-05,
+        "total": 102.54677804093808
+      },
+      {
+        "apply": 0.25867624999955297,
+        "compare_full": 0.0,
+        "compare_incremental": 32.38656395790167,
+        "new_graph": 64.66629558382556,
+        "root_cause": 4.082918167114258e-06,
+        "total": 97.31816362496465
+      },
+      {
+        "apply": 0.11626720800995827,
+        "compare_full": 0.0,
+        "compare_incremental": 20.387409042101353,
+        "new_graph": 70.03118483303115,
+        "root_cause": 4.6833883970975876e-05,
+        "total": 90.54236770793796
+      },
+      {
+        "apply": 0.12688416708260775,
+        "compare_full": 0.0,
+        "compare_incremental": 19.94621479092166,
+        "new_graph": 91.39061333308928,
+        "root_cause": 5.020899698138237e-05,
+        "total": 111.470629083924
+      },
+      {
+        "apply": 0.11364720785059035,
+        "compare_full": 0.0,
+        "compare_incremental": 32.23614912503399,
+        "new_graph": 64.46339770895429,
+        "root_cause": 1.3707904145121574e-05,
+        "total": 96.82024583290331
+      },
+      {
+        "apply": 0.10678412509150803,
+        "compare_full": 299.2799771251157,
+        "compare_incremental": 38.0589997919742,
+        "new_graph": 70.3679084579926,
+        "root_cause": 3.8833124563097954e-05,
+        "total": 409.3815265831072
+      },
+      {
+        "apply": 0.13807670818641782,
+        "compare_full": 0.0,
+        "compare_incremental": 32.96746854088269,
+        "new_graph": 64.27645129105076,
+        "root_cause": 2.5791814550757408e-05,
+        "total": 97.38996495818719
+      },
+      {
+        "apply": 0.11364833288826048,
+        "compare_full": 0.0,
+        "compare_incremental": 33.723074707901105,
+        "new_graph": 64.93211620789953,
+        "root_cause": 1.1542113497853279e-05,
+        "total": 98.77596262493171
+      },
+      {
+        "apply": 0.1424488329794258,
+        "compare_full": 0.0,
+        "compare_incremental": 20.844570082845166,
+        "new_graph": 69.8812964160461,
+        "root_cause": 3.937492147088051e-05,
+        "total": 90.87525787483901
+      },
+      {
+        "apply": 0.12278045807033777,
+        "compare_full": 0.0,
+        "compare_incremental": 20.185219333972782,
+        "new_graph": 86.7123518330045,
+        "root_cause": 3.7499936297535896e-05,
+        "total": 107.02757766610011
+      },
+      {
+        "apply": 0.11022899998351932,
+        "compare_full": 0.0,
+        "compare_incremental": 25.819500624900684,
+        "new_graph": 88.37930891686119,
+        "root_cause": 2.3958971723914146e-05,
+        "total": 114.3171080830507
+      },
+      {
+        "apply": 0.1028770417906344,
+        "compare_full": 0.0,
+        "compare_incremental": 39.740355959162116,
+        "new_graph": 65.4108062919695,
+        "root_cause": 9.74601508397609,
+        "total": 115.14981791679747
+      },
+      {
+        "apply": 0.13532470888458192,
+        "compare_full": 0.0,
+        "compare_incremental": 33.63837408297695,
+        "new_graph": 69.70419425005093,
+        "root_cause": 2.108304761350155e-05,
+        "total": 103.4994892089162
+      },
+      {
+        "apply": 0.10940958303399384,
+        "compare_full": 0.0,
+        "compare_incremental": 35.75580804096535,
+        "new_graph": 66.67057475005277,
+        "root_cause": 1.5999889001250267e-05,
+        "total": 102.54306537518278
+      },
+      {
+        "apply": 0.12494145799428225,
+        "compare_full": 0.0,
+        "compare_incremental": 33.63383266609162,
+        "new_graph": 63.87808708404191,
+        "root_cause": 8.458038792014122e-06,
+        "total": 97.64427783316933
+      },
+      {
+        "apply": 0.1479006668087095,
+        "compare_full": 306.85268362495117,
+        "compare_incremental": 21.492559207836166,
+        "new_graph": 67.17781275021844,
+        "root_cause": 5.392663958016783,
+        "total": 402.22328887484036
+      },
+      {
+        "apply": 0.13382650003768504,
+        "compare_full": 0.0,
+        "compare_incremental": 20.11887229187414,
+        "new_graph": 60.95009991689585,
+        "root_cause": 2.650008536875248e-05,
+        "total": 81.21068683289923
+      },
+      {
+        "apply": 0.14547520806081593,
+        "compare_full": 0.0,
+        "compare_incremental": 18.129112833878025,
+        "new_graph": 80.31446162494831,
+        "root_cause": 7.082941010594368e-06,
+        "total": 98.59621770796366
+      },
+      {
+        "apply": 0.10272583388723433,
+        "compare_full": 0.0,
+        "compare_incremental": 39.46338408300653,
+        "new_graph": 66.58794479211792,
+        "root_cause": 4.382242708001286,
+        "total": 110.54456049995497
+      },
+      {
+        "apply": 0.14629924995824695,
+        "compare_full": 0.0,
+        "compare_incremental": 33.317552000051364,
+        "new_graph": 67.26857312512584,
+        "root_cause": 6.417045369744301e-06,
+        "total": 100.7410128749907
+      },
+      {
+        "apply": 0.1369135829154402,
+        "compare_full": 0.0,
+        "compare_incremental": 34.136170875048265,
+        "new_graph": 61.147131375037134,
+        "root_cause": 1.1458992958068848e-05,
+        "total": 95.42745033279061
+      },
+      {
+        "apply": 0.11611300008371472,
+        "compare_full": 0.0,
+        "compare_incremental": 35.196088333847,
+        "new_graph": 62.07468349998817,
+        "root_cause": 2.041715197265148e-05,
+        "total": 97.39477233402431
+      },
+      {
+        "apply": 0.14421191602014005,
+        "compare_full": 0.0,
+        "compare_incremental": 32.902859166963026,
+        "new_graph": 62.510148082859814,
+        "root_cause": 1.812516711652279e-05,
+        "total": 95.56417379109189
+      },
+      {
+        "apply": 0.11835175007581711,
+        "compare_full": 0.0,
+        "compare_incremental": 38.34915820788592,
+        "new_graph": 63.976348208030686,
+        "root_cause": 3.762519918382168e-05,
+        "total": 102.45169704197906
+      },
+      {
+        "apply": 0.12301529198884964,
+        "compare_full": 0.0,
+        "compare_incremental": 34.33934616600163,
+        "new_graph": 64.36185766709968,
+        "root_cause": 1.8209218978881836e-05,
+        "total": 98.8311680839397
+      },
+      {
+        "apply": 0.10927354195155203,
+        "compare_full": 282.30647245794535,
+        "compare_incremental": 33.65904091694392,
+        "new_graph": 62.75324320793152,
+        "root_cause": 7.166992872953415e-06,
+        "total": 379.96076566702686
+      },
+      {
+        "apply": 0.11041420907713473,
+        "compare_full": 0.0,
+        "compare_incremental": 22.160701249958947,
+        "new_graph": 62.26390920905396,
+        "root_cause": 14.191630583954975,
+        "total": 99.07389758410864
+      },
+      {
+        "apply": 0.13914558407850564,
+        "compare_full": 0.0,
+        "compare_incremental": 19.155462499940768,
+        "new_graph": 76.36105208285153,
+        "root_cause": 3.0624913051724434e-05,
+        "total": 95.68626799993217
+      },
+      {
+        "apply": 0.11585604213178158,
+        "compare_full": 0.0,
+        "compare_incremental": 24.132934666937217,
+        "new_graph": 72.43016154202633,
+        "root_cause": 3.424985334277153e-05,
+        "total": 96.6843744169455
+      },
+      {
+        "apply": 0.12341133411973715,
+        "compare_full": 0.0,
+        "compare_incremental": 19.856607750058174,
+        "new_graph": 86.16450683306903,
+        "root_cause": 4.379218444228172e-05,
+        "total": 106.151760334149
+      },
+      {
+        "apply": 0.11697612516582012,
+        "compare_full": 0.0,
+        "compare_incremental": 20.304381874855608,
+        "new_graph": 81.11841545789503,
+        "root_cause": 4.1082967072725296e-05,
+        "total": 101.5483668751549
+      },
+      {
+        "apply": 0.1190164159052074,
+        "compare_full": 0.0,
+        "compare_incremental": 32.90287012490444,
+        "new_graph": 75.58420604094863,
+        "root_cause": 2.0167091861367226e-05,
+        "total": 108.6128489158582
+      },
+      {
+        "apply": 0.10474483296275139,
+        "compare_full": 0.0,
+        "compare_incremental": 39.271496874978766,
+        "new_graph": 62.570802041795105,
+        "root_cause": 3.283284604549408e-05,
+        "total": 101.95373095804825
+      },
+      {
+        "apply": 0.11040395800955594,
+        "compare_full": 0.0,
+        "compare_incremental": 32.575858999975026,
+        "new_graph": 63.315744457999244,
+        "root_cause": 5.634924540994689,
+        "total": 101.6849442080129
+      },
+      {
+        "apply": 0.2095499171409756,
+        "compare_full": 0.0,
+        "compare_incremental": 31.18227433413267,
+        "new_graph": 64.30465616588481,
+        "root_cause": 6.292015314102173e-06,
+        "total": 95.70934150018729
+      },
+      {
+        "apply": 0.1419062081258744,
+        "compare_full": 294.50607554102316,
+        "compare_incremental": 33.920576540986076,
+        "new_graph": 63.574679624987766,
+        "root_cause": 4.820898175239563e-05,
+        "total": 393.7468021251261
+      },
+      {
+        "apply": 0.15814379206858575,
+        "compare_full": 0.0,
+        "compare_incremental": 25.23027658299543,
+        "new_graph": 56.82186620798893,
+        "root_cause": 7.042195647954941e-06,
+        "total": 82.21634437493049
+      },
+      {
+        "apply": 0.10537416697479784,
+        "compare_full": 0.0,
+        "compare_incremental": 31.60110054188408,
+        "new_graph": 58.228181625017896,
+        "root_cause": 5.00003807246685e-06,
+        "total": 89.9416074580513
+      },
+      {
+        "apply": 0.12026100000366569,
+        "compare_full": 0.0,
+        "compare_incremental": 19.322871833108366,
+        "new_graph": 71.33863154100254,
+        "root_cause": 5.2625080570578575e-05,
+        "total": 90.78861295804381
+      },
+      {
+        "apply": 0.11253966693766415,
+        "compare_full": 0.0,
+        "compare_incremental": 19.148567833006382,
+        "new_graph": 90.48851975006983,
+        "root_cause": 2.166605554521084e-05,
+        "total": 109.75743200001307
+      },
+      {
+        "apply": 0.11607524985447526,
+        "compare_full": 0.0,
+        "compare_incremental": 34.93498620809987,
+        "new_graph": 65.13299808395095,
+        "root_cause": 3.0375085771083832e-05,
+        "total": 100.19115866697393
+      },
+      {
+        "apply": 0.1107832919806242,
+        "compare_full": 0.0,
+        "compare_incremental": 44.70177441695705,
+        "new_graph": 71.98874354199506,
+        "root_cause": 5.03937020804733,
+        "total": 121.85071341716684
+      },
+      {
+        "apply": 0.17838699999265373,
+        "compare_full": 0.0,
+        "compare_incremental": 49.44360450003296,
+        "new_graph": 84.81738762487657,
+        "root_cause": 3.933394327759743e-05,
+        "total": 134.44790541590191
+      },
+      {
+        "apply": 0.15271724993363023,
+        "compare_full": 0.0,
+        "compare_incremental": 24.33413370908238,
+        "new_graph": 87.72984904097393,
+        "root_cause": 4.8958929255604744e-05,
+        "total": 112.22611708403565
+      },
+      {
+        "apply": 0.1339446660131216,
+        "compare_full": 0.0,
+        "compare_incremental": 23.000278959050775,
+        "new_graph": 93.91242208401673,
+        "root_cause": 3.120908513665199e-05,
+        "total": 117.05748129100539
+      },
+      {
+        "apply": 0.1264674998819828,
+        "compare_full": 286.5136327089276,
+        "compare_incremental": 32.19026649999432,
+        "new_graph": 69.2866656249389,
+        "root_cause": 7.58306123316288e-06,
+        "total": 389.6598319578916
+      },
+      {
+        "apply": 0.14733525016345084,
+        "compare_full": 0.0,
+        "compare_incremental": 25.420220042113215,
+        "new_graph": 58.3733832500875,
+        "root_cause": 7.792143151164055e-06,
+        "total": 83.94766537495889
+      },
+      {
+        "apply": 0.09631058317609131,
+        "compare_full": 0.0,
+        "compare_incremental": 23.62984999991022,
+        "new_graph": 54.22444666689262,
+        "root_cause": 8.00006091594696e-06,
+        "total": 77.9574535000138
+      },
+      {
+        "apply": 0.11028212495148182,
+        "compare_full": 0.0,
+        "compare_incremental": 15.441459333058447,
+        "new_graph": 53.4658556249924,
+        "root_cause": 1.6958918422460556e-05,
+        "total": 69.0245732080657
+      },
+      {
+        "apply": 0.11748654092662036,
+        "compare_full": 0.0,
+        "compare_incremental": 17.235575792146847,
+        "new_graph": 64.17416399996728,
+        "root_cause": 1.7582904547452927e-05,
+        "total": 81.53264879086055
+      },
+      {
+        "apply": 0.1297525418922305,
+        "compare_full": 0.0,
+        "compare_incremental": 15.505926041863859,
+        "new_graph": 64.99310066713952,
+        "root_cause": 1.9292114302515984e-05,
+        "total": 80.63546604197472
+      },
+      {
+        "apply": 0.10840591602027416,
+        "compare_full": 0.0,
+        "compare_incremental": 13.960285791894421,
+        "new_graph": 64.02820316608995,
+        "root_cause": 5.833106115460396e-06,
+        "total": 78.10516070807353
+      },
+      {
+        "apply": 0.11219166708178818,
+        "compare_full": 0.0,
+        "compare_incremental": 26.758261041948572,
+        "new_graph": 56.15358849987388,
+        "root_cause": 4.458939656615257e-06,
+        "total": 83.0296477500815
+      },
+      {
+        "apply": 0.09547937498427927,
+        "compare_full": 0.0,
+        "compare_incremental": 26.032121083000675,
+        "new_graph": 56.19341029203497,
+        "root_cause": 10.208840999985114,
+        "total": 92.83393116598018
+      },
+      {
+        "apply": 0.13614950003102422,
+        "compare_full": 0.0,
+        "compare_incremental": 26.17079658387229,
+        "new_graph": 57.224771542008966,
+        "root_cause": 4.459172487258911e-06,
+        "total": 83.55928541603498
+      },
+      {
+        "apply": 0.09428929211571813,
+        "compare_full": 312.03899908298627,
+        "compare_incremental": 25.73519037500955,
+        "new_graph": 55.70649270899594,
+        "root_cause": 3.945804201066494e-05,
+        "total": 395.3810284999199
+      },
+      {
+        "apply": 0.4397087919060141,
+        "compare_full": 0.0,
+        "compare_incremental": 16.992749541066587,
+        "new_graph": 91.82003979198635,
+        "root_cause": 3.208313137292862e-05,
+        "total": 109.25828433292918
+      },
+      {
+        "apply": 0.13375162496231496,
+        "compare_full": 0.0,
+        "compare_incremental": 36.11567633319646,
+        "new_graph": 60.775883625028655,
+        "root_cause": 3.616698086261749e-05,
+        "total": 97.03068729210645
+      },
+      {
+        "apply": 0.11755587509833276,
+        "compare_full": 0.0,
+        "compare_incremental": 34.586292332969606,
+        "new_graph": 66.44458491704427,
+        "root_cause": 2.2500054910779e-05,
+        "total": 101.15803400008008
+      },
+      {
+        "apply": 0.1265238330233842,
+        "compare_full": 0.0,
+        "compare_incremental": 38.4146406671498,
+        "new_graph": 71.5373799582012,
+        "root_cause": 2.2500054910779e-05,
+        "total": 110.08556416700594
+      },
+      {
+        "apply": 0.10016391682438552,
+        "compare_full": 0.0,
+        "compare_incremental": 33.30838308297098,
+        "new_graph": 61.146550624864176,
+        "root_cause": 2.512522041797638e-05,
+        "total": 94.56132033304311
+      },
+      {
+        "apply": 0.1489726670552045,
+        "compare_full": 0.0,
+        "compare_incremental": 38.360194500070065,
+        "new_graph": 73.70920604211278,
+        "root_cause": 4.624994471669197e-05,
+        "total": 112.22617533314042
+      },
+      {
+        "apply": 0.11542745889164507,
+        "compare_full": 0.0,
+        "compare_incremental": 40.824780125170946,
+        "new_graph": 72.83692329190671,
+        "root_cause": 3.383401781320572e-05,
+        "total": 113.78309924993664
+      },
+      {
+        "apply": 0.09939533402211964,
+        "compare_full": 0.0,
+        "compare_incremental": 44.258467874955386,
+        "new_graph": 71.70991383399814,
+        "root_cause": 5.091587081551552e-05,
+        "total": 116.07499137497507
+      },
+      {
+        "apply": 0.1464546660427004,
+        "compare_full": 0.0,
+        "compare_incremental": 18.728642167057842,
+        "new_graph": 75.3131915840786,
+        "root_cause": 3.658304922282696e-05,
+        "total": 94.19370829104446
+      },
+      {
+        "apply": 0.10348004195839167,
+        "compare_full": 292.86665249988437,
+        "compare_incremental": 18.39820741605945,
+        "new_graph": 89.30517429090105,
+        "root_cause": 3.937492147088051e-05,
+        "total": 402.63427358400077
+      },
+      {
+        "apply": 0.18672612495720387,
+        "compare_full": 0.0,
+        "compare_incremental": 36.356761207804084,
+        "new_graph": 68.9933144999668,
+        "root_cause": 3.258301876485348e-05,
+        "total": 105.5454447909724
+      },
+      {
+        "apply": 0.11659500002861023,
+        "compare_full": 0.0,
+        "compare_incremental": 31.98244904098101,
+        "new_graph": 67.8713832499925,
+        "root_cause": 2.1167099475860596e-05,
+        "total": 99.97739479201846
+      },
+      {
+        "apply": 0.10904312506318092,
+        "compare_full": 0.0,
+        "compare_incremental": 40.67508212500252,
+        "new_graph": 66.91677779192105,
+        "root_cause": 5.5999960750341415e-05,
+        "total": 107.70888437516987
+      },
+      {
+        "apply": 0.112712417030707,
+        "compare_full": 0.0,
+        "compare_incremental": 38.759456334169954,
+        "new_graph": 73.53500679205172,
+        "root_cause": 2.208305522799492e-05,
+        "total": 112.41520745912567
+      },
+      {
+        "apply": 0.11116837500594556,
+        "compare_full": 0.0,
+        "compare_incremental": 34.30105125019327,
+        "new_graph": 71.30727279186249,
+        "root_cause": 2.1707965061068535e-05,
+        "total": 105.7267451249063
+      },
+      {
+        "apply": 0.15093150013126433,
+        "compare_full": 0.0,
+        "compare_incremental": 44.19448462501168,
+        "new_graph": 76.13826004206203,
+        "root_cause": 4.300009459257126e-05,
+        "total": 120.49137070821598
+      },
+      {
+        "apply": 0.12931904196739197,
+        "compare_full": 0.0,
+        "compare_incremental": 24.01226570806466,
+        "new_graph": 78.55359850008972,
+        "root_cause": 4.933285526931286e-05,
+        "total": 102.70717112510465
+      },
+      {
+        "apply": 0.15536900004372,
+        "compare_full": 0.0,
+        "compare_incremental": 20.61469579092227,
+        "new_graph": 107.18720937496983,
+        "root_cause": 4.987488500773907e-05,
+        "total": 127.9674362919759
+      },
+      {
+        "apply": 0.11656700004823506,
+        "compare_full": 0.0,
+        "compare_incremental": 21.044592791004106,
+        "new_graph": 93.58856779080816,
+        "root_cause": 3.229198046028614e-05,
+        "total": 114.75565862492658
+      },
+      {
+        "apply": 0.10369154112413526,
+        "compare_full": 299.5810003329534,
+        "compare_incremental": 33.57438875013031,
+        "new_graph": 74.22220145910978,
+        "root_cause": 2.337503246963024e-05,
+        "total": 409.24724500020966
+      },
+      {
+        "apply": 0.16894595883786678,
+        "compare_full": 0.0,
+        "compare_incremental": 30.38094612513669,
+        "new_graph": 61.71165241696872,
+        "root_cause": 5.375128239393234e-06,
+        "total": 92.26830704184249
+      },
+      {
+        "apply": 0.10861712507903576,
+        "compare_full": 0.0,
+        "compare_incremental": 31.042867499869317,
+        "new_graph": 60.41844516689889,
+        "root_cause": 8.33394005894661e-06,
+        "total": 91.57570083392784
+      },
+      {
+        "apply": 0.13471174985170364,
+        "compare_full": 0.0,
+        "compare_incremental": 23.029449417022988,
+        "new_graph": 62.15184033289552,
+        "root_cause": 5.191587843000889e-05,
+        "total": 85.3238173329737
+      },
+      {
+        "apply": 0.11123279109597206,
+        "compare_full": 0.0,
+        "compare_incremental": 19.083384707802907,
+        "new_graph": 83.77528974995948,
+        "root_cause": 7.207971066236496e-06,
+        "total": 102.97709437506273
+      },
+      {
+        "apply": 0.12086283415555954,
+        "compare_full": 0.0,
+        "compare_incremental": 16.629368749912828,
+        "new_graph": 74.3669335001614,
+        "root_cause": 5.58304600417614e-06,
+        "total": 91.12378575000912
+      },
+      {
+        "apply": 0.10960270813666284,
+        "compare_full": 0.0,
+        "compare_incremental": 18.5854695411399,
+        "new_graph": 79.23186804214492,
+        "root_cause": 1.7916085198521614e-05,
+        "total": 97.93396970815957
+      },
+      {
+        "apply": 0.10516883409582078,
+        "compare_full": 0.0,
+        "compare_incremental": 13.75570487510413,
+        "new_graph": 63.8469916251488,
+        "root_cause": 3.424985334277153e-05,
+        "total": 77.7141941669397
+      },
+      {
+        "apply": 0.09808204206638038,
+        "compare_full": 0.0,
+        "compare_incremental": 12.653701208066195,
+        "new_graph": 72.4345275000669,
+        "root_cause": 1.650000922381878e-05,
+        "total": 85.19127208390273
+      },
+      {
+        "apply": 0.09850945882499218,
+        "compare_full": 0.0,
+        "compare_incremental": 18.982314291177318,
+        "new_graph": 72.13999070902355,
+        "root_cause": 3.5708071663975716e-05,
+        "total": 91.22714791679755
+      },
+      {
+        "apply": 0.133499207906425,
+        "compare_full": 285.0720992081333,
+        "compare_incremental": 18.122815707931295,
+        "new_graph": 77.13000104087405,
+        "root_cause": 4.041707143187523e-05,
+        "total": 382.6538976249285
+      },
+      {
+        "apply": 0.40773883392103016,
+        "compare_full": 0.0,
+        "compare_incremental": 18.96690516686067,
+        "new_graph": 95.61604279093444,
+        "root_cause": 1.729186624288559e-05,
+        "total": 114.99980687489733
+      },
+      {
+        "apply": 0.11507604201324284,
+        "compare_full": 0.0,
+        "compare_incremental": 40.776131083024666,
+        "new_graph": 68.09511191607453,
+        "root_cause": 4.0624989196658134e-05,
+        "total": 108.9954971249681
+      },
+      {
+        "apply": 0.10942541598342359,
+        "compare_full": 0.0,
+        "compare_incremental": 32.845121416961774,
+        "new_graph": 66.87379370885901,
+        "root_cause": 1.0082963854074478e-05,
+        "total": 99.83586104097776
+      },
+      {
+        "apply": 0.10697750002145767,
+        "compare_full": 0.0,
+        "compare_incremental": 39.70813737506978,
+        "new_graph": 66.67928962479346,
+        "root_cause": 1.89170241355896e-05,
+        "total": 106.50708450004458
+      },
+      {
+        "apply": 0.10388824995607138,
+        "compare_full": 0.0,
+        "compare_incremental": 26.3059963749256,
+        "new_graph": 71.84480954101309,
+        "root_cause": 1.9333092495799065e-05,
+        "total": 98.2630517501384
+      },
+      {
+        "apply": 0.1273374587763101,
+        "compare_full": 0.0,
+        "compare_incremental": 18.97238816600293,
+        "new_graph": 90.62042554211803,
+        "root_cause": 1.2875068932771683e-05,
+        "total": 109.7283257918898
+      },
+      {
+        "apply": 0.14225895795971155,
+        "compare_full": 0.0,
+        "compare_incremental": 18.610621666070074,
+        "new_graph": 86.569476417033,
+        "root_cause": 2.1167099475860596e-05,
+        "total": 105.3291905829683
+      },
+      {
+        "apply": 0.12152570812031627,
+        "compare_full": 0.0,
+        "compare_incremental": 19.5626289579086,
+        "new_graph": 87.4414703331422,
+        "root_cause": 3.8041966035962105e-05,
+        "total": 107.13202825002372
+      },
+      {
+        "apply": 0.11347662494517863,
+        "compare_full": 0.0,
+        "compare_incremental": 37.352733666077256,
+        "new_graph": 67.03910854202695,
+        "root_cause": 1.0208925232291222e-05,
+        "total": 104.51307949982584
+      },
+      {
+        "apply": 0.11963595892302692,
+        "compare_full": 316.508270499995,
+        "compare_incremental": 40.78911808389239,
+        "new_graph": 69.96612162492238,
+        "root_cause": 6.754091009497643e-05,
+        "total": 429.6201142091304
+      },
+      {
+        "apply": 0.2565878329332918,
+        "compare_full": 0.0,
+        "compare_incremental": 42.544335667043924,
+        "new_graph": 69.34799262485467,
+        "root_cause": 2.9582995921373367e-05,
+        "total": 112.15656087477691
+      },
+      {
+        "apply": 0.11997562483884394,
+        "compare_full": 0.0,
+        "compare_incremental": 34.66691533382982,
+        "new_graph": 62.1102257091552,
+        "root_cause": 2.3250002413988113e-05,
+        "total": 96.90554262488149
+      },
+      {
+        "apply": 0.14077637484297156,
+        "compare_full": 0.0,
+        "compare_incremental": 31.987398500088602,
+        "new_graph": 66.05246620904654,
+        "root_cause": 1.216609962284565e-05,
+        "total": 98.18772829184309
+      },
+      {
+        "apply": 0.14295799983665347,
+        "compare_full": 0.0,
+        "compare_incremental": 30.530262458138168,
+        "new_graph": 70.97895537503064,
+        "root_cause": 5.233125917147845,
+        "total": 106.91791758290492
+      },
+      {
+        "apply": 0.1574846669100225,
+        "compare_full": 0.0,
+        "compare_incremental": 28.198384042130783,
+        "new_graph": 60.43639366701245,
+        "root_cause": 6.624963134527206e-06,
+        "total": 88.80168383289129
+      },
+      {
+        "apply": 0.11787408380769193,
+        "compare_full": 0.0,
+        "compare_incremental": 35.2653785829898,
+        "new_graph": 70.79204987501726,
+        "root_cause": 1.7582904547452927e-05,
+        "total": 106.18551637488417
+      },
+      {
+        "apply": 0.13563612499274313,
+        "compare_full": 0.0,
+        "compare_incremental": 29.67768570804037,
+        "new_graph": 86.78151116613299,
+        "root_cause": 2.591707743704319e-05,
+        "total": 116.600813458208
+      },
+      {
+        "apply": 0.09091429109685123,
+        "compare_full": 0.0,
+        "compare_incremental": 32.02830350003205,
+        "new_graph": 60.8846579589881,
+        "root_cause": 1.9999919459223747e-05,
+        "total": 93.01202158303931
+      },
+      {
+        "apply": 0.11873066704720259,
+        "compare_full": 0.0,
+        "compare_incremental": 27.670118917012587,
+        "new_graph": 59.697840332984924,
+        "root_cause": 1.1499971151351929e-05,
+        "total": 87.49464041693136
+      },
+      {
+        "apply": 0.10258883307687938,
+        "compare_full": 286.37060704198666,
+        "compare_incremental": 30.638345542130992,
+        "new_graph": 70.83882883284241,
+        "root_cause": 6.875023245811462e-06,
+        "total": 389.5715361670591
+      },
+      {
+        "apply": 0.21712741698138416,
+        "compare_full": 0.0,
+        "compare_incremental": 16.936434459174052,
+        "new_graph": 61.92240275000222,
+        "root_cause": 2.2292137145996094e-05,
+        "total": 79.08325854199938
+      },
+      {
+        "apply": 0.10012850002385676,
+        "compare_full": 0.0,
+        "compare_incremental": 18.23783045890741,
+        "new_graph": 75.86044316692278,
+        "root_cause": 3.137486055493355e-05,
+        "total": 94.20641708304174
+      },
+      {
+        "apply": 0.0979172911029309,
+        "compare_full": 0.0,
+        "compare_incremental": 30.560781833017245,
+        "new_graph": 59.751714458921924,
+        "root_cause": 3.02919652312994e-05,
+        "total": 90.41719299997203
+      },
+      {
+        "apply": 0.11715512489899993,
+        "compare_full": 0.0,
+        "compare_incremental": 30.415477459086105,
+        "new_graph": 64.81127649988048,
+        "root_cause": 1.2250151485204697e-05,
+        "total": 95.3518411249388
+      },
+      {
+        "apply": 0.10697762481868267,
+        "compare_full": 0.0,
+        "compare_incremental": 28.93999999994412,
+        "new_graph": 68.02527424995787,
+        "root_cause": 5.175009040860459,
+        "total": 102.31443920801394
+      },
+      {
+        "apply": 0.1654898750130087,
+        "compare_full": 0.0,
+        "compare_incremental": 34.59813966695219,
+        "new_graph": 66.03257229086012,
+        "root_cause": 1.7958926036953926e-05,
+        "total": 100.8108564580325
+      },
+      {
+        "apply": 0.12401120807044208,
+        "compare_full": 0.0,
+        "compare_incremental": 29.024046958889812,
+        "new_graph": 64.18302054191008,
+        "root_cause": 1.237494871020317e-05,
+        "total": 93.33694083313458
+      },
+      {
+        "apply": 0.14063991699367762,
+        "compare_full": 0.0,
+        "compare_incremental": 30.516091249883175,
+        "new_graph": 62.046517124865204,
+        "root_cause": 9.041046723723412e-06,
+        "total": 92.70935404184274
+      },
+      {
+        "apply": 0.10443700011819601,
+        "compare_full": 0.0,
+        "compare_incremental": 17.110617749858648,
+        "new_graph": 69.27762316702865,
+        "root_cause": 2.787495031952858e-05,
+        "total": 86.50075316708535
+      },
+      {
+        "apply": 0.09938691696152091,
+        "compare_full": 284.00662037497386,
+        "compare_incremental": 17.696324832970276,
+        "new_graph": 86.66555337514728,
+        "root_cause": 4.3667154386639595e-05,
+        "total": 390.10082254209556
+      },
+      {
+        "apply": 0.10549766686744988,
+        "compare_full": 0.0,
+        "compare_incremental": 17.8995682077948,
+        "new_graph": 77.78693683398888,
+        "root_cause": 3.1833071261644363e-05,
+        "total": 95.80024320888333
+      },
+      {
+        "apply": 0.08736387500539422,
+        "compare_full": 0.0,
+        "compare_incremental": 27.003957292065024,
+        "new_graph": 56.931351999985054,
+        "root_cause": 7.209135219454765e-06,
+        "total": 84.0306265829131
+      },
+      {
+        "apply": 0.1014532910194248,
+        "compare_full": 0.0,
+        "compare_incremental": 28.4734601250384,
+        "new_graph": 57.27250904194079,
+        "root_cause": 6.916932761669159e-06,
+        "total": 85.85471508302726
+      },
+      {
+        "apply": 0.09738604188896716,
+        "compare_full": 0.0,
+        "compare_incremental": 30.054447166156024,
+        "new_graph": 59.07820266694762,
+        "root_cause": 4.875131916021928,
+        "total": 94.11611874983646
+      },
+      {
+        "apply": 0.19445308414287865,
+        "compare_full": 0.0,
+        "compare_incremental": 34.22580537502654,
+        "new_graph": 66.87091087503359,
+        "root_cause": 4.9889050831552595,
+        "total": 106.29049433395267
+      },
+      {
+        "apply": 0.22336104209534824,
+        "compare_full": 0.0,
+        "compare_incremental": 34.00162920798175,
+        "new_graph": 61.94070658297278,
+        "root_cause": 2.2624852135777473e-05,
+        "total": 96.17390708415769
+      },
+      {
+        "apply": 0.1118463329039514,
+        "compare_full": 0.0,
+        "compare_incremental": 17.253520916914567,
+        "new_graph": 67.54684562492184,
+        "root_cause": 2.3792032152414322e-05,
+        "total": 84.91991170798428
+      },
+      {
+        "apply": 0.09890562482178211,
+        "compare_full": 0.0,
+        "compare_incremental": 15.986115332925692,
+        "new_graph": 72.21436108299531,
+        "root_cause": 2.3916130885481834e-05,
+        "total": 88.30555933294818
+      },
+      {
+        "apply": 0.0980187498498708,
+        "compare_full": 0.0,
+        "compare_incremental": 15.574612290831283,
+        "new_graph": 74.96505958307534,
+        "root_cause": 4.603382749948651,
+        "total": 95.25117295794189
+      },
+      {
+        "apply": 0.18348216591402888,
+        "compare_full": 276.2100457921624,
+        "compare_incremental": 29.93807129212655,
+        "new_graph": 58.919193542096764,
+        "root_cause": 1.091696321964264e-05,
+        "total": 367.260817958042
+      },
+      {
+        "apply": 0.18562216707505286,
+        "compare_full": 0.0,
+        "compare_incremental": 18.226574041880667,
+        "new_graph": 75.14456475013867,
+        "root_cause": 4.545512791955844,
+        "total": 98.11201208410785
+      },
+      {
+        "apply": 0.18339404184371233,
+        "compare_full": 0.0,
+        "compare_incremental": 30.320288042072207,
+        "new_graph": 59.26259679184295,
+        "root_cause": 1.3167038559913635e-05,
+        "total": 89.77391437487677
+      },
+      {
+        "apply": 0.10900004208087921,
+        "compare_full": 0.0,
+        "compare_incremental": 31.806394499959424,
+        "new_graph": 61.0463107500691,
+        "root_cause": 2.3999949917197227e-05,
+        "total": 92.96830312511884
+      },
+      {
+        "apply": 0.11112520913593471,
+        "compare_full": 0.0,
+        "compare_incremental": 33.80115329101682,
+        "new_graph": 61.06178637500852,
+        "root_cause": 9.041046723723412e-06,
+        "total": 94.9798701251857
+      },
+      {
+        "apply": 0.10429729195311666,
+        "compare_full": 0.0,
+        "compare_incremental": 32.824455792084336,
+        "new_graph": 61.229187165852636,
+        "root_cause": 3.2624928280711174e-05,
+        "total": 94.16539091686718
+      },
+      {
+        "apply": 0.10938633396290243,
+        "compare_full": 0.0,
+        "compare_incremental": 33.25934150000103,
+        "new_graph": 62.35712975007482,
+        "root_cause": 9.958166629076004e-06,
+        "total": 95.73247137502767
+      },
+      {
+        "apply": 0.11926100007258356,
+        "compare_full": 0.0,
+        "compare_incremental": 33.128757084021345,
+        "new_graph": 66.87705662497319,
+        "root_cause": 1.0125106200575829e-05,
+        "total": 100.13207375002094
+      },
+      {
+        "apply": 0.11423345794901252,
+        "compare_full": 0.0,
+        "compare_incremental": 31.473142749862745,
+        "new_graph": 63.02059750002809,
+        "root_cause": 4.654224708909169,
+        "total": 99.28583966684528
+      },
+      {
+        "apply": 0.20751291699707508,
+        "compare_full": 0.0,
+        "compare_incremental": 34.06546162487939,
+        "new_graph": 60.85536145907827,
+        "root_cause": 1.295912079513073e-05,
+        "total": 95.13661504210904
+      },
+      {
+        "apply": 0.10772829107008874,
+        "compare_full": 295.1418246671092,
+        "compare_incremental": 39.18737679114565,
+        "new_graph": 74.14958908315748,
+        "root_cause": 1.4208955690264702e-05,
+        "total": 409.3913820409216
+      },
+      {
+        "apply": 0.09696870786137879,
+        "compare_full": 0.0,
+        "compare_incremental": 16.10649137501605,
+        "new_graph": 55.59560383413918,
+        "root_cause": 1.9084196537733078e-05,
+        "total": 71.80845283297822
+      },
+      {
+        "apply": 0.09586245799437165,
+        "compare_full": 0.0,
+        "compare_incremental": 16.19984820811078,
+        "new_graph": 64.9593379588332,
+        "root_cause": 1.4457851648330688e-05,
+        "total": 81.26089920802042
+      },
+      {
+        "apply": 0.0874772910028696,
+        "compare_full": 0.0,
+        "compare_incremental": 26.227162041934207,
+        "new_graph": 55.739600042114034,
+        "root_cause": 1.0208925232291222e-05,
+        "total": 82.06094737513922
+      },
+      {
+        "apply": 0.10680758394300938,
+        "compare_full": 0.0,
+        "compare_incremental": 25.32198516698554,
+        "new_graph": 56.77406199998222,
+        "root_cause": 4.875008016824722e-06,
+        "total": 82.20948749990202
+      },
+      {
+        "apply": 0.09874233300797641,
+        "compare_full": 0.0,
+        "compare_incremental": 28.554701916873455,
+        "new_graph": 56.0561461658217,
+        "root_cause": 8.208910003304482e-06,
+        "total": 84.71607566694729
+      },
+      {
+        "apply": 0.13202174985781312,
+        "compare_full": 0.0,
+        "compare_incremental": 16.144587625050917,
+        "new_graph": 61.38643741700798,
+        "root_cause": 1.6625039279460907e-05,
+        "total": 77.66840608301573
+      },
+      {
+        "apply": 0.10903304209932685,
+        "compare_full": 0.0,
+        "compare_incremental": 15.321672582998872,
+        "new_graph": 77.9733832499478,
+        "root_cause": 3.0375085771083832e-05,
+        "total": 93.41134987515397
+      },
+      {
+        "apply": 0.11449362500570714,
+        "compare_full": 0.0,
+        "compare_incremental": 16.912186292000115,
+        "new_graph": 82.26040316699073,
+        "root_cause": 4.9833906814455986e-05,
+        "total": 99.29354812507518
+      },
+      {
+        "apply": 0.09513187501579523,
+        "compare_full": 0.0,
+        "compare_incremental": 29.19464520807378,
+        "new_graph": 62.95417887484655,
+        "root_cause": 7.542083039879799e-06,
+        "total": 92.24966495786794
+      },
+      {
+        "apply": 0.08681570901535451,
+        "compare_full": 287.3790142079815,
+        "compare_incremental": 32.83711379207671,
+        "new_graph": 57.37360466690734,
+        "root_cause": 7.333001121878624e-06,
+        "total": 379.2873432091437
+      },
+      {
+        "apply": 0.15697229118086398,
+        "compare_full": 0.0,
+        "compare_incremental": 26.922961957985535,
+        "new_graph": 59.49240158405155,
+        "root_cause": 4.665926098823547e-06,
+        "total": 86.578274208121
+      },
+      {
+        "apply": 0.09917995892465115,
+        "compare_full": 0.0,
+        "compare_incremental": 26.283910166937858,
+        "new_graph": 55.46981425001286,
+        "root_cause": 1.391698606312275e-05,
+        "total": 81.85989054199308
+      },
+      {
+        "apply": 0.13908824999816716,
+        "compare_full": 0.0,
+        "compare_incremental": 26.662904750090092,
+        "new_graph": 54.38849220890552,
+        "root_cause": 5.95790334045887e-06,
+        "total": 81.19724745908752
+      },
+      {
+        "apply": 0.11384600005112588,
+        "compare_full": 0.0,
+        "compare_incremental": 26.781830958090723,
+        "new_graph": 60.65822699991986,
+        "root_cause": 7.125083357095718e-06,
+        "total": 87.5613393750973
+      },
+      {
+        "apply": 0.11602312489412725,
+        "compare_full": 0.0,
+        "compare_incremental": 28.891322792042047,
+        "new_graph": 57.31639312510379,
+        "root_cause": 2.129189670085907e-05,
+        "total": 86.33000045781955
+      },
+      {
+        "apply": 0.09503983380272985,
+        "compare_full": 0.0,
+        "compare_incremental": 32.90267949993722,
+        "new_graph": 56.98615795816295,
+        "root_cause": 4.332978278398514e-06,
+        "total": 89.98908204189502
+      },
+      {
+        "apply": 0.09322520811110735,
+        "compare_full": 0.0,
+        "compare_incremental": 16.394757167203352,
+        "new_graph": 68.30687487497926,
+        "root_cause": 3.7250109016895294e-05,
+        "total": 84.802790540969
+      },
+      {
+        "apply": 0.10235983319580555,
+        "compare_full": 0.0,
+        "compare_incremental": 18.088913792045787,
+        "new_graph": 73.93721158406697,
+        "root_cause": 3.2416777685284615e-05,
+        "total": 92.13412566715851
+      },
+      {
+        "apply": 0.1153690421488136,
+        "compare_full": 0.0,
+        "compare_incremental": 16.970693207811564,
+        "new_graph": 76.72802116698585,
+        "root_cause": 3.279210068285465e-05,
+        "total": 93.82108904211782
+      },
+      {
+        "apply": 0.206947416998446,
+        "compare_full": 272.84664550004527,
+        "compare_incremental": 31.078110167058185,
+        "new_graph": 65.80682254186831,
+        "root_cause": 5.088785499799997,
+        "total": 376.36631849990226
+      },
+      {
+        "apply": 0.27631187508814037,
+        "compare_full": 0.0,
+        "compare_incremental": 18.137122167041525,
+        "new_graph": 72.43344741710462,
+        "root_cause": 4.675312208011746,
+        "total": 95.53385937493294
+      },
+      {
+        "apply": 0.2709707908798009,
+        "compare_full": 0.0,
+        "compare_incremental": 28.247796500101686,
+        "new_graph": 56.84378570783883,
+        "root_cause": 4.114021415822208,
+        "total": 89.4899280408863
+      },
+      {
+        "apply": 0.24837350007146597,
+        "compare_full": 0.0,
+        "compare_incremental": 33.77057183301076,
+        "new_graph": 57.999449874972925,
+        "root_cause": 13.873520584078506,
+        "total": 106.21082958299667
+      },
+      {
+        "apply": 0.2413301661144942,
+        "compare_full": 0.0,
+        "compare_incremental": 18.450907499995083,
+        "new_graph": 68.67703808308579,
+        "root_cause": 3.2791867852211e-05,
+        "total": 87.39754616608843
+      },
+      {
+        "apply": 0.219984499970451,
+        "compare_full": 0.0,
+        "compare_incremental": 25.93175745802,
+        "new_graph": 71.2113024580758,
+        "root_cause": 10.101240540854633,
+        "total": 107.62417195807211
+      },
+      {
+        "apply": 0.24099179194308817,
+        "compare_full": 0.0,
+        "compare_incremental": 24.68020270811394,
+        "new_graph": 77.2601262498647,
+        "root_cause": 5.244472499936819,
+        "total": 107.49411283410154
+      },
+      {
+        "apply": 0.2875925831031054,
+        "compare_full": 0.0,
+        "compare_incremental": 22.515693166991696,
+        "new_graph": 74.97399370907806,
+        "root_cause": 14.612485083052889,
+        "total": 112.75811208295636
+      },
+      {
+        "apply": 0.24530566693283617,
+        "compare_full": 0.0,
+        "compare_incremental": 29.371991708874702,
+        "new_graph": 56.125540249980986,
+        "root_cause": 4.315189457964152,
+        "total": 90.09107474982738
+      },
+      {
+        "apply": 0.23673058417625725,
+        "compare_full": 0.0,
+        "compare_incremental": 34.20633070822805,
+        "new_graph": 59.36064662504941,
+        "root_cause": 10.679965750081465,
+        "total": 104.79484045901336
+      },
+      {
+        "apply": 0.31109037483111024,
+        "compare_full": 285.4089308339171,
+        "compare_incremental": 31.77856312505901,
+        "new_graph": 59.66620762483217,
+        "root_cause": 9.417068213224411e-06,
+        "total": 378.8669746669475
+      },
+      {
+        "apply": 0.21940816706046462,
+        "compare_full": 0.0,
+        "compare_incremental": 33.09407954197377,
+        "new_graph": 56.27437683311291,
+        "root_cause": 4.58303838968277e-06,
+        "total": 89.59501379192807
+      },
+      {
+        "apply": 0.21259966609068215,
+        "compare_full": 0.0,
+        "compare_incremental": 32.533970582997426,
+        "new_graph": 54.63383350009099,
+        "root_cause": 8.083879947662354e-06,
+        "total": 87.38858979102224
+      },
+      {
+        "apply": 0.23083379189483821,
+        "compare_full": 0.0,
+        "compare_incremental": 37.51488749985583,
+        "new_graph": 53.604610916925594,
+        "root_cause": 1.829187385737896e-05,
+        "total": 91.35737974988297
+      },
+      {
+        "apply": 0.16576012480072677,
+        "compare_full": 0.0,
+        "compare_incremental": 37.300612417049706,
+        "new_graph": 55.937372291926295,
+        "root_cause": 5.2496115828398615,
+        "total": 98.68166004191153
+      },
+      {
+        "apply": 0.2129380831029266,
+        "compare_full": 0.0,
+        "compare_incremental": 32.88222458283417,
+        "new_graph": 58.87551004206762,
+        "root_cause": 4.987073166994378,
+        "total": 97.02194087509997
+      },
+      {
+        "apply": 0.21062770811840892,
+        "compare_full": 0.0,
+        "compare_incremental": 22.43982324982062,
+        "new_graph": 62.20602795807645,
+        "root_cause": 5.708492458099499,
+        "total": 90.58392766700126
+      },
+      {
+        "apply": 0.22954400000162423,
+        "compare_full": 0.0,
+        "compare_incremental": 20.595400209072977,
+        "new_graph": 70.70578495808877,
+        "root_cause": 4.7754929170478135,
+        "total": 96.33062233403325
+      },
+      {
+        "apply": 0.24428108287975192,
+        "compare_full": 0.0,
+        "compare_incremental": 21.288263665977865,
+        "new_graph": 73.15954012493603,
+        "root_cause": 4.483293741941452e-05,
+        "total": 94.70131720788777
+      },
+      {
+        "apply": 0.19817550014704466,
+        "compare_full": 0.0,
+        "compare_incremental": 36.72803266718984,
+        "new_graph": 61.86125766695477,
+        "root_cause": 3.0499882996082306e-05,
+        "total": 98.79506412497722
+      }
+    ]
+  }
+}

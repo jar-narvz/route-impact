@@ -1,0 +1,1007 @@
+{
+  "N": 200,
+  "faults": [
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 396846215
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 909862691
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 530973776
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 517835762
+    },
+    {
+      "node_id": 4975841386,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 266682601
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 675499012
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 10502992
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 31712677
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 431918835
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 442700809
+    },
+    {
+      "node_id": 671845924,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 43667733
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 960939029
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 745494999
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 27145834
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 35150388
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 119496329
+    },
+    {
+      "node_id": 56019378,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 1134224042
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 417895398
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 1383745628
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 24204349
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 92357621
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1119902643
+    },
+    {
+      "node_id": 62318210,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 8916993
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 416949241
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 16150471
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 1043774170
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 307386049
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1271262292
+    },
+    {
+      "node_id": 13260413806,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 68833157
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 415460008
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 448434234
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 38854510
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 744491976
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 183198827
+    },
+    {
+      "node_id": 369641685,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 30125100
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 546258239
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 366867799
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 1311666355
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 490321800
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1006336182
+    },
+    {
+      "node_id": 1106992514,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 60725989
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 27628560
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 1385723200
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 31345457
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 417722989
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 33783051
+    },
+    {
+      "node_id": 7070552529,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 417316804
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 1318324810
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 48017712
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 39846662
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 47378472
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 8917746
+    },
+    {
+      "node_id": 4178828492,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 613951350
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 417085712
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 729980062
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 183343417
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 370509367
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1346077717
+    },
+    {
+      "node_id": 1211585321,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 22719504
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 185568339
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 7875701
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 583791565
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 536408703
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 10467795
+    },
+    {
+      "node_id": 4176758057,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 619117732
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 405292592
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 996866082
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 206231778
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 415861316
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 184867245
+    },
+    {
+      "node_id": 4168126867,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 366792150
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 588706849
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 208884190
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 31764845
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 888768763
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 60725986
+    },
+    {
+      "node_id": 65432999,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 238899346
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 261439906
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 1187494797
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 620216065
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 27807297
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 685472297
+    },
+    {
+      "node_id": 89323651,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 34717011
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 965541109
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 1233755391
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 118632685
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 1206515809
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1356788349
+    },
+    {
+      "node_id": 5567999532,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 507203881
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 894572039
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 8956069
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 499329491
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 1475005402
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 7700816
+    },
+    {
+      "node_id": 249069107,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 10746687
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 1313719935
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 242632647
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 217151063
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 394442673
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1490267239
+    },
+    {
+      "node_id": 1103465123,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 376627244
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 418533933
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 186082341
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 22563651
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 937740711
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 10503015
+    },
+    {
+      "node_id": 313866910,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 162114261
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 279504037
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 1455916065
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 1203027636
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 1030330651
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 948129315
+    },
+    {
+      "node_id": 4939164004,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 1071904172
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 442792442
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 10476650
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 109187427
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 22729996
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 461743452
+    },
+    {
+      "node_id": 65593612,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 416932648
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 966336790
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 396949695
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 495234289
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 276702518
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1392436204
+    },
+    {
+      "node_id": 89489275,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 230067122
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 39864882
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 8929513
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 118632648
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 10746504
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 370758591
+    },
+    {
+      "node_id": 1081556104,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 850746591
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 1349064035
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 731598168
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 239089452
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 416175685
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 62150001
+    },
+    {
+      "node_id": 313115072,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 405292734
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 1445309699
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 24620194
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 772766540
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 499231842
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 765837084
+    },
+    {
+      "node_id": 685134970,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 999484121
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 162871078
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 269867401
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 31985919
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 24164433
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 26662560
+    },
+    {
+      "node_id": 5055985107,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 721044169
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 10296470
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 398435536
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 28665690
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 31799131
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1313712001
+    },
+    {
+      "node_id": 65284851,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 1079155556
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 737911630
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 345656510
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 157781963
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 705431519
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 28317884
+    },
+    {
+      "node_id": 65327522,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 536511988
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 1078411618
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 665130866
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 956216297
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 54601351
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 28714481
+    },
+    {
+      "node_id": 57787851,
+      "type": "disconnect_node",
+      "way_id": null
+    },
+    {
+      "node_id": null,
+      "type": "bad_maxspeed",
+      "way_id": 726194010
+    },
+    {
+      "node_id": null,
+      "type": "downgrade_class",
+      "way_id": 415456107
+    },
+    {
+      "node_id": null,
+      "type": "delete_way",
+      "way_id": 415861328
+    },
+    {
+      "node_id": null,
+      "type": "delete_bridge",
+      "way_id": 532642889
+    },
+    {
+      "node_id": null,
+      "type": "flip_oneway",
+      "way_id": 442864121
+    },
+    {
+      "node_id": null,
+      "type": "add_oneway",
+      "way_id": 1553285194
+    }
+  ],
+  "full_check_every": 10,
+  "seed": 2027
+}
