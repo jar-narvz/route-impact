@@ -4,7 +4,7 @@
 - **Working on:** Step 12's real fault suite (N=200, seed 2027, full check every 10th run). The Claude session that built Step 9c starts it after the n=10 rehearsal passes (~16:15, 2026-10-28) and then records the launch below. Until that "Fault run started" line appears, other sessions must not edit PROGRESS.md.
 - **Done:** design, plan critique, Steps 0–9c committed (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`). Step 9b findings A–C (output size, joint bridge, runtime) are resolved or measured; details under "Step 9b real-data checks" below.
 - **Next up (can run in parallel with the fault suite):**
-  - **Step 10 — CI.** Not blocked. Read PLAN "### Step 10"; write the Codex brief from it.
+  - **Step 10 — CI.** Written and reviewed, local lint/test pass (2026-10-29). Waiting on Jared: commit + push, then confirm the Actions run is green and the badge renders. That is Step 10's Verify; mark it done only after that.
   - **Step 11 — Daily job.** Not blocked. Read PLAN "### Step 11". GitHub's runner memory vs the ~7.8–8.5 GB peak of one real impact run is unverified, so check it in Step 11's first dispatch.
   - **Step 12 — code only.** `metrics.py`, `scripts/bench.sh` and `scripts/check_outputs.py` can be written now.
   - **Step 13 — README text.** Can be drafted now, with fault numbers left blank.
@@ -25,7 +25,7 @@
     - `scripts/feasibility.py:31-32` still hardcodes the city filter. Switch it to `trips.filter_places` when a step names that file.
   - **Follow-ups (not blocking):** remove the unused `segments` temp table (`segments.sql:21-25`). Have Step 3 emit a `speed_source` column so `graph.py:70-80` stops duplicating the maxspeed parser.
   - **Still open from earlier reviews:**
-    - `extract()` finds `sql/` and `config/` via the source checkout (`parents[2]`), so it needs the editable install (the CI workflow must use `pip install -e`).
+    - `extract()` finds `sql/` and `config/` via the source checkout (`parents[2]`), so it needs the editable install (`ci.yml` uses `pip install -e`; Step 11's workflow must too).
     - The motorway and ramps are on no named trip, so they're covered structurally only.
 - **Pending small fixes:** AGENTS.md install line should say `PYENV_VERSION=3.11.14 python3.11 -m venv .venv` (see Step 0 gotchas).
 - **Environment:** `.venv` exists (Python 3.11.14, deps + `spatial`). Snapshots 261023–261027 in `data/`, verified (261027 is an APFS clone of `norcal-latest`, same md5); `make download` works.
@@ -46,6 +46,14 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-29 — Step 10: CI
+- **Agent:** Codex (Claude reviewed)
+- **Did:** Added a CI workflow (push, pull_request, workflow_dispatch) on ubuntu-latest + Python 3.11: pip cache keyed on `pyproject.toml`, `~/.duckdb/extensions` cached, `pip install -e ".[dev]"`, then `make setup`, `make lint`, `make test`. Read-only `contents` permission, per-ref concurrency with cancel-in-progress, 15-min timeout. Added the CI badge under the README title.
+- **Changed:** `.github/workflows/ci.yml` (new), `README.md` (badge line).
+- **Verify:** Local only so far (the real Verify needs a push). `ruby -ryaml -e 'YAML.load_file(".github/workflows/ci.yml")'` → parses. `nice -n 19 make lint` → `All checks passed!` / `28 files already formatted`. `nice -n 19 make test` → `132 passed in 34.42s` (run at low priority while the fault suite was at run 213/220). Pending: Actions run green + badge renders after Jared pushes.
+- **Review:** Claude — approved; diff limited to the two named files, no secrets, no data downloads.
+- **Gotchas:** duckdb is unpinned, so the extension cache key uses `pyproject.toml`; a DuckDB version bump just misses the cache (extension dirs are versioned) and `make setup` reinstalls. Codex was told not to run tests while the fault suite ran.
 
 ### 2026-10-28 — Step 9c: sampled full checks and resumable fault suite
 - **Agent:** Codex

@@ -1,4 +1,5 @@
 # route-impact
+[![CI](https://github.com/jar-narvz/route-impact/actions/workflows/ci.yml/badge.svg)](https://github.com/jar-narvz/route-impact/actions/workflows/ci.yml)
 
 Measures how a day of OpenStreetMap edits changes navigation in Northern California.
 
