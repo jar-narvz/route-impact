@@ -1,0 +1,59 @@
+{
+  "candidates": [],
+  "culprits": [],
+  "excluded_trip_ids": [],
+  "exit_code": 0,
+  "metrics": {
+    "broken": 0,
+    "changed_segments": 25,
+    "delay_median_s": null,
+    "delay_p95_s": null,
+    "excluded_old": 0,
+    "gravity_share_affected": 0.0,
+    "gravity_share_high": 0.0,
+    "improved": 1,
+    "intercity": {
+      "broken": 0,
+      "changed_segments": 0,
+      "delay_median_s": null,
+      "delay_p95_s": null,
+      "excluded_old": 0,
+      "improved": 0,
+      "rerouted": 0,
+      "routed": 3660,
+      "slowed": 0,
+      "trips_total": 3660
+    },
+    "local": {
+      "broken": 0,
+      "changed_segments": 25,
+      "delay_median_s": null,
+      "delay_p95_s": null,
+      "excluded_old": 0,
+      "improved": 1,
+      "rerouted": 39,
+      "routed": 2000,
+      "slowed": 0,
+      "trips_total": 2000
+    },
+    "rerouted": 39,
+    "routed": 5660,
+    "slowed": 0,
+    "trips_total": 5660
+  },
+  "mode": "incremental",
+  "new": "261026",
+  "old": "261025",
+  "risk": {
+    "level": "LOW",
+    "rule": "LOW: no rule fired"
+  },
+  "thresholds": {
+    "high_local_broken": 10,
+    "high_slow_seconds": 300,
+    "high_slowed_share": 0.01,
+    "slow_seconds": 120,
+    "snap_fallback_m": 200
+  },
+  "trips": []
+}

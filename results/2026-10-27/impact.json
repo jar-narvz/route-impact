@@ -1,4 +1,6 @@
 {
+  "candidates": [],
+  "culprits": [],
   "excluded_trip_ids": [],
   "exit_code": 0,
   "metrics": {
