@@ -15,7 +15,7 @@ help:
 	@echo "what-if   Evaluate edits (SNAPSHOT=YYMMDD ARGS='--delete-way ID')"
 	@echo "faults    Run injected faults (SNAPSHOT=YYMMDD N=200 SEED=2027 FULL_CHECK_EVERY=10)"
 	@echo "demos     Run the three configured what-if demos (SNAPSHOT=261027)"
-	@echo "bench     Benchmark the pipeline (stub)"
+	@echo "bench     Benchmark the pipeline (SNAPSHOT=YYMMDD [OLD=YYMMDD])"
 	@echo "test      Run pytest"
 	@echo "lint      Check code style and formatting"
 
@@ -58,8 +58,9 @@ demos: SNAPSHOT ?= 261027
 demos:
 	$(PYTHON) -c "from route_impact.faults import run_demos; run_demos('$(SNAPSHOT)')"
 
+bench: SNAPSHOT ?= 261027
 bench:
-	@echo "not implemented yet (Step 12)"
+	PYTHON="$(PYTHON)" bash scripts/bench.sh $(SNAPSHOT) $(OLD)
 
 test:
 	$(PYTHON) -m pytest
