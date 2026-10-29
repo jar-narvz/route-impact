@@ -1,13 +1,12 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 11 Verify (GitHub dispatches), then Step 12 bench. Nothing is running locally (2026-10-29 ~01:00).
-- **Done:** design, plan critique, Steps 0–10 (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`, 10 = `c72c53c` + `eaf1149`, CI green). Step 11 code committed (`6813151`), not yet verified. Real fault suite finished and committed (`0c73497`). All pushed.
+- **Working on:** Step 12 — code reviewed and uncommitted; Jared to commit, then run the bench on the Mac (2026-10-29 ~01:25).
+- **Done:** design, plan critique, Steps 0–11 (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`, 10 = `c72c53c` + `eaf1149`, 11 = `6813151`, verified 2026-10-29). Fault suite committed (`0c73497`). Step 12 code + follow-up written by Codex, reviewed (170 passed, lint clean).
 - **Next session, in order:**
-  1. **Step 11 Verify.** Pages is already enabled (`build_type: workflow`; do not add a Pages starter workflow). Dispatch (a): `gh workflow run daily.yml -f date=2026-10-28`. Expect green, a bot commit adding `results/2026-10-28/`, and the map at `https://jar-narvz.github.io/route-impact/site/?date=2026-10-28`. Note the run's duration and that it wasn't OOM-killed. Then `-f date=2026-10-27` → "already done"; `-f test_high=true` → `[test]` issue, no commit; `-f date=2099-01-01` → fails "not published", no commit, no issue. Run `git pull` after (a), since the bot commits to main.
-     - **Dispatch (a) started 2026-10-29 ~01:00 by Jared: run 40838962434.** Check with `gh run view 40838962434 --repo jar-narvz/route-impact` (add `--log-failed` if it failed). Record the duration and result here before doing (b)–(d).
-  2. **Step 12.** Write `metrics.py`, `scripts/bench.sh`, `scripts/check_outputs.py` (Codex), then Jared runs `make bench` and the four impact runs on the Mac.
-  3. **Step 13.** README with real numbers from `results/` (fault numbers below).
+  1. **Step 12 runs (Jared, Mac, nothing else heavy running):** after committing Step 12 code and `git pull` (bot commit `76d814b`), run `make bench SNAPSHOT=261027` and `route-impact impact --old 2610xx --new 2610yy` for 23→24, 24→25, 25→26, 26→27 (26→27 overwrites `results/2026-10-27/` — check its diff). Verify: `python scripts/check_outputs.py results/ --expect-impact 4` and metrics.json has `git_dirty: false`.
+  2. **Step 13.** README with real numbers from `results/` (fault numbers below; daily-run timing in the Step 11 Verify log entry).
+  3. Close test issues #1 and #2 when convenient.
 - **Fault suite result (`results/faults/261027/scores.json`, N=200, seed 2027, full check every 10th run):** incremental==full 22/22; root cause single 355/355 and batch 355/355 trips; joint 0/0; impact rate 19/200 (9.5%, "network redundancy, not accuracy"). 220 runs (200 single + 20 batches of 10). Setup: extract 18.19 s, baseline 309.80 s; mean run 125.96 s single / 125.05 s batch. Log: 29322.42 s real, 13977993216 B max RSS. README caveat: the 355 trips come from only 19 faults, so the trips aren't independent tests; batch and single share the same 355 because the batches regroup the same 200 faults.
 - **Earlier notes (kept for reference):**
   - **Step 10 — CI.** Done 2026-10-29: run 40838310758 green (`132 passed in 49.57s`), badge shows "passing". Commits `c72c53c` + `eaf1149`.
@@ -52,6 +51,71 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-29 — Step 11 Verify: GitHub dispatches
+- **Agent:** Claude (Jared dispatched)
+- **Did:** Ran the four Step 11 Verify dispatches on GitHub and checked runs, commits, issues and the Pages map.
+- **Changed:** `PROGRESS.md` only. Bot commit `76d814b` on origin/main (`results/2026-10-28/impact.json`, `report.md`, `impact.geojson`).
+- **Verify:**
+  - (a) run 40838962434, `date=2026-10-28`: success, 9m15s total (07:59:19→08:08:34Z); "Run daily impact" 07:59:39→08:08:11Z; downloads 624M each at ~12–15 MB/s; output `LOW LOW: no rule fired broken=0 slowed=0 output=results/2026-10-28/impact.json`; bot commit rebased and pushed; `pages` job deployed. Not OOM-killed (peak RSS on the runner not measured). Map `https://jar-narvz.github.io/route-impact/site/?date=2026-10-28` → HTTP 200, renders "No affected routes or confirmed culprits in this file.", no console errors; `results/2026-10-28/impact.geojson` → 200.
+  - (b) run 40840231384, `date=2026-10-27`: success, log `results/2026-10-27 already done; skipping`, no commit.
+  - (c) run 40840259018, `test_high=true`: cancelled before starting (see gotcha). Rerun alone: runs 40840662303 (31s) and 40840922338 (25s), both success; opened `[test] HIGH risk: fixture town_v1 → town_v2` issues #1 and #2; no commits (origin/main still ends at `76d814b`).
+  - (d) run 40840270536, `date=2099-01-01`: failure as expected, log `norcal-981231.osm.pbf not published on Geofabrik`, exit 1, `pages` skipped, no commit, no issue.
+- **Review:** n/a (no code change).
+- **Gotchas:** `concurrency: group: daily, cancel-in-progress: false` still allows only **one pending** run per group: dispatching (d) while (c) was queued behind (b) cancelled (c). Dispatch tests one at a time. Same applies if a manual run is queued when the 06:00 UTC cron fires. The 2099 failure names the OLD file (day before), which is correct behaviour.
+
+### 2026-10-29 — Step 12 code: benchmark and output validation
+- **Agent:** Codex
+- **Did:** Added the benchmark module with real OLD→NEW extraction, graph construction, incremental routing and root-cause timings; snapshot counts and environment metadata; BSD/GNU time parsing and RSS merge. Added the portable bench wrapper, Make target and stdlib output checker, plus 28 offline test cases covering fixture benchmarking, captured resource logs, merge/error paths, synthetic schema failures and committed results.
+- **Changed:** `src/route_impact/metrics.py`, `scripts/bench.sh`, `scripts/check_outputs.py`, `Makefile` (bench target/help only), `tests/test_metrics.py`, `tests/test_check_outputs.py`, `PROGRESS.md` (this log entry only).
+- **Verify:** All four required commands exited 0, using the existing venv via `PATH="$PWD/.venv/bin:$PATH"`. Actual output excerpts:
+
+```text
+$ make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 160 items
+
+============================= 160 passed in 35.50s =============================
+$ make lint
+ruff check . && ruff format --check .
+All checks passed!
+32 files already formatted
+$ python scripts/check_outputs.py results/
+OK results/2026-10-27/impact.json
+OK results/faults/261027/scores.json n = 200
+Summary: metrics=0 impact=1 scores=1 failures=0
+$ bash -n scripts/bench.sh
+```
+
+  Follow-up Verify (Codex, 2026-10-29): all three commands exited 0 with `PATH="$PWD/.venv/bin:$PATH"`; actual output excerpts:
+
+```text
+$ make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 170 items
+
+============================= 170 passed in 37.28s =============================
+$ make lint
+ruff check . && ruff format --check .
+All checks passed!
+32 files already formatted
+$ python scripts/check_outputs.py results/
+OK results/2026-10-27/impact.json
+OK results/faults/261027/scores.json n = 200
+Summary: metrics=0 impact=1 scores=1 failures=0
+```
+
+- **Review:** Claude, 2026-10-29: reran `make test` (160 passed in 35.20s), `make lint` (clean), `check_outputs.py results/` (impact OK, scores OK n = 200), `bash -n` OK. Files touched match the step. Findings: (1) `metrics.py:135-165` `seconds.total` (and the `/usr/bin/time` wall/RSS) include an extra full ST_ReadOSM scan of NEW for row counts — total ≠ pipeline time; (2) `metrics.py:110-111` snapping index + way loading for both snapshots are inside total but in no phase; (3) `git_commit` doesn't record a dirty tree, so commit Step 12 before benching; (4) `bench.sh:21` buffers all stderr until exit — no progress shown during a long run. None blocks; (1)–(3) are a small follow-up before the real run. Step 12 not done until the Mac runs pass Verify.
+- **Gotchas:** No full NorCal files were run. Only one committed daily impact currently exists; `--expect-impact 4` will fail until Jared runs the remaining comparisons. Metrics schema uses `seconds` for phases and `risk_level` for the impact level; `wall_seconds` is added by `add-rss`. `diff` is residual impact summary/risk/selection/JSON work; segment differencing is inside the route timer. Total includes preparation, counting and temporary-DB cleanup, so phase sums need not equal total. The count query performs an additional raw NEW PBF scan. The checker accepts null score percentages only for zero denominators, matching the committed joint score. The initial fixture test exposed sandbox denial of macOS CPU sysctl; the required platform.processor() fallback now handles that, and all checks above passed afterward. Existing PLAN.md and untracked .claude/.codex changes were left untouched. Current state was not edited.
+  Follow-up Gotchas (Codex, 2026-10-29): superseding the timing caveat above, `seconds.total` now stops immediately after `impact_from_graphs`, before counting and temporary-DB cleanup. `prepare_old` / `prepare_new` time node preparation and way loading inside total; `count` times the drivable count and raw NEW PBF scan outside total. `/usr/bin/time` wall_seconds and peak_rss_bytes still cover the whole process, including count. Added `git_dirty` from tracked-only porcelain status, with both git fields null when git is missing; the checker requires a boolean and reports `WARN dirty tree` on an otherwise OK metrics line. Tests cover the fixture phase keys and pipeline-sum lower bound (excluding count), clean/dirty/missing git, missing new phase keys, missing/null/nonboolean git_dirty and the non-failing warning. Changed only metrics.py, check_outputs.py, their two test files and this entry's Verify/Gotchas. No full NorCal files, staging or commits; Current state, PLAN.md and docs/DESIGN.md were not edited. Follow-up awaits Claude review.
 
 ### 2026-10-29 — Step 11: Daily job
 - **Agent:** Codex (Claude reviewed; Claude edited PLAN Step 11 first)
