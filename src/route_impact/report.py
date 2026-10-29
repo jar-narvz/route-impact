@@ -61,7 +61,7 @@ def render_markdown(payload: dict, geojson_path: Path | None = None) -> str:
     ]
     for kind in ("intercity", "local"):
         counts = metrics[kind]
-        share = f"{metrics['gravity_share_affected'] * 100:g}%" if kind == "intercity" else "—"
+        share = f"{metrics['gravity_share_affected'] * 100:.3g}%" if kind == "intercity" else "—"
         lines.append(
             f"| {kind.title()} | {counts['trips_total']} | {counts['routed']} |"
             f" {counts['broken']} | {counts['slowed']} | {share} |"

@@ -289,7 +289,7 @@ def json_safe(value: Any) -> Any:
     if isinstance(value, list):
         return [json_safe(item) for item in value]
     if isinstance(value, float):
-        return round(value, 2) if isfinite(value) else None
+        return float(f"{value:.6g}") if isfinite(value) else None
     return value
 
 

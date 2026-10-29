@@ -177,6 +177,15 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Verify:** `python scripts/check_outputs.py results/` → every `metrics.json` field present and non-null with the right type; `results/faults/261027/` has all score fields and n = 200 (or the reduced n, stated); four `results/<date>/impact.json` files each carry a risk level and exit code.
 - **Status:** done 2026-10-29 (bench `533b05b`; four impact runs 23→27 all LOW / exit 0; `check_outputs.py --expect-impact 4` → failures=0; see PROGRESS)
 
+### Step 12b — Keep small fractions in impact.json (bug fix)
+- **Owner:** Codex writes; Claude reviews and reruns
+- **Files:** `src/route_impact/impact.py`, `tests/test_impact.py`, `src/route_impact/report.py`, `tests/test_report.py` (added 2026-10-29 in review: `report.md` printed `share * 100` with `:g`, which only looked tidy because the JSON was pre-rounded — it now prints percentages to 3 significant digits, e.g. `55.6%`, `0.00383%`), then regenerated `results/2026-10-2{4,5,6,7,8}/` (impact.json, report.md, impact.geojson)
+- **Bug:** `json_safe` rounds every float to 2 decimals, so `high_slowed_share` 0.005 is written as 0.01 and any `gravity_share_*` below 0.005 is written as 0.0. Risk levels were computed before rounding, so no committed risk level is wrong, but `impact.json` (the source of truth) misreports the threshold and would hide small shares. Found in Step 12 Verify.
+- **Do:** round finite floats to **6 significant digits** (`float(f"{v:.6g}")`) instead of 2 decimals; nonfinite → `null` as before. Update the `0.56` share assertion (`tests/test_impact.py:78`) to the 6-significant-digit value. Add tests: thresholds with `high_slowed_share = 0.005` serialise as `0.005`; a share of `3.83e-05` (one intercity trip's share of the gravity weight) serialises as non-zero; seconds still serialise deterministically (same payload twice → identical JSON). After the code is merged, rerun 23→24 … 27→28 locally (`make download DATE=261028` first) to regenerate the committed files.
+  - *Why significant digits, not more decimals:* one rule fits values of any size — a 3.83e-05 share and a 299.54 s route both keep 6 meaningful digits, while fixed decimals would need a guess about the smallest value. *Rejected:* exempting share/threshold keys from rounding (a key list goes stale and new fields get rounded silently); no rounding (still deterministic, but float noise like `0.30000000000000004` makes committed diffs harder to read).
+- **Verify:** `pytest tests/test_impact.py` green with the new tests; `make test` and `make lint` green. After the reruns: `python scripts/check_outputs.py results/ --expect-impact 4` → failures=0, and `git diff results/` shows only `high_slowed_share` 0.01 → 0.005 plus extra digits on existing floats — no change to risk level, exit code, broken, slowed or rerouted counts.
+- **Status:** done 2026-10-29 (181 passed; five reruns all LOW/exit 0; results diff = `high_slowed_share` 0.01 → 0.005 only; see PROGRESS)
+
 ### Step 13 — README with real numbers (MVP done)
 - **Owner:** Claude drafts, Jared approves
 - **Files:** `README.md`

@@ -45,7 +45,7 @@ def test_fixture_report(towns: dict, payload: dict, tmp_path: Path) -> None:
     assert (
         "Map: https://jar-narvz.github.io/route-impact/site/?date=2026-10-02" in report.splitlines()
     )
-    assert "| Intercity | 9 | 9 | 1 | 4 | 56% |" in report
+    assert "| Intercity | 9 | 9 | 1 | 4 | 55.6% |" in report
     assert "| Local | 0 | 0 | 0 | 0 | — |" in report
     expected = towns["expected"]["trips"].values()
     culprits = {
@@ -89,6 +89,12 @@ def test_fixture_report(towns: dict, payload: dict, tmp_path: Path) -> None:
         f["properties"]["id"] for f in geojson["features"] if f["properties"]["role"] == "culprit"
     } == {identifier for _, identifier in culprits}
     _dump_geojson(tmp_path / "impact.geojson")
+
+
+def test_small_gravity_share_report(payload: dict) -> None:
+    payload["metrics"]["gravity_share_affected"] = 3.83e-05
+    report = render_markdown(payload)
+    assert "| Intercity | 9 | 9 | 1 | 4 | 0.00383% |" in report.splitlines()
 
 
 def test_tag_shapes() -> None:

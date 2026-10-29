@@ -1,12 +1,12 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 13 — README drafted 2026-10-29, waiting on Jared's read-through/approval. Step 12 done (verified 2026-10-29).
+- **Working on:** Step 13 — README drafted 2026-10-29, waiting on Jared's read-through/approval. Steps 12 and 12b done (verified 2026-10-29).
 - **Done:** design, plan critique, Steps 0–12. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact results 23→27, README draft and Step 12 Verify committed 2026-10-29.
 - **Next session, in order:**
   1. ~~Jared commits Step 12 results + README~~ — done 2026-10-29.
   2. **Step 13 approval:** Jared reads `README.md`; then mark PLAN Step 13 done. Not yet verified: `make setup && make test` from a *fresh clone* (only run in the existing `.venv`: 170 passed).
-  3. **Bug fix step (new, needs a PLAN entry):** `json_safe` rounds every float to 2 dp (`impact.py:290`), so `high_slowed_share` 0.005 is written as 0.01 and small gravity shares as 0.0. Details in the Step 12 Verify log entry.
+  3. ~~Step 12b — json_safe rounding fix~~ — done 2026-10-29, uncommitted (see log).
   4. ~~Close test issues #1 and #2~~ — closed 2026-10-29 with a comment (Jared approved).
   5. Resume bullet: draft from README numbers once Jared approves the README.
 - **Bench result (`results/2026-10-27/metrics.json`, commit `0beac5d`, git_dirty false, M3 Max, 36 GB, threads 2, memory_limit 2GB):** wall 448.46 s, pipeline total 438.23 s, peak RSS 9797926912 B. Phases: extract 18.31/18.85, graph 26.33/30.20, prepare 23.88/20.76, route 299.54, diff 0.34, root_cause ~0 (nothing affected), count 5.92 (outside total). 655 MB pbf; 79670984 nodes, 7763376 ways, 85234 relations; 535394 drivable ways; graph 726182 vertices / 1660020 edges; LSCC 716812. LOW, 0 broken, 0 slowed of 5660 trips.
@@ -54,6 +54,18 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-29 — Step 12b: keep small fractions in impact.json
+- **Agent:** Codex (code + tests, two passes); Claude (review, reruns, Verify)
+- **Did:** `json_safe` now rounds finite floats to 6 significant digits instead of 2 decimals. Review found `report.md` relied on the old rounding (`share * 100:g` printed `55.5556%`), so Step 12b's Files were extended to `report.py` + `tests/test_report.py` and the share now prints with `:.3g` (`55.6%`, `0.00383%`). Downloaded 261028 and reran all five days.
+- **Changed:** `src/route_impact/impact.py`, `tests/test_impact.py`, `src/route_impact/report.py`, `tests/test_report.py`, `results/2026-10-2{4,5,6,7,8}/impact.json`, `PLAN.md`.
+- **Verify:**
+  - `pytest tests/test_impact.py -q` → `39 passed in 2.04s`; `make test` → `181 passed in 35.98s`; `make lint` → `All checks passed!`, `37 files already formatted`.
+  - Reruns 23→24 … 27→28 (log `data/impact-rerun-12b.log`): all `LOW LOW: no rule fired broken=0 slowed=0`, `exit=0`.
+  - `python scripts/check_outputs.py results/ --expect-impact 4` → `Summary: metrics=1 impact=5 scores=1 failures=0`.
+  - `git diff results/`: 5 files, 1 line each — `"high_slowed_share": 0.01` → `0.005`. No other change (report.md and impact.geojson identical).
+- **Review (Claude):** no blocking findings. Nit: delays in `report.md` still use `:g` minutes (`report.py:101`), so they can show 6 digits (pre-existing). The new `test_json_safe_preserves_small_threshold` tests `json_safe` directly, not through `compute_impact`; acceptable since `compute_impact` returns `json_safe(...)` of `asdict(thresholds)`.
+- **Gotchas:** the local 27→28 rerun matched the GitHub Actions bot commit (`76d814b`) byte for byte apart from the threshold line — same output on Mac and the runner.
 
 ### 2026-10-29 — Step 13: README draft
 - **Agent:** Claude (drafted; Jared approves)

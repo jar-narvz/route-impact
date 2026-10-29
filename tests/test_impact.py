@@ -15,11 +15,46 @@ from route_impact.impact import (
     Snapper,
     compare_trips,
     compute_impact,
+    json_safe,
     prepare_trips,
     segment_costs,
     summarize,
 )
 from route_impact.risk import Thresholds, exit_code, load_thresholds, risk_level
+
+
+def test_json_safe_preserves_small_threshold() -> None:
+    payload = {"thresholds": {"high_slowed_share": 0.005}}
+    encoded = json.dumps(json_safe(payload), sort_keys=True, allow_nan=False)
+    assert json.loads(encoded)["thresholds"]["high_slowed_share"] == 0.005
+
+
+def test_json_safe_preserves_small_share() -> None:
+    share = json_safe(3.83e-05)
+    assert share != 0
+    assert share == 3.83e-05
+
+
+def test_json_safe_serialization_is_deterministic() -> None:
+    payload = {
+        "thresholds": {"high_slowed_share": 0.005},
+        "gravity_share_affected": 3.83e-05,
+        "seconds": 299.541234567,
+    }
+    first = json.dumps(json_safe(payload), sort_keys=True, allow_nan=False)
+    second = json.dumps(json_safe(payload), sort_keys=True, allow_nan=False)
+    assert first == second
+    assert json.loads(first)["seconds"] == 299.541
+
+
+@pytest.mark.parametrize("value", [inf, -inf, float("nan")])
+def test_json_safe_nonfinite(value: float) -> None:
+    assert json_safe(value) is None
+
+
+@pytest.mark.parametrize("value", [True, False, 0, 123456789])
+def test_json_safe_preserves_bools_and_ints(value: bool | int) -> None:
+    assert json_safe(value) is value
 
 
 def comparison(
@@ -75,7 +110,7 @@ def test_fixture_impact(towns: dict, version: str, thresholds: Thresholds) -> No
         assert payload["metrics"]["broken"] == 1
         assert payload["metrics"]["slowed"] == 4
         assert payload["risk"]["level"] == "HIGH"
-        assert payload["metrics"]["gravity_share_affected"] == 0.56
+        assert payload["metrics"]["gravity_share_affected"] == 0.555556
     else:
         assert payload["metrics"]["changed_segments"] == 0
         assert payload["metrics"]["broken"] == payload["metrics"]["slowed"] == 0
