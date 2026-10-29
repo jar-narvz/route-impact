@@ -5,7 +5,7 @@
 - **Done:** design, plan critique, Steps 0–9c committed (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`). Step 9b findings A–C (output size, joint bridge, runtime) are resolved or measured; details under "Step 9b real-data checks" below.
 - **Next up (can run in parallel with the fault suite):**
   - **Step 10 — CI.** Written and reviewed, local lint/test pass (2026-10-29). Waiting on Jared: commit + push, then confirm the Actions run is green and the badge renders. That is Step 10's Verify; mark it done only after that.
-  - **Step 11 — Daily job.** Not blocked. Read PLAN "### Step 11". GitHub's runner memory vs the ~7.8–8.5 GB peak of one real impact run is unverified, so check it in Step 11's first dispatch.
+  - **Step 11 — Daily job.** Written and reviewed, offline checks pass (2026-10-29). Waiting on Jared: commit + push, set Settings → Pages → Source = GitHub Actions, then the three dispatches in PLAN Step 11 Verify (a: 2026-10-28, then 2026-10-27 → "already done"; b: test_high; c: 2099-01-01). In dispatch (a), read the run's duration and confirm it wasn't OOM-killed: GitHub's 16 GB runner vs the ~7.8–8.5 GB peak is still unverified.
   - **Step 12 — code only.** `metrics.py`, `scripts/bench.sh` and `scripts/check_outputs.py` can be written now.
   - **Step 13 — README text.** Can be drafted now, with fault numbers left blank.
   - **While the fault suite runs, do not:** run `make bench` or the four impact runs (they skew both timings; run them after it finishes); edit `faults.py`, `impact.py`, `rootcause.py`, `graph.py`, `extract.py` or `sql/` (a crash-resume would mix code versions); commit `results/faults/261027/` before `scores.json` exists.
@@ -46,6 +46,14 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-29 — Step 11: Daily job
+- **Agent:** Codex (Claude reviewed; Claude edited PLAN Step 11 first)
+- **Did:** `daily.yml`: cron `0 6 * * *` + `workflow_dispatch(date, test_high)`, job `run` (contents/issues write, 300-min timeout) runs `scripts/daily.sh`; job `pages` deploys `site/` + `results/` only when the run committed. `daily.sh`: date defaults to yesterday UTC (OLD = day before); skips if `results/<date>/` exists; downloads via `scripts/download.sh`, retrying "not published" 3 × 20 min on scheduled runs only; calls `route-impact impact` directly, 0 → bot commit, 1 → commit + issue (report.md capped at 60000 bytes + map link), else fail; `test_high` runs the town fixture pair, opens a `[test]` issue, commits nothing; `DAILY_DRY_RUN=1` echoes git/gh.
+- **Changed:** `.github/workflows/daily.yml` (new), `scripts/daily.sh` (new). Claude: `PLAN.md` Step 11 (Verify (a) moved to 2026-10-28 because `results/2026-10-27/` was committed in Step 6; schedule/retry decision recorded).
+- **Verify:** Offline only so far. YAML parses; `bash -n` ok (shellcheck not installed). `DAILY_DRY_RUN=1 TEST_HIGH=true` → `HIGH HIGH: 1 intercity trip broken broken=1 slowed=0`, then `DRY RUN: gh issue create --title '[test] HIGH risk: fixture town_v1 → town_v2' …`, exit 0. `DATE=2026-10-27` → `results/2026-10-27 already done; skipping`, exit 0. `DATE=2099-01-01` → `norcal-981231.osm.pbf not published on Geofabrik`, exit 1, no file left in `data/`. `DATE=2026-02-30` → `Invalid DATE`, exit 1. `TEST_HIGH=yes` → exit 1. Pending: the three GitHub dispatches.
+- **Review:** Claude — approved. Minor, accepted: the `[test]` issue's map link points at `?date=2026-10-02`, which isn't on Pages; a dispatch with an empty date is treated as scheduled (gets retries); if `git push` fails after a HIGH, the issue isn't opened, but the run fails and GitHub notifies.
+- **Gotchas:** Pushes made with `GITHUB_TOKEN` don't trigger other workflows, so Pages deploys inside `daily.yml`, not on push. Pages must be enabled once by hand.
 
 ### 2026-10-29 — Step 10: CI
 - **Agent:** Codex (Claude reviewed)
