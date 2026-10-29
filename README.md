@@ -107,6 +107,7 @@ By fault type (single runs):
 - The 355 trips come from only 19 faults, so they aren't 355 independent tests. The four biggest faults account for 306 of them (103, 99, 61 and 43 trips).
 - The batch score covers the same 355 trips, because the batches regroup the same 200 faults.
 - Slowing a single way (`bad_maxspeed`, `downgrade_class`) never pushed a trip past the 2-minute threshold. A detour of similar length was always nearby.
+- The root-cause score only covers **connectivity-type faults** (deleted ways and bridges, one-way changes, disconnected nodes), because those were the only ones that affected a trip. It says nothing about attributing slowdowns.
 - These are scores on **injected** faults, not a real-world catch rate.
 
 Each single run took 125.96 s on average, after a one-time 18.19 s extract and 309.80 s of baseline routing, on the Mac described below.
@@ -114,6 +115,7 @@ Each single run took 125.96 s on average, after a one-time 18.19 s extract and 3
 ## Limitations
 - **No turn restrictions, no traffic.** Routes use free-flow travel times from speed limits and class defaults. Turn-restriction relations are ignored, so a broken restriction is invisible and some routes are shorter than in reality.
 - **Thresholds are provisional.** They were set against snapshots 261023–261027, which had almost no major-road change. That's too little history to calibrate on, so they need revisiting after a few weeks of daily runs.
+- **Single-road slowdowns are mostly invisible.** A wrong speed limit or a downgraded road class on one road rarely delays any trip by 2 minutes, because routes go around it. In the fault suite, 0 of 56 such faults affected a trip. This is arguably correct (if no trip gets slower, navigation isn't hurt), but speed-tag vandalism is only caught on roads with no nearby alternative.
 - **Injected faults are not a real-world catch rate.** The scores show the tool finds the culprit for faults *it injected* into the graph tables. They say nothing about how often real bad edits happen, or whether every kind would be caught.
 - **Reversible roads** (`oneway=alternating|reversible`) are treated as two-way.
 - **Service roads are excluded**, so an endpoint in a parking lot snaps to the nearest street, and a broken driveway is out of scope.
