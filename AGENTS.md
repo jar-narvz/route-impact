@@ -4,7 +4,7 @@
 
 ## Project
 - **What:** `route-impact` — measures how a day of OpenStreetMap edits changes navigation in Northern California. Routes a fixed, population-weighted trip set on two consecutive Geofabrik snapshots, reports broken and slowed trips with a LOW/MEDIUM/HIGH risk level, traces each to the edit that caused it, runs daily in GitHub Actions, and is evaluated with injected faults. Design: `docs/DESIGN.md`.
-- **Stack:** Python 3.11+, DuckDB (+ `spatial` extension, `ST_ReadOSM`), SQL, scipy (`sparse.csgraph`), pytest, GNU Make, bash, GitHub Actions + Pages, Leaflet (static page only). `osmium-tool` only for building test fixtures.
+- **Stack:** Python 3.11+, DuckDB (+ `spatial` extension, `ST_ReadOSM`), SQL, scipy (`sparse.csgraph`), pytest, GNU Make, bash, GitHub Actions + Pages, Leaflet (results map) and MapLibre GL JS (playground), static pages only. `osmium-tool` only for building test fixtures.
 - **Key dirs:**
   - `sql/extract/` — SQL that builds `roads`, `road_nodes`, `places`, and graph `edges` from the `.osm.pbf` (`drivable.sql` holds the drivable list)
   - `sql/faults/` — one `.sql` per fault type (mutations applied to a copy of a snapshot DB)

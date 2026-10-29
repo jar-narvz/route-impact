@@ -193,8 +193,13 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Verify:** every number in README `grep`s back to a value in `results/`; a fresh clone runs `make setup && make test` green.
 - **Status:** done 2026-10-29 — Jared approved the README; numbers traced; fresh clone 181 passed; CI run 40961646981 green. **MVP done.**
 
-### Phase 2 (after Nov 4, optional) — Fault playground
-In-browser Bay Area routing (static, no server): ship a compact Bay Area subgraph, click a road to delete/flip it, recompute routes in JS. Not planned in detail yet.
+### Phase 2 — Fault playground (design: [docs/PLAYGROUND.md](docs/PLAYGROUND.md); started 2026-10-29)
+Branch `playground`; merge to `main` only after P2 Verify. Steps below are outlines; each gets Files / Do / Verify detail before Codex starts it.
+- **P0 — Feasibility spike (go/no-go).** Export real Bay arrays (all parallel edges, reverse twins, Float64 costs), baseline paths, reduced geometry; bare MapLibre page; measure in a real browser into `results/playground/feasibility.json`: cold-load bytes (excl. tiles, incl. MapLibre), decode time, peak heap, end-to-end edit latency (incl. what-mattered check) for both presets, 20 random Stomps and Meteors at 150/300/500 m over downtown SF, ways per blast, per-file gzip size; OpenFreeMap terms checked. Go if each file ≤ 5,000,000 B, total ≤ 10,000,000 B, Bay Bridge preset and chosen Meteor radius ≤ 2 s. No-go path in docs/PLAYGROUND.md §7. *Status:* todo
+- **P1 — Exporter + oracle + tests.** `route-impact export-playground`; Python oracle (Stomp/Flip/Meteor + full recompute on the exported graph, fixed endpoints, uncapped "mattered" set); pytest on fixtures; `node --test` JS vs oracle for Stomp, Flip, delete-parallel-winner, flip-into-existing-edge, Meteor with one road mattering, Meteor needing a contiguous run, "several roads together", 120 s boundary. *Status:* todo
+- **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. *Status:* todo
+- **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
+- **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
 
 ## Risks / open questions
 - **Scope vs time:** 14 steps in ~5 days. **Cut order (whole features, not trimming):** (1) batch-of-10 fault runs (single faults only); (2) random suite → demos + 50 random faults (n stated); (3) map click-for-details popups (still draw routes and culprits). **Never cut:** the mandatory vertical slice, CI, demo faults, the results map.
@@ -219,7 +224,28 @@ In-browser Bay Area routing (static, no server): ship a compact Bay Area subgrap
 10. After Codex critique: segments are the cross-snapshot identity; snapping keeps node ids and routes on the full NEW graph; root cause confirmed by counterfactual; access by OSM precedence; batched routing; workflow calls the CLI directly (see Review log).
 11. Step 6 adds `graph.route_pairs` (2026-10-28, Claude): `shortest()` returns the full origin × destination product, so 2,000 local origins would rebuild ~4M paths; pair routing keeps the same batched Dijkstra but rebuilds only the requested paths. Impact extracts each snapshot into a fresh temp DB (as `trips.generate` does) — no cached `.duckdb`, so no stale-cache risk and the "tables already exist" issue goes away.
 
+12. **Playground becomes a game with an Apple Maps-style interface** (2026-10-29, Jared + Claude). Jared asked for faults that work like campuscrusher.com and a UI that feels like Apple Maps on iOS.
+    - **Game loop:** weapons Stomp / Flip / Meteor (MVP), Quake / Tornado (P3), damage numbers and Rebuild.
+    - **Meteor's "roads that mattered" check:** the pipeline's restore-one-edit root cause applied to one blast.
+    - **Interface:** MapLibre GL JS + OpenFreeMap vector tiles instead of Leaflet + raster tiles, because a calm restyled map and dark mode need vector styling. The results map stays on Leaflet.
+    - **Not copied:** no global leaderboard (needs a backend), no 3D, no Apple assets (SF Symbols and SF Pro are licensed for Apple platforms only).
+    - **Deadline fallback:** Meteor is the first thing dropped if P0 or time says so.
+    - Details in docs/PLAYGROUND.md.
+
 ## Review log
+### 2026-10-29 — Codex critique of the Phase 2 playground design (`codex exec --sandbox read-only`, 10 points)
+All 10 accepted; docs/PLAYGROUND.md and the Phase 2 steps updated the same day.
+1. **Incremental proof: promise worsening only.** Accepted: flips activate reverse edges that can speed up untouched trips. The page reports break/slow only (as the pipeline does); the test compares incremental vs full worsening after delete and flip.
+2. **Winner-only CSR loses parallel detours.** Accepted, and the most important point. It was a real correctness bug in the draft: export one row per pipeline `Edge`, relax all active edges, plus delete-winner and flip-into-existing-edge fixtures.
+3. **Endpoint semantics differ from the CLI.** Accepted: fixed endpoints (edits only deactivate edges), with the oracle using the same rule; no claim of CLI equivalence.
+4. **Box clipping changes answers.** Accepted: filter trips by raw coordinates before snapping; drop whole contracted edges that leave the box; LSCC once on the unedited graph only; freeze the cohort; state "no detours outside the box".
+5. **`what-if` is not a valid oracle; Bay Bridge is 10 ways.** Accepted: the oracle is a Python full recompute on the identical exported graph; Bay Bridge is a labelled compound preset counted as one edit.
+6. **The 300 ms single-search gate doesn't prove 1 s edits.** Accepted: P0 measures end-to-end edit latency in a real browser, with the Bay Bridge preset as the gate (≤ 2 s), and destinations grouped by origin. Deadline fallback: presets only.
+7. **The size gate missed the total.** Accepted: hard per-file 5,000,000 B plus a 10,000,000 B transfer target excluding tiles (5 MB total was infeasible: routing alone is 3,992,423 B gzipped), measured into `results/playground/feasibility.json`.
+8. **Binary format underspecified.** Accepted: versioned, little-endian, Float64 costs, Float64 OSM ids (node ids exceed 2^32), and an active-mask overlay with reverse twins instead of rewriting CSR.
+9. **Node tests miss browser/worker/hosting.** Accepted: P0 measures in a real browser; P2 has a deployed-Pages smoke test; request ids stop stale worker responses; loading/error states are required (N8).
+10. **MVP scope mixed deferred features; "routes around it" was unsupported.** Accepted: Nov 4 scope is delete + flip, one active edit, Reset, two presets, essential phone layout, loading/error states. Two honest "nothing changed" messages; the cause is stated as "this edit, by construction", not a root-cause search.
+
 ### 2026-10-28 — Codex plan critique (`codex exec --sandbox read-only`, 10 points)
 Prompt: *"Read docs/DESIGN.md, PLAN.md and AGENTS.md. Critique the plan: missing steps, wrong Verify commands, OSM/DuckDB/scipy pitfalls, graph-construction bugs, scope risk for ~5 days. Max 10 bullets."*
 
