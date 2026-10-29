@@ -61,8 +61,8 @@ Terms from [DESIGN.md §2](DESIGN.md#2-glossary) (segment, edge, vertex, LSCC, t
    - **Flip:** tap a one-way road, reverse it (disabled on two-way roads, with the reason).
    - **Meteor:** tap anywhere, delete every way within a fixed radius of the tap.
    - Quake (disconnect every intersection in a circle) and Tornado (delete along a dragged line) come in P3. Speed edits (`bad_maxspeed`, `downgrade_class`) are left out: in the suite they affected 0 of 56 faults, so as weapons they would almost never do anything.
-3. **F3 — Damage:** after an edit, reroute the affected trips and show **trips broken**, **trips slowed by 2 min or more** (the pipeline's `slow_seconds`, 120 s), and **minutes of delay added** across slowed trips.
-4. **F4 — What mattered:** draw affected trips (before vs after route). For Stomp and Flip the cause is that one road, by construction. For Meteor, list the destroyed roads that **mattered**: those whose restoration alone recovers at least one affected trip (§5.8). Trips that no single road explains are labelled "broken by several roads together", never forced onto one road. Each road links to openstreetmap.org.
+3. **F3 — Damage:** after an edit, reroute the affected trips and show **trips broken**, **trips slowed by 2 min or more** (the pipeline's `slow_seconds`, 120 s), and **added travel minutes across the sampled trips delayed ≥ 2 min** (seconds summed, then rounded for display), always next to the sample size ("of 2,0xx sampled trips"). Broken trips are counted separately and never added into the minutes. The page never presents this as total traffic delay or vehicle-minutes.
+4. **F4 — What mattered:** draw affected trips (before vs after route). For Stomp and Flip the cause is that one road, by construction. For Meteor, list what **mattered** (§5.8) in three kinds: **single roads** whose restoration alone recovers a trip, **road groups** (a run of destroyed roads on one stretch, e.g. a bridge drawn as several ways) that recover it together, and trips explained only by **several separate roads together**. When the check was capped, affected trips are marked **"attribution incomplete"** instead of getting a verdict. Each road links to openstreetmap.org.
 5. **F5 — One active edit, Rebuild:** a new edit replaces the current one; **Rebuild** restores the original network. (Stacking several edits and undo come in P3.)
 6. **F6 — Explain "nothing happened" honestly:** distinguish **"no sampled trip used these roads"** from **"N trips rerouted, none slowed by 2 min or more"**. Both are common (181 of 200 suite faults affected no trip). Neither claims the edit is harmless: only the sampled trips were tested.
 7. **F7 — Try these:** one-tap presets from `config/demo_faults.toml`: **Bay Bridge** (a labelled compound Stomp of its 10 ways) and **University Ave ramp** (Flip). A visitor sees real damage without hunting for a chokepoint.
@@ -78,7 +78,7 @@ Terms from [DESIGN.md §2](DESIGN.md#2-glossary) (segment, edge, vertex, LSCC, t
 - **N7 — Phone first:** the sheet layout is designed for a phone and adapts to desktop (§5.9). Tap targets ≥ 44 px.
 - **N8 — Visible loading and error states:** the page never shows a blank map; failed fetch, missing browser feature, or a worker error each produce a plain message.
 - **N9 — Smooth map:** pan, zoom and drawing stay at interactive frame rates while routing runs. Routing happens in a Web Worker; drawing is GPU-rendered (§5.9).
-- **N10 — Accessible:** weapons and results are reachable by keyboard and screen reader; the results are always readable as text, not only as colors on the map; motion is reduced when the visitor asks for it (`prefers-reduced-motion`).
+- **N10 — Accessible:** the whole edit flow works without a pointer (crosshair + Enter, §5.9), results are announced to screen readers and are always readable as text, not only as colors on the map, and motion is reduced when the visitor asks for it (`prefers-reduced-motion`).
 
 ### Non-goals
 - **Global counters, leaderboards, shared scores.** They need a backend (Campus Crusher has one); the playground is static. Damage is per visit.
@@ -133,11 +133,12 @@ flowchart LR
 |---|---|---|---|---|
 | **Stomp** | MVP | deactivate every directed edge of the tapped OSM way | `delete_way` | a road is within tap distance |
 | **Flip** | MVP | deactivate the way's edges, activate their reverse twins | `flip_oneway` | the way is one-way; disabled with a reason otherwise |
-| **Meteor** | MVP | Stomp every way with any geometry point within radius *r* of the tap | `delete_way` × many | always (a tap on water hits nothing and says so) |
+| **Meteor** | MVP | deletes **entire OSM ways** that intersect the circle of radius *r* (a segment-to-circle test in metres, so a segment crossing the circle counts even if both its points lie outside). A long way is deleted whole, even its parts beyond the ring; the drawn blast highlights all of it | `delete_way` × many | always (a tap on water hits nothing and says so) |
 | **Quake** | P3 | at every vertex within *r*, only continue on the way you arrived on | `disconnect_node` × many | always |
 | **Tornado** | P3 | Stomp every way crossed by a dragged line | `delete_way` × many | drag of ≥ some minimum length |
 
-- **Meteor radius:** one fixed radius in the MVP, chosen in P0 from 150 / 300 / 500 m by measured ways-per-blast over downtown SF and the resulting edit latency. Not guessed here.
+- **Hit test uses the shipped (simplified) geometry,** with the simplification tolerance recorded in `meta.json`. Roads within that tolerance of the ring's edge may differ from the unsimplified map. The oracle runs on the same shipped geometry, so the tests check the browser, not the simplification.
+- **Meteor radius:** one fixed radius in the MVP, chosen in P0 from 150 / 300 / 500 m against the frozen stress set (§7). Not guessed here.
 - **One active edit** (MVP): each weapon use replaces the previous edit; a preset is one compound edit. Stacking and undo come in P3.
 - Quake needs a small change to Dijkstra (state = vertex + incoming way at the affected vertices), so it waits for P3.
 
@@ -166,29 +167,35 @@ flowchart LR
 - **Phone:** tap targets ≥ 44 px; the sheet never covers the blast — the map pans so the tap point stays visible above the sheet; slower routing is acceptable.
 
 ### 5.8 What mattered (counterfactual check for one blast)
-A Meteor can destroy dozens of roads at once, and usually only a few of them matter. Finding those few is the pipeline's root-cause idea (DESIGN §5.7), applied to one edit:
+A Meteor can destroy dozens of roads at once, and usually only a few of them matter. Finding those few is the pipeline's root-cause rule (DESIGN §5.7), applied to one edit, with the same definitions:
 1. **Affected trips** = trips whose baseline path uses a deactivated edge and which broke or slowed by ≥ 2 min.
-2. **Candidates for a trip** = the destroyed ways on its baseline path, in path order.
-3. **Restore one at a time:** for each candidate way *w*, reactivate only *w*'s edges and reroute only the affected trips that have *w* as a candidate. If a trip recovers (reachable again and delay < 2 min), *w* **mattered** for it.
-4. **Contiguous runs:** for trips no single way recovers, test each run of ≥ 2 consecutive destroyed ways on its path (a bridge drawn as several ways), the same rule as DESIGN §5.7.
-5. **Otherwise:** "broken by several roads together", listing its candidates. Never forced onto one road.
+2. **Candidates for a trip** = the destroyed ways on its baseline path.
+3. **"Recovers" means what the pipeline means:** a **broken** trip recovers when it becomes reachable again; a **slowed** trip recovers when its delay drops below `slow_seconds`. (So restoring a road that turns a break into a 5-minute detour *does* count as mattering for that broken trip.) A fixture pins this case.
+4. **Single roads:** for each candidate way *w*, reactivate only *w*'s edges and reroute the affected trips that have *w* as a candidate. A recovering trip confirms *w*.
+5. **Road groups:** for trips no single road recovers, split the trip's baseline path into **maximal runs of changed segments, separated by any unchanged segment** (DESIGN §5.7), and test each run with ≥ 2 ways, maximal runs only. *Why the separator matters:* the Bay Bridge's two spans are split by the intact Yerba Buena tunnel, so they are two runs, not one.
+6. **Otherwise:** "several separate roads together", listing the candidates. Never forced onto one road.
 
-- **Cost:** step 3 costs one grouped reroute per (candidate way, origin) pair. **Cap:** if this exceeds a budget set in P0, check the candidates used by the most affected trips first and mark the rest **"not checked"** in the panel, honestly, rather than guessing.
-- Stomp and Flip skip this: the cause is the one road by construction.
-- The **oracle** (N6) runs the same steps in Python, uncapped, so the browser's "mattered" set is tested, not trusted.
+**Per-trip bookkeeping:** confirmed singles, confirmed runs, tested candidates, unchecked candidates.
+- **Cost:** one grouped reroute per (candidate way, origin) pair, plus one per (run, origin) pair.
+- **Cap:** one total attribution budget (number of searches), set in P0 from the stress set. When the budget runs out, checking continues in order of trips affected, and every trip with untested singles or runs is shown as **"attribution incomplete"**, never as "several roads together". A step-6 verdict is only given when steps 4–5 were complete for that trip.
+- **Stomp and Flip** skip this: the cause is the one road by construction.
+- **The oracle** (N6) runs the same steps in Python, **uncapped**. Tests compare the browser's *confirmed* singles and runs against the oracle (they must be a subset, and equal when the cap isn't hit), and a dedicated fixture forces the cap to check the "attribution incomplete" path.
 
 ### 5.9 Interface: Apple Maps patterns
-**Decision — MapLibre GL JS with free OpenFreeMap vector tiles, instead of Leaflet with raster OSM tiles.** *Why:* the Apple Maps feel depends on a calm, restyled map (muted colors, roads and labels de-emphasized so the routes stand out), smooth fractional zoom, rotation, and a matching dark style. Raster tiles can't be restyled. MapLibre also draws the routes and blasts on the GPU, which serves N9. *Cost:* a larger library than Leaflet (size measured in P0), WebGL required (fallback message, §5.7), and a second map library in the repo (the existing results map stays on Leaflet). *Open check in P0:* confirm OpenFreeMap's usage terms and attribution; fallback is OSM raster tiles as a MapLibre raster source.
+**Decision — MapLibre GL JS with free OpenFreeMap vector tiles, instead of Leaflet with raster OSM tiles.** *Why:* the Apple Maps feel depends on a calm, restyled map (muted colors, roads and labels de-emphasized so the routes stand out), smooth fractional zoom, rotation, and a matching dark style. Raster tiles can't be restyled. MapLibre also draws the routes and blasts on the GPU, which serves N9. *Cost:* a larger library than Leaflet (size measured in P0), WebGL required (fallback message, §5.7), and a second map library in the repo (the existing results map stays on Leaflet). *Use the provider's ready-made styles* (a light and a dark one) with only small color tweaks for the MVP; a fully custom Apple-like style is P4.
+
+**Attribution is part of the layout.** The tile credits (OpenFreeMap, OpenMapTiles, © OpenStreetMap contributors, per OpenFreeMap's guide) stay visible above the sheet at every sheet height, never hidden behind it. P0 records the chosen style's license, the icon set's license, and the policy of the fallback (OSM's own raster tiles, whose usage policy forbids obscuring attribution and limits heavy use).
 
 Patterns taken from Apple Maps (layout and behavior only; no Apple assets, see Non-goals):
 - **Full-screen map;** everything else floats above it.
-- **Bottom sheet with three heights:** *peek* (weapon toolbar + one line of status), *half* (damage numbers, roads that mattered, Try these), *full* (list of affected trips with before/after times). Drag the grabber or tap to change height; on desktop (≥ 900 px wide) the sheet becomes a floating card on the left, like Apple Maps on Mac and iPad.
+- **Bottom sheet with three heights:** *peek* (weapon toolbar + one line of status), *half* (damage numbers, roads that mattered, Try these), *full* (list of affected trips with before/after times). In the MVP, height changes by **tapping the grabber or labelled height buttons**; drag with momentum is P4. On desktop (≥ 900 px wide) the sheet becomes a floating card on the left, like Apple Maps on Mac and iPad.
 - **Materials:** translucent blurred background on the sheet and buttons (`backdrop-filter`), large corner radius, soft shadow, thin separators.
 - **Floating round buttons** top-right: Rebuild, recenter on the Bay, light/dark toggle.
 - **Type:** the system font stack (`-apple-system, system-ui, …`), so it's SF on Apple devices and native elsewhere; large bold numbers for damage, as Apple Maps does for ETAs.
 - **Weapon toolbar:** a segmented row of icon + label buttons (open-source icon set) in the sheet's peek height, with the selected weapon highlighted in the accent color.
 - **Color:** one accent blue for "after" routes and selection; grey for "before" routes; red for broken, orange for slowed — always paired with text, never color alone (N10).
-- **Feedback:** a Meteor shows an expanding ring that fades out where it lands; destroyed roads fade out; routes redraw. All motion is reduced under `prefers-reduced-motion`.
+- **Feedback:** a Meteor shows a simple expanding ring where it lands (CSS/MapLibre layer); routes redraw. Richer animation is P4. All motion is reduced under `prefers-reduced-motion`.
+- **Without a pointer:** a crosshair marks the map center. Arrow keys pan, and **Enter fires the selected weapon at the crosshair** (Stomp/Flip take the road nearest it). Results are announced through a polite live region, focus is always visible, and the sheet heights are buttons. P2 verifies the full flow — pick weapon, fire, read damage, Rebuild — by keyboard only.
 - **Light and dark:** follows the system setting, with a matching dark map style.
 
 ## 6. Solution implementation
@@ -242,16 +249,17 @@ flowchart TD
 ## 7. Proposed plan / timeline
 Work on a branch (`playground`) so `main`, which job applications link to from Nov 4, stays stable; merge only after P2's Verify passes.
 
-- **P0 — Feasibility spike (go / no-go), ~½ day.** Export the real Bay arrays in the §5.2 format (all parallel edges, reverse twins, Float64 costs), baseline paths and reduced geometry. Build a bare MapLibre page and measure **in a real browser** (Claude's browser pane, page served locally), writing the numbers to a committed `results/playground/feasibility.json`:
-  - cold-load bytes transferred (excluding tiles; including MapLibre), decode time, peak JS heap;
-  - **end-to-end edit latency** (affected-trip lookup + grouped reroute + what-mattered check + message + draw) for the Bay Bridge preset, the University ramp, 20 random Stomps, and Meteors at 150 / 300 / 500 m over downtown SF;
-  - ways per Meteor blast at each radius, and each file's gzipped size;
-  - OpenFreeMap terms and attribution checked (or fallback chosen).
+- **P0 — Feasibility spike (two go/no-go decisions), Oct 30.** Export the real Bay arrays in the §5.2 format (all parallel edges, reverse twins, Float64 costs), baseline paths and reduced geometry. Build a bare MapLibre page and measure **in a real browser** (Claude's browser pane, page served locally). Results go to a committed `results/playground/feasibility.json`.
+  - **Frozen stress set**, fixed before measuring and committed with the results: the Bay Bridge preset; the University ramp; 20 seeded random Stomps; Meteors at 150 / 300 / 500 m on four fixed spots chosen to cover the worst cases — dense downtown SF streets, a chokepoint (a bridge approach), a spot that isolates trip endpoints, and a quiet residential area.
+  - **Per case, recorded:** affected trips and origins, single and run searches, whether attribution completed, and end-to-end latency (lookup + grouped reroute + attribution + message + draw) as the median of 5 repeats.
+  - **Also recorded:** cold-load bytes (excluding tiles, including MapLibre), decode time, peak JS heap, per-file gzipped size, and the licenses and attribution of the tiles, style and icons.
 
-  **Go** if every file ≤ 5,000,000 B, the total ≤ 10,000,000 B, and both the Bay Bridge preset and the chosen Meteor radius finish in ≤ 2 s (1 s target). The radius is the largest that passes. **No-go:** shrink the box (SF + Oakland) or the local-trip sample and re-measure once. If it still fails, ship Stomp/Flip plus precomputed preset results and drop Meteor from the Nov 4 scope.
+  **Decision A — live routing:** go if every file ≤ 5,000,000 B, the total ≤ 10,000,000 B, and the Bay Bridge preset and every Stomp finish in ≤ 2 s (1 s target). If not, shrink the box (SF + Oakland) or the local-trip sample and re-measure once. If it still fails, the Nov 4 page ships **labelled precomputed results for the presets only** (no live routing).
+  **Decision B — Meteor:** given A passes, the radius is the largest one whose stress cases all finish in ≤ 2 s within one total attribution budget. If no radius passes, Meteor is dropped from Nov 4 and Stomp/Flip ship live.
 - **P1 — Exporter + oracle + tests.** `route-impact export-playground`. pytest on fixtures: counts, parallel edges kept, reverse twins, exclusions recorded, baselines equal Python routing. A **Python oracle** that applies a Stomp, Flip or Meteor edit to the exported graph, fully recomputes every trip under fixed-endpoint semantics, and computes the uncapped "mattered" set (§5.8). `node --test` checks that the JS routing core agrees with the oracle on trip ids, reachability, delays, classification and the mattered set, on these fixtures: Stomp, Flip, delete-the-parallel-winner, flip-into-an-existing-edge, a Meteor where one road matters, a Meteor needing a contiguous run, a "several roads together" case, and trips at exactly 120 s. Node is preinstalled on GitHub runners; no npm packages.
 - **P2 — Game MVP.** Full-screen MapLibre map with muted light and dark styles; bottom sheet with three heights (desktop: left card); floating Rebuild / recenter / theme buttons; Stomp, Flip, Meteor; grouped reroute in a worker with request ids; damage numbers; drawn before/after routes; roads that mattered; Try these presets; the two "nothing happened" messages; loading/error states; keyboard and reduced-motion support. **Verify:** browser == oracle on both presets, 10 random Stomps and 3 Meteors (damage numbers and mattered set); a smoke test on the deployed Pages URL on a phone-sized and a desktop viewport (loads, presets run, no console errors). Then link it from the README.
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset.
 - **P4 — Polish:** URL hash to share one edit, animation and phone pass.
 
+**Timeline:** the MVP is done and the main repo is ready for Nov 4 either way. P0 on Oct 30 decides A and B. P1–P2 run Oct 31 – Nov 2, with these cuts if time runs short, in order: drag/animation polish (already P4), then Meteor attribution beyond singles (show singles + "attribution incomplete"), then Meteor itself. Stomp, Flip, presets, Rebuild, light/dark and the three-height sheet always ship. P3–P4 after Nov 4.
 **Timeline:** the MVP is done and the main repo is ready for Nov 4 either way. P0 on Oct 30; P1–P2 Oct 31 – Nov 2 if P0 says go, with Meteor the first thing dropped if time runs short (Stomp, Flip and the presets still ship). P3–P4 after Nov 4.

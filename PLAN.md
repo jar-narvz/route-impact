@@ -195,7 +195,30 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 
 ### Phase 2 — Fault playground (design: [docs/PLAYGROUND.md](docs/PLAYGROUND.md); started 2026-10-29)
 Branch `playground`; merge to `main` only after P2 Verify. Steps below are outlines; each gets Files / Do / Verify detail before Codex starts it.
-- **P0 — Feasibility spike (go/no-go).** Export real Bay arrays (all parallel edges, reverse twins, Float64 costs), baseline paths, reduced geometry; bare MapLibre page; measure in a real browser into `results/playground/feasibility.json`: cold-load bytes (excl. tiles, incl. MapLibre), decode time, peak heap, end-to-end edit latency (incl. what-mattered check) for both presets, 20 random Stomps and Meteors at 150/300/500 m over downtown SF, ways per blast, per-file gzip size; OpenFreeMap terms checked. Go if each file ≤ 5,000,000 B, total ≤ 10,000,000 B, Bay Bridge preset and chosen Meteor radius ≤ 2 s. No-go path in docs/PLAYGROUND.md §7. *Status:* todo
+- **P0 — Feasibility spike (two go/no-go decisions), Oct 30.**
+  - **Owner:** Codex writes the spike code; Claude runs the export and the browser measurements and decides A and B.
+  - **Branch:** `playground`.
+  - **Files:**
+    - `scripts/playground_spike.py`: spike exporter and stress-set generator. Not the P1 exporter; it may be replaced.
+    - `site/playground/spike/index.html`, `site/playground/spike/worker.js`, `site/playground/spike/measure.js`
+    - `results/playground/stress_set.json` and `results/playground/feasibility.json` (both committed)
+  - **Spike data:** written to `data/playground-spike/` (gitignored, never committed), served locally with `python -m http.server` from the repo root.
+  - **Do:**
+    1. **Export from 261027 in the §5.2 format:**
+       - routing: CSR, every parallel edge, reverse twins inactive, Float64 seconds, Float64 OSM ids;
+       - baseline paths for the box's trip cohort (filter by raw coordinates, then snap to the LSCC);
+       - geometry simplified at a stated tolerance with quantized coordinates, gzipped.
+    2. **Freeze the stress set before measuring:** Bay Bridge and University ramp from `config/demo_faults.toml`; 20 Stomps from seeded random ways on at least one baseline path (seed recorded); Meteors at 150, 300 and 500 m on 4 fixed points (dense downtown SF, a bridge approach, a spot that isolates trip endpoints, a quiet residential area), with coordinates in the file.
+    3. **Spike page:**
+       - MapLibre from a pinned CDN version with an OpenFreeMap style;
+       - worker loads and decompresses the data with `DecompressionStream`;
+       - grouped-by-origin Dijkstra over the active-edge mask;
+       - segment-to-circle Meteor hit test;
+       - single + maximal-run attribution with a search counter;
+       - `measure.js` runs every stress case 5× and downloads the result JSON.
+    4. **Record:** cold-load transfer (excluding tiles), decode time, peak heap, per-file gzip size, and for each case its affected trips and origins, searches, attribution completeness and median latency. Also record tile, style and icon licenses and the attribution text.
+  - **Verify:** `results/playground/feasibility.json` has every field above for every stress case; every file is ≤ 5,000,000 B; decisions A and B are written in PROGRESS with the numbers they rest on. No pytest is required for spike code. `make test` and `make lint` stay green.
+  - *Status:* todo
 - **P1 — Exporter + oracle + tests.** `route-impact export-playground`; Python oracle (Stomp/Flip/Meteor + full recompute on the exported graph, fixed endpoints, uncapped "mattered" set); pytest on fixtures; `node --test` JS vs oracle for Stomp, Flip, delete-parallel-winner, flip-into-existing-edge, Meteor with one road mattering, Meteor needing a contiguous run, "several roads together", 120 s boundary. *Status:* todo
 - **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. *Status:* todo
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
@@ -233,6 +256,18 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - Details in docs/PLAYGROUND.md.
 
 ## Review log
+### 2026-10-29 — Codex critique of the playground game + UI additions (`codex exec --sandbox read-only`, 9 points)
+7 accepted as given, 2 accepted with changes; docs/PLAYGROUND.md and the P0 step updated the same day.
+1. **Runs must be maximal runs split by unchanged segments.** Accepted: same rule as DESIGN §5.7 (keeps the Bay Bridge's two spans separate across the tunnel); groups shown separately from single roads.
+2. **A capped check can't give a "several roads" verdict.** Accepted: per-trip bookkeeping; "attribution incomplete" whenever checks remain; browser-confirmed ⊆ oracle, equal when uncapped; a cap fixture.
+3. **"Recovers" was stricter than the pipeline.** Accepted, and it was my error: a broken trip recovers when reachable, a slowed one when its delay is under 120 s, exactly as DESIGN §5.7. A fixture pins break → 5-min detour.
+4. **"Any geometry point" misses crossing segments.** Accepted: segment-to-circle intersection in metres, whole ways deleted, simplification tolerance recorded; the oracle uses the same shipped geometry.
+5. **Ways per blast isn't the cost.** Accepted: a frozen stress set (Bay Bridge, ramp, 20 Stomps, Meteors at 3 radii on 4 fixed spots), recording origins, searches, completeness and the median of 5 timings.
+6. **Fallback depended on what failed; P2 too big.** Accepted with a change: P0 makes two decisions (A live routing → else precomputed presets; B Meteor → else Stomp/Flip live). The Apple-style UI stays because Jared asked for it, but the MVP uses ready-made light/dark styles, tap-to-change sheet heights and a simple ring; drag, custom style and animation move to P4.
+7. **"Minutes of delay added" overclaims.** Accepted: labelled "added travel minutes across the sampled trips delayed ≥ 2 min", with the sample size, broken counted separately, seconds summed before rounding.
+8. **Map editing wasn't accessible.** Accepted with a change: a center crosshair with Enter to fire (instead of a text road search, which can come later), a live region for results, visible focus, sheet-height buttons, and a keyboard-only Verify in P2.
+9. **Attribution is a layout requirement.** Accepted: tile credits stay visible above the sheet at every height; P0 records the style, icon and fallback licenses and policies.
+
 ### 2026-10-29 — Codex critique of the Phase 2 playground design (`codex exec --sandbox read-only`, 10 points)
 All 10 accepted; docs/PLAYGROUND.md and the Phase 2 steps updated the same day.
 1. **Incremental proof: promise worsening only.** Accepted: flips activate reverse edges that can speed up untouched trips. The page reports break/slow only (as the pipeline does); the test compares incremental vs full worsening after delete and flip.
