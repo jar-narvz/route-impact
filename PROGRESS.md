@@ -1,9 +1,15 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Step 12's real fault suite (N=200, seed 2027, full check every 10th run). The Claude session that built Step 9c starts it after the n=10 rehearsal passes (~16:15, 2026-10-28) and then records the launch below. Until that "Fault run started" line appears, other sessions must not edit PROGRESS.md.
-- **Done:** design, plan critique, Steps 0–9c committed (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`). Step 9b findings A–C (output size, joint bridge, runtime) are resolved or measured; details under "Step 9b real-data checks" below.
-- **Next up (can run in parallel with the fault suite):**
+- **Working on:** Step 11 Verify (GitHub dispatches), then Step 12 bench. Nothing is running locally (2026-10-29 ~01:00).
+- **Done:** design, plan critique, Steps 0–10 (Step 9 = `a8c7c9a`, 9b = `24eceb4`, 9c = `3200567`, 10 = `c72c53c` + `eaf1149`, CI green). Step 11 code committed (`6813151`), not yet verified. Real fault suite finished and committed (`0c73497`). All pushed.
+- **Next session, in order:**
+  1. **Step 11 Verify.** Pages is already enabled (`build_type: workflow`; do not add a Pages starter workflow). Dispatch (a): `gh workflow run daily.yml -f date=2026-10-28`. Expect green, a bot commit adding `results/2026-10-28/`, and the map at `https://jar-narvz.github.io/route-impact/site/?date=2026-10-28`. Note the run's duration and that it wasn't OOM-killed. Then `-f date=2026-10-27` → "already done"; `-f test_high=true` → `[test]` issue, no commit; `-f date=2099-01-01` → fails "not published", no commit, no issue. Run `git pull` after (a), since the bot commits to main.
+     - **Dispatch (a) started 2026-10-29 ~01:00 by Jared: run 40838962434.** Check with `gh run view 40838962434 --repo jar-narvz/route-impact` (add `--log-failed` if it failed). Record the duration and result here before doing (b)–(d).
+  2. **Step 12.** Write `metrics.py`, `scripts/bench.sh`, `scripts/check_outputs.py` (Codex), then Jared runs `make bench` and the four impact runs on the Mac.
+  3. **Step 13.** README with real numbers from `results/` (fault numbers below).
+- **Fault suite result (`results/faults/261027/scores.json`, N=200, seed 2027, full check every 10th run):** incremental==full 22/22; root cause single 355/355 and batch 355/355 trips; joint 0/0; impact rate 19/200 (9.5%, "network redundancy, not accuracy"). 220 runs (200 single + 20 batches of 10). Setup: extract 18.19 s, baseline 309.80 s; mean run 125.96 s single / 125.05 s batch. Log: 29322.42 s real, 13977993216 B max RSS. README caveat: the 355 trips come from only 19 faults, so the trips aren't independent tests; batch and single share the same 355 because the batches regroup the same 200 faults.
+- **Earlier notes (kept for reference):**
   - **Step 10 — CI.** Done 2026-10-29: run 40838310758 green (`132 passed in 49.57s`), badge shows "passing". Commits `c72c53c` + `eaf1149`.
   - **Step 11 — Daily job.** Written and reviewed, offline checks pass (2026-10-29). Waiting on Jared: commit + push, set Settings → Pages → Source = GitHub Actions, then the three dispatches in PLAN Step 11 Verify (a: 2026-10-28, then 2026-10-27 → "already done"; b: test_high; c: 2099-01-01). In dispatch (a), read the run's duration and confirm it wasn't OOM-killed: GitHub's 16 GB runner vs the ~7.8–8.5 GB peak is still unverified.
   - **Step 12 — code only.** `metrics.py`, `scripts/bench.sh` and `scripts/check_outputs.py` can be written now.
@@ -14,7 +20,7 @@
     - **Expected finish:** about 23:00–00:30. Estimated from the rehearsal (setup 330.3 s; unchecked run ~85 s; a full check adds ~300 s, ×22). Not measured.
     - **If it died:** rerun the same command without `--fresh`; it resumes from `progress.jsonl`. If the last progress line is truncated, delete that one line first.
     - **Rehearsal that passed (n=10, scratchpad):** 1889.29 s real, 12461473792 B max RSS; full-checked runs [0, 10], incremental==full 2/2, root cause single 8/8, batch 8/8, impact rate 1/10.
-    - **After it finishes:** record `scores.json` numbers here, commit `results/faults/261027/`, then run `make bench` and the four impact runs (Step 12).
+    - **Finished 2026-10-29 00:18**, 220/220; committed `0c73497`. Numbers are under "Fault suite result" above.
   - **Step 9b real-data checks (Claude, 2026-10-28; outputs in the session scratchpad, not `results/`):**
     - Bay Bridge what-if (10 ways): 667.68 s real, 7794311168 B max RSS; impact.json 374,105 B, impact.geojson 1,942,107 B (25 of 349 trips). Still 348 joint / 1 confirmed: the undeleted Yerba Buena tunnel splits each route into two separate runs. Jared, 2026-10-28: keep both spans. DESIGN §5.7 and the PLAN 9b Verify now note this.
     - `route-impact faults --snapshot 261027 --n 10 --seed 2027`: 4873.03 s real, 12240011264 B max RSS, 11 runs (10 single + 1 batch). Setup: extract 17.9 s, baseline 307.4 s. Per run mean 410.2 s, of which compare_full 73.6%, new_graph 17.9%; apply 0.1–0.3 s; root cause ≤ 5.7 s. Scores: incremental==full 11/11, root cause single 8/8 and batch 8/8 (all 8 trips from one fault), impact rate 1/10.
