@@ -222,8 +222,8 @@ Patterns taken from Apple Maps (layout and behavior only; no Apple assets, see N
   4. **Undo and Rebuild** run the same procedure (or restore a saved base copy for Rebuild).
   5. Tests check partial == full customization after every transition.
 - **Integer milliseconds, rounded once in Python:** `ms = floor(seconds × 1000 + 0.5)`, computed by the exporter and shipped as `Uint32`. JS never rounds.
-  - **Infinity** is a reserved sentinel (2³² − 1), and every addition is guarded: an infinite operand gives infinity, and finite sums are checked against a proven bound (total of all edge ms < 2⁵³ and < sentinel). Values are stored only after validation.
-  - Zero-ms edges are allowed. Ties are expected and handled by deterministic tie-breaks.
+  - **Arithmetic in `Float64` holding whole milliseconds** (revised 2026-10-29). The CCH metrics are `Float64Array`s whose finite values are always integers; **infinity is JavaScript's `Infinity`**. *Why:* integer sums are exact below 2⁵³, and the bound is checked at build time (the sum of all finite input ms must be ≤ `Number.MAX_SAFE_INTEGER`). The first design used a `Uint32` sentinel with a "sum of all weights < 2³² − 1" bound, but the Bay graph's finite weights sum to 4,813,448,868 ms, so the P0c-2 checkpoint stopped. `Float64` removes the sentinel and the guarded addition at ~7.5 MB extra. Shipped edge times stay `Uint32` (each edge is far below 2³² ms).
+  - Zero-ms edges are allowed.
   - *Disclosure:* answers are exact **relative to the quantized playground graph**. Against the pipeline's Float64 seconds, a trip can cross the 120,000 ms threshold, and baseline paths, candidate sets and attribution can change. P0c reports every such difference against the Float64 P0b reference, and the page states that times are rounded to the millisecond.
   - Baselines and presets are recomputed in Python on the integer graph.
 - **Parallel arcs:** several input arcs can map to one CCH arc; the direct-input minimum is over the *active* ones, so deleting a parallel winner exposes the next one.

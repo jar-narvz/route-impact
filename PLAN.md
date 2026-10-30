@@ -267,6 +267,13 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - Code: `site/playground/spike/cch.js` with fill-graph build, directed customization, partial re-customization (§5.10), guarded integer arithmetic with an ∞ sentinel, witnesses + unpacking, and batched counterfactuals.
     - Network-free tests (`node --test`, runnable in CI): tiny graphs, **all pairs**, under several permutations, including the committed RoutingKit fixture order. Edit cases: increase and decrease sequences, infinite directions, parallel-winner change, Flip, restore/undo, repeated edits. Each is compared against both full customization and Dijkstra, with unpacked-path validity asserted.
     - **Checkpoint:** on the real Bay graph in Node, time the toll-plaza 500 m case with full attribution, broken down into initial edit, each restore, undo, query and unpack, with dirty-arc and triangle-scan counts. Also record fill arcs, triangles and buffer bytes. If it isn't clearly heading under 2 s, Claude raises the fallback decision early.
+    - *Status:* done 2026-10-29, **checkpoint passed → go** (Codex wrote it; Claude reran):
+      - `node --test site/playground/spike/test/cch.test.mjs`: 27/27 pass.
+      - `node site/playground/spike/cch_bench.mjs` → `results/playground/cch_checkpoint_node.json`, status complete; CCH == integer-ms Dijkstra running the same procedure on 25/25 comparisons.
+      - Real Bay graph: 935,530 CCH arcs, 6,230,212 triangles, build 486 ms.
+      - Median totals with full attribution, 1 thread (Node): toll plaza 500 m 81.5 ms, 150 m 38.8 ms; Bay Bridge live 47.8 ms; Union Square 500 m 48.9 ms; stomp_17 6.5 ms. (P0b with 8 workers: 6,471 / 2,675 / 5,070 / 665 / 331 ms.)
+      - Process peak RSS 485,834,752 B, including the Dijkstra oracle.
+      - First run stopped on the Uint32 bound → decision 15.
   - **P0c-3 — Integration + acceptance.**
     - Exporter: integer ms and the order; baselines and presets recomputed on integer ms; size trims.
     - `check.mjs`: a new integer-ms Dijkstra reference, with every stress case == CCH (impact + full attribution). Differences against the Float64 P0b reference are listed: classification, baseline paths, candidates, confirmed attribution.
@@ -326,6 +333,8 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Design:** RoutingKit nested-dissection order computed offline; topology, customization, queries and partial re-customization in plain JS.
     - **Costs:** integer-millisecond costs for exact arithmetic; size trims to reach ≤ 10 MB.
     - **Fallback:** if P0c still misses, progressive results, recorded as a gate change.
+
+15. **CCH metric arithmetic: `Float64` holding integer ms, `Infinity` for no arc** (2026-10-29, Claude). The P0c-2 checkpoint stopped at the Uint32 design's own bound: the finite weights sum to 4,813,448,868 ms > 2³² − 1. That bound was overly conservative but was my spec, and Codex correctly refused to bend it. *Why Float64:* exact for integers below 2⁵³ (≈ 1.9 million× the Bay total), so no sentinel or guarded add; ~7.5 MB more memory. Checkpoint data so far: 935,530 CCH arcs (1.7× the 551,760 input arcs), 6,230,212 triangles, build 486.8 ms, Meteor hit counts identical to P0b.
 
 ## Review log
 ### 2026-10-29 — Codex critique of the P0c CCH design (`codex exec --sandbox read-only`, 10 points)

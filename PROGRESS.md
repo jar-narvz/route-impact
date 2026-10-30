@@ -1,12 +1,11 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P0c, branch `playground`. **P0c-1 done 2026-10-29** (Claude, uncommitted):
-  - Files: `scripts/cch_order/{Makefile,main.cpp,order.py}` and `site/playground/spike/fixtures/grid6_order.json`.
-  - `make -C scripts/cch_order` clones RoutingKit `54d49bb0…` into `data/routingkit/` and builds `data/cch_order/cch_order` with fixed flags.
-  - `python scripts/cch_order/order.py --spike data/playground-spike`: 213,910 nodes, 272,836 undirected edges, 6.0 s; writes `cch_order.bin.gz` (525,982 B) and `order_manifest.json` (input sha256 `80977322…`, output `c06aa07d…`).
-  - Rebuild + rerun is byte-identical. `make lint` clean; `make test` 181 passed in 40.76 s.
-  - **Next:** P0c-2 (Codex: JS CCH core + network-free tests + toll-plaza checkpoint, due Nov 1).
+- **Working on:** Phase 2 P0c, branch `playground`.
+  - **P0c-2 done 2026-10-29; checkpoint passed (go).** Codex code, Claude reran; uncommitted: `site/playground/spike/{cch.js,cch_bench.mjs,test/cch.test.mjs}`, `results/playground/cch_checkpoint_node.json`, and the decision 15 spec fix in PLAN/PLAYGROUND.
+  - Tests 27/27; bench identical to integer-ms Dijkstra on 25/25 comparisons.
+  - Medians, 1 thread: toll plaza 500 m 81.5 ms, 150 m 38.8 ms; Bay Bridge live 47.8 ms; Union Square 500 m 48.9 ms; stomp_17 6.5 ms. CCH build 486 ms.
+  - **Next:** P0c-3 (exporter integer ms + order + size trims, worker on CCH, check.mjs vs Float64 reference, browser acceptance run).
 - **Done:** design, plan critique, Steps 0–13 + 12b. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact results 23→27, README draft and Step 12 Verify committed 2026-10-29.
 - **Next session, in order:**
   1. ~~Jared commits Step 12 results + README~~ — done 2026-10-29.
