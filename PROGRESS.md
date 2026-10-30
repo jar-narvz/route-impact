@@ -1,12 +1,13 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P1, branch `playground`. P1a committed (`b2edc58`). **P1b (Python oracle) is done and verified 2026-10-30, uncommitted.** Stopped here at Jared's request; P1c not started.
+- **Working on:** Phase 2 P1, branch `playground`. P1a committed (`b2edc58`). P1b (Python oracle) committed (`f638798`). P1c not started.
 - **Next session, start here:**
-  1. Jared commits P1b (commands in the 2026-10-30 P1b log entry).
-  2. **P1c**, per PLAN: move `cch.js`, `procedure.js` and `engine.js` into `site/playground/core/`; add `load.mjs` and `oracle.test.mjs` against the 12 fixtures; Makefile `test-js`; Node 22 in CI; the AGENTS.md Commands line. Include the P1b review's JS follow-ups: the Meteor arithmetic in the oracle's operation order, and rejecting duplicate way ids. Same workflow: an implementer subagent, then an adversarial review subagent, then Claude reruns Verify.
+  1. ~~Jared commits P1b~~ — done, `f638798`.
+  2. **P1c**, per PLAN: move `cch.js`, `procedure.js` and `engine.js` into `site/playground/core/`; add `load.mjs` and `oracle.test.mjs` against the 12 fixtures; Makefile `test-js`; Node 22 in CI; the AGENTS.md Commands line. Include the P1b review's JS follow-ups: the Meteor arithmetic in the oracle's operation order, and rejecting duplicate way ids. Workflow: Codex implements, Claude reviews the diff and reruns Verify.
   3. Then P2 (Nov 10–16), launch ~Nov 17.
-  - **Workflow change (Jared, 2026-10-30):** Codex usage is running low, so don't use Codex. Same workflow, different agents: a Claude Code subagent implements and writes tests; a separate, adversarial Claude subagent reviews the diff (and critiques plans) where Codex used to.
+  - **Workflow (Jared, 2026-10-30 02:45):** Codex is back from the 03:40 session: Codex implements and writes tests, Claude reviews. If Codex hits a quota error, fall back to a Claude implementer subagent + adversarial Claude reviewer subagent and say so in the log entry. (P1a–P1b used Claude subagents.)
+  - **Overnight 2026-10-30 (Jared):** autonomous from 03:40 — Claude commits each finished step itself as Jared, no co-author line, no push. Stop with a note here on anything needing Jared's call.
   - Leftovers:
      - Follow-up (P1a review #4): the Earth radius is in both `config/playground.toml` and `impact.py` `Snapper`; make one the source.
      - Codex notes `site/playground/spike/p0b-verification.txt` and `p0c-verification.txt`, `p0c-memory-verification.txt` are untracked; don't commit them.
