@@ -198,6 +198,42 @@ Patterns taken from Apple Maps (layout and behavior only; no Apple assets, see N
 - **Without a pointer:** a crosshair marks the map center. Arrow keys pan, and **Enter fires the selected weapon at the crosshair** (Stomp/Flip take the road nearest it). Results are announced through a polite live region, focus is always visible, and the sheet heights are buttons. P2 verifies the full flow — pick weapon, fire, read damage, Rebuild — by keyboard only.
 - **Light and dark:** follows the system setting, with a matching dark map style.
 
+### 5.10 Exact fast routing: customizable contraction hierarchies (P0c)
+*Why:* P0b's clean browser run (`results/playground/feasibility.json`) showed plain Dijkstra + landmarks + 8 workers still needs 2.7–6.5 s for a full explanation at the Bay Bridge toll plaza, plus ~1.9 s of landmark setup and an unmeasured 8× memory cost. Jared chose CCH over progressive results (PLAN decision 14).
+
+**How CCH works:**
+1. **Order (offline, once):** rank every intersection by a nested-dissection order. Small separators, such as the few roads crossing a bridge or a ridge, go last.
+2. **Shortcut structure (topology):** "contract" intersections in that order, adding a shortcut wherever removing one would disconnect its neighbours. This depends only on the order, not on travel times.
+3. **Customization:** fill every shortcut's travel time bottom-up from the real edge times (the lower triangles).
+4. **Query:** an exact shortest path is found by searching *upward* in rank from both ends and meeting in the middle, typically touching a few hundred intersections instead of tens of thousands.
+
+**Decisions** (revised after the Codex critique of 2026-10-29; see PLAN Review log):
+- **Order offline with RoutingKit** (BSD-2, by CCH's authors; inertial-flow nested dissection on vertex coordinates), via a small C++ program in `scripts/cch_order/` at a pinned RoutingKit commit.
+  - *Reproducibility:* the input is canonical (vertices in export order, undirected deduplicated edge list sorted by (min, max), coordinates as fixed microdegrees). The compiler and flags are recorded, and the output is validated as a permutation of 0..V−1.
+  - `order_manifest.json` records the RoutingKit commit, compiler, flags and SHA-256 of input and output.
+  - *Why RoutingKit:* the reference implementation; our own partitioner would be the riskiest code in the project.
+  - *Rejected:* all of RoutingKit in WebAssembly (adds a toolchain and blobs for steps that are simple in JS); METIS (another native dependency, not CCH's own method).
+- **Topology = the fill graph:** eliminate vertices in rank order, making **all remaining higher-ranked neighbours of each vertex a clique**, regardless of weights or alternative paths. With that construction, **any** permutation gives correct distances; only speed depends on the order. Tests use several trivial permutations; CI never needs C++.
+- **Directed metrics:** every CCH arc {x, y} stores an upward and a downward weight. For ranks z < x < y, `x→y` relaxes through `x→z→y` and `y→x` through `y→z→x`. Lower triangles are processed in increasing rank of the arc's lower endpoint, so dependencies are final. Each direction keeps ∞ where no input arc exists, so a later Flip can make it finite.
+- **Partial re-customization** (the CCH paper's update procedure; *not* a running `min` that would keep stale cheap shortcuts after deletions):
+  1. For each changed input arc, recompute its CCH arc's **direct-input minimum** over its currently active parallel input arcs, and enqueue that arc.
+  2. Pop arcs in increasing lower-endpoint rank. Recompute both directional weights **from scratch** = min(direct-input minimum, every lower triangle).
+  3. If a directional weight changed, enqueue every arc whose lower triangles use it, transitively.
+  4. **Undo and Rebuild** run the same procedure (or restore a saved base copy for Rebuild).
+  5. Tests check partial == full customization after every transition.
+- **Integer milliseconds, rounded once in Python:** `ms = floor(seconds × 1000 + 0.5)`, computed by the exporter and shipped as `Uint32`. JS never rounds.
+  - **Infinity** is a reserved sentinel (2³² − 1), and every addition is guarded: an infinite operand gives infinity, and finite sums are checked against a proven bound (total of all edge ms < 2⁵³ and < sentinel). Values are stored only after validation.
+  - Zero-ms edges are allowed. Ties are expected and handled by deterministic tie-breaks.
+  - *Disclosure:* answers are exact **relative to the quantized playground graph**. Against the pipeline's Float64 seconds, a trip can cross the 120,000 ms threshold, and baseline paths, candidate sets and attribution can change. P0c reports every such difference against the Float64 P0b reference, and the page states that times are rounded to the millisecond.
+  - Baselines and presets are recomputed in Python on the integer graph.
+- **Parallel arcs:** several input arcs can map to one CCH arc; the direct-input minimum is over the *active* ones, so deleting a parallel winner exposes the next one.
+- **Path unpacking:** **direction-specific witnesses** per CCH arc: either the winning input edge, or the two directed child arcs of the winning triangle. They're refreshed whenever a weight or an equal-cost winner changes, and restored on undo and Rebuild. Unpacked paths are asserted to be continuous, use only active edges, and sum exactly to the distance. Attribution candidates always come from the **shipped baseline path**, never from a CCH re-unpacking.
+- **Batched counterfactuals:** for each restored way or run, re-customize once, query all trips that share it, then undo once. The toll-plaza case is benchmarked first (P0c-2 checkpoint), before the full integration.
+- **Size and memory:** fill-arc and triangle counts and explicit buffer bytes (topology, two metrics, witnesses, saved base, construction temporaries) are measured before choosing between shipping the topology (chunked under 5 MB per file) and building it in the browser.
+  - Load-time and memory limits are set in PLAN P0c.
+  - Drop what the browser no longer needs: vertex coordinates and OSM ids, `edge_source`, landmark tables, the exclusion list in `meta.json`.
+- **Fallback at the P0c cutoff (PLAN):** progressive results (numbers first, explanation streamed), recorded as an explicit gate change. Nothing is cut.
+
 ## 6. Solution implementation
 ### 6.1 Mockup (phone; sheet at half height after a Meteor)
 ```
