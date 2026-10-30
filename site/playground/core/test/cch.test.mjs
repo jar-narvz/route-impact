@@ -5,7 +5,7 @@ import {buildCCH} from '../cch.js';
 import {createEditSession} from '../engine.js';
 import {createProcedure} from '../procedure.js';
 
-const fixture = JSON.parse(readFileSync(new URL('../fixtures/grid6_order.json', import.meta.url)));
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/grid6_order.json', import.meta.url)));
 function random(seed) {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; };
 }

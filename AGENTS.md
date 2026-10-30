@@ -22,7 +22,7 @@
 - What-if: `route-impact what-if --snapshot <YYMMDD> --delete-way <id>` (also `--flip-oneway`, `--disconnect-node`)
 - Faults: `make faults SNAPSHOT=<YYMMDD> N=200 SEED=2027` (→ `results/faults/<snapshot>/`)
 - Benchmark: `make bench SNAPSHOT=<YYMMDD>` (→ `results/<snapshot>/metrics.json`: rows, seconds, peak RSS)
-- Test: `make test` (pytest on `tests/fixtures/` only — never needs the network or the big file)
+- Test: `make test` (pytest on `tests/fixtures/` only — never needs the network or the big file — then `make test-js`, the playground engine's `node --test` suites; needs Node ≥ 22)
 - Lint: `make lint` (`ruff check . && ruff format --check .`)
 
 ## Workflow

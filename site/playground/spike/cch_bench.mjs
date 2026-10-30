@@ -2,7 +2,7 @@
 import {writeFileSync} from 'node:fs';
 import {cpus, totalmem, platform, arch, release} from 'node:os';
 import {load, root, data, json} from './node-data.mjs';
-import {createEngine} from './engine.js';
+import {createEngine} from '../core/engine.js';
 const {meta, a, order, presets, manifest} = load();
 const start = performance.now();
 const engine = createEngine(meta, a, order, presets);

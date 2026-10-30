@@ -1,7 +1,7 @@
 PYTHON ?= python
 
 .DEFAULT_GOAL := help
-.PHONY: help setup download extract trips impact report map what-if faults demos bench test lint
+.PHONY: help setup download extract trips impact report map what-if faults demos bench test test-js lint
 
 help:
 	@echo "help      List available targets"
@@ -16,7 +16,8 @@ help:
 	@echo "faults    Run injected faults (SNAPSHOT=YYMMDD N=200 SEED=2027 FULL_CHECK_EVERY=10)"
 	@echo "demos     Run the three configured what-if demos (SNAPSHOT=261027)"
 	@echo "bench     Benchmark the pipeline (SNAPSHOT=YYMMDD [OLD=YYMMDD])"
-	@echo "test      Run pytest"
+	@echo "test      Run pytest and JavaScript tests"
+	@echo "test-js   Run JavaScript core tests (Node >= 22)"
 	@echo "lint      Check code style and formatting"
 
 setup:
@@ -64,6 +65,10 @@ bench:
 
 test:
 	$(PYTHON) -m pytest
+	$(MAKE) test-js
+
+test-js:
+	node --test 'site/playground/core/test/*.test.mjs'
 
 lint:
 	ruff check . && ruff format --check .

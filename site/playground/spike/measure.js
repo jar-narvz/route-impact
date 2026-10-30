@@ -1,5 +1,5 @@
 /** Browser acceptance harness. Every edit is checked against the integer oracle. */
-import {canonical} from './procedure.js';
+import {canonical} from '../core/procedure.js';
 const status = document.getElementById('status'), error = document.getElementById('error');
 const run = document.getElementById('run'), download = document.getElementById('download');
 let sequence = 0, map, loadData, measurements, reference, stress;

@@ -1,10 +1,13 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P1, branch `playground`. P1a committed (`b2edc58`). P1b (Python oracle) committed (`f638798`). P1c not started.
+- **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
 - **Next session, start here:**
-  1. ~~Jared commits P1b~~ — done, `f638798`.
-  2. **P1c**, per PLAN: move `cch.js`, `procedure.js` and `engine.js` into `site/playground/core/`; add `load.mjs` and `oracle.test.mjs` against the 12 fixtures; Makefile `test-js`; Node 22 in CI; the AGENTS.md Commands line. Include the P1b review's JS follow-ups: the Meteor arithmetic in the oracle's operation order, and rejecting duplicate way ids. Workflow: Codex implements, Claude reviews the diff and reruns Verify.
+  1. **Jared decides P2's open questions** before Claude writes P2's Files / Do / Verify (PLAN says every step gets that detail before Codex starts; P2 is still an outline):
+     - Pages data: commit the export (9,663,640 B shipped at P0c-3) under `site/playground/data/`, or build it in a workflow? P1a left this "a P2 decision".
+     - Whether `site/playground/spike/` and `scripts/playground_spike.py` are deleted in P2, or kept as the measured reference until launch.
+     - The §5.8 Meteor attribution budget and its "attribution incomplete" fixture (deferred to P2 in PLAN P1): is it still needed now that CCH runs full attribution in ≤ 83 ms?
+  2. Push `playground` so CI checks the new Node step (`actions/setup-node@v4`, Node 22) — P1c Verify asks for CI green on push. Not yet pushed.
   3. Then P2 (Nov 10–16), launch ~Nov 17.
   - **Workflow (Jared, 2026-10-30 02:45):** Codex is back from the 03:40 session: Codex implements and writes tests, Claude reviews. If Codex hits a quota error, fall back to a Claude implementer subagent + adversarial Claude reviewer subagent and say so in the log entry. (P1a–P1b used Claude subagents.)
   - **Overnight 2026-10-30 (Jared):** autonomous from 03:40 — Claude commits each finished step itself as Jared, no co-author line, no push. Stop with a note here on anything needing Jared's call.
@@ -66,6 +69,22 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-30 — P1c: JS core promoted + `node --test` against the oracle
+- **Agent:** Codex (`codex exec --sandbox workspace-write`, ~4 min), Claude review + a one-line loader fix, Claude reran Verify. Overnight autonomous run; Claude committed as Jared.
+- **Did:** Moved `cch.js`, `procedure.js`, `engine.js` into `site/playground/core/` and the two test suites, `dijkstra.mjs` and `grid6_order.json` into `site/playground/core/test/`. Changed only the import paths in the spike files. New `load.mjs`: a generic export loader that checks the sha256 and length of each array; presets are optional. New `oracle.test.mjs`: every `tests/fixtures/playground/<case>/` gives the same `canonical()` result as the oracle's `expected.json`. `procedure.js` changes: numeric run-tuple sort and rows sorted by trip in `canonical()`; Meteor hit test rewritten in the oracle's `segment_distances2` order of operations (`k = R*π/180`, the segment as a difference of scaled points, `cx*cx+cy*cy <= r*r`), with R taken from `meta.earth_radius_m` (6371008.8 fallback only for the format-0 spike data, which lacks the key); duplicate way ids rejected. Makefile `test-js` (`make test` = pytest, then test-js). CI: `actions/setup-node@v4` Node 22. AGENTS.md Test line (Claude).
+- **Changed:** `site/playground/core/{cch.js,engine.js,procedure.js,load.mjs}`, `site/playground/core/test/{cch.test.mjs,procedure.test.mjs,dijkstra.mjs,oracle.test.mjs,fixtures/grid6_order.json}` (renames from `site/playground/spike/`), `site/playground/spike/{worker.js,measure.js,check.mjs,cch_bench.mjs}`, `Makefile`, `.github/workflows/ci.yml`, `AGENTS.md`, `PLAN.md` (P1c status only), `PROGRESS.md`.
+- **Verify (Claude reran):**
+  - `make test-js` → `# tests 47` `# pass 47` `# fail 0` (12 oracle fixtures + duplicate-id + Meteor-at-r + run-sort tests + the moved suites).
+  - `node site/playground/spike/check.mjs` → `All 34 cases identical; Python presets identical. Drift: {"affected_set":0,"classification":0,"baseline_path":0,"candidate_sets":0,"confirmed_attribution":0,"added_ms":6}`.
+  - `node --expose-gc site/playground/spike/cch_bench.mjs` → `{"after_load_rss":199950336,"after_50_rss":259555328,"growth":59604992}`; `data/playground-spike/cch_engine_node.json`: `peak_load_rss_bytes` 209764352, `memory_gate_pass: true` (limit 300000000).
+  - `make test` → `264 passed in 37.16s` then JS 47/47; `make lint` → `All checks passed!` / `46 files already formatted`.
+  - CI on push: **not run** (not pushed).
+- **Review (Claude, diff + PLAN P1c):**
+  1. *Fixed:* Codex stopped with every fixture failing `Order hash mismatch`. My brief required checking `cch_order.bin.gz` against the manifest's `output_sha256`, but the identity-order fixtures have no such field. `load.mjs` now checks the hash when the manifest has one; otherwise it requires `method == "identity"` and an order that really is 0..n−1. `meta.files` still checks the gzip's sha256 either way.
+  2. *Fixed:* Codex wrote its blocker notes to `site/playground/core/P1C_NOTES.md` (not a named file). Deleted.
+  3. No other findings. The scope matches the file list; spike edits are import paths only; the Meteor order matches the oracle line by line; the duplicate check runs before the Flip one-way check, the same order as the oracle.
+- **Gotchas:** Codex's sandbox can't write `.git/index`, so its `git mv` went to a temporary index. Claude staged the renames, and git detects them as renames. `node --test` with a quoted glob needs Node ≥ 21.
 
 ### 2026-10-30 — P1b: Python oracle (`route-impact playground-oracle`)
 - **Agent:** Claude subagent (code + tests, two passes); adversarial Claude subagent (review + fuzz); Claude (reran Verify)

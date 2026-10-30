@@ -36,19 +36,23 @@ export function createProcedure(meta, a) {
 
   // Hit-test the shipped simplified polylines in the local metre projection.
   function meteor(test) {
-    const {lat, lon, radius_m: radius} = test, R = 6371008.8, DEG = Math.PI / 180;
-    const sx = R * DEG * Math.cos(lat * DEG), sy = R * DEG, hit = [];
+    const {lat, lon, radius_m: radius} = test;
+    // Format-v0 spike exports predate earth_radius_m.
+    const R = 'earth_radius_m' in meta ? meta.earth_radius_m : 6371008.8, scale = meta.geometry_scale;
+    const k = R * Math.PI / 180, kx = k * Math.cos(lat * Math.PI / 180), hit = [];
+    const point = p => {
+      const plat = a.geometry_coords[2 * p] / scale, plon = a.geometry_coords[2 * p + 1] / scale;
+      const y = (plat - lat) * k, x = (plon - lon) * kx;
+      return [x, y];
+    };
     for (let w = 0; w < meta.counts.ways; w++) {
       const end = a.geometry_offsets[w + 1];
       for (let p = a.geometry_offsets[w] + 1; p < end; p++) {
-        const lat0 = a.geometry_coords[2 * (p - 1)] / meta.geometry_scale;
-        const lon0 = a.geometry_coords[2 * (p - 1) + 1] / meta.geometry_scale;
-        const x = (lon0 - lon) * sx, y = (lat0 - lat) * sy;
-        const vx = (a.geometry_coords[2 * p + 1] / meta.geometry_scale - lon0) * sx;
-        const vy = (a.geometry_coords[2 * p] / meta.geometry_scale - lat0) * sy;
-        const norm = vx * vx + vy * vy;
-        const t = norm ? Math.max(0, Math.min(1, -(x * vx + y * vy) / norm)) : 0;
-        if ((x + t * vx) ** 2 + (y + t * vy) ** 2 <= radius ** 2) { hit.push(w); break; }
+        const [ax, ay] = point(p - 1), [bx, by] = point(p);
+        const dx = bx - ax, dy = by - ay, length2 = dx * dx + dy * dy;
+        const projection = length2 > 0 ? -(ax * dx + ay * dy) / length2 : 0;
+        const t = Math.min(Math.max(projection, 0), 1), cx = ax + t * dx, cy = ay + t * dy;
+        if (cx * cx + cy * cy <= radius * radius) { hit.push(w); break; }
       }
     }
     return hit;
@@ -151,7 +155,10 @@ export function createProcedure(meta, a) {
 
   function hitWays(test) {
     if (test.weapon === 'meteor') return meteor(test);
-    return (test.way_ids || [test.way_id]).map(wayIndex);
+    const ids = test.way_ids || [test.way_id], seen = new Set(), duplicates = new Set();
+    for (const id of ids) { if (seen.has(id)) duplicates.add(id); seen.add(id); }
+    if (duplicates.size) throw new Error(`Duplicate way ids in the edit: [${[...duplicates].sort((a, b) => a - b).join(', ')}]`);
+    return ids.map(wayIndex);
   }
   return {run: (test, engine) => procedure(test, hitWays(test), engine, baseline, meta.slow_seconds * 1000), path, hitWays};
 }
@@ -159,11 +166,15 @@ export function createProcedure(meta, a) {
 // Paths may differ on equal-cost routes; impact and full attribution must not.
 export function canonical(result) {
   const sorted = values => [...values].sort((a, b) => a - b);
+  const tuples = (a, b) => {
+    for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return a[i] - b[i];
+    return a.length - b.length;
+  };
   return {ways_hit: result.ways_hit, candidate_trips: result.candidate_trips,
     affected_trips: result.affected_trips, broken: result.broken, slowed: result.slowed, added_ms: result.added_ms,
-    rows: result.rows.map(row => ({...row,
+    rows: [...result.rows].sort((a, b) => a.trip - b.trip).map(row => ({...row,
       candidates: sorted(row.candidates), confirmed_singles: sorted(row.confirmed_singles),
-      confirmed_runs: row.confirmed_runs.map(sorted).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+      confirmed_runs: row.confirmed_runs.map(sorted).sort(tuples),
       tested_candidates: sorted(row.tested_candidates), unchecked_candidates: sorted(row.unchecked_candidates)
     }))};
 }

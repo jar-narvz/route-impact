@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createProcedure, canonical} from '../procedure.js';
 import {createEngine, deriveSources} from '../engine.js';
-import {makeDijkstra} from '../dijkstra.mjs';
+import {makeDijkstra} from './dijkstra.mjs';
 function graph(edges, baseline, baseMs) {
   edges.sort((a,b) => a[0]-b[0] || a[1]-b[1]);
   const n = Math.max(...edges.flatMap(e => e.slice(0,2)))+1;

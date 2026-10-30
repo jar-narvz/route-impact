@@ -36,6 +36,9 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Install DuckDB spatial extension
         run: make setup
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Lint
         run: make lint
       - name: Test

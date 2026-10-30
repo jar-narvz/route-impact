@@ -1,5 +1,5 @@
 /** Single module worker: no landmarks, pool, or attribution budget. */
-import {createEngine} from './engine.js';
+import {createEngine} from '../core/engine.js';
 let engine;
 const types = {'<f8': Float64Array, '<u4': Uint32Array, '<i4': Int32Array, u1: Uint8Array};
 async function load() {
