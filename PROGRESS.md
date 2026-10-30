@@ -3,7 +3,7 @@
 ## Current state
 - **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. **Next: Claude writes P2's Files / Do / Verify, then a Codex plan critique, then Codex implements.**
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). **Next: Codex implements P2a**; Claude runs the real export and the shipping script itself (Codex has no `data/` or RoutingKit access).
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Not yet exercised by a scheduled run.
   4. **Geofabrik stalled:** its NorCal state.txt stops at 2026-10-28T21:21Z and `norcal-261029` is still unpublished (checked 2026-10-30 ~19:30 UTC). If a dated snapshot is never published, every later daily run also fails, because OLD is always NEW−1. Design question for Jared: fall back to the newest published older snapshot?

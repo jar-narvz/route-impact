@@ -418,7 +418,172 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `node --expose-gc site/playground/spike/cch_bench.mjs` → memory gate still passes.
       - `make test` and `make lint` green; CI green on push (Jared pushes).
   - *Status:* **P1a done 2026-10-30** (Claude subagent code, adversarial Claude review, Claude reran Verify: 197 passed, real export 21/21 hashes == spike) · **P1b done 2026-10-30** (Claude subagent code, adversarial Claude review with a fuzz of ~600 graphs and 0 mismatches; Claude reran: 264 passed, real 34/34 == reference-ms.json, presets equal) · **P1c done 2026-10-30** (Codex code, Claude review + loader fix, Claude reran: JS 47/47 incl. 12 oracle fixtures, check.mjs 34/34 identical, memory gate pass; CI on push pending)
-- **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. Decision 16: committed 261027 data, spike deleted, no Meteor budget. *Status:* todo — needs Files / Do / Verify detail.
+- **P2 — Game MVP** (design: PLAYGROUND §5.5–5.9, §6; F1–F8, N1–N10; Nov 10–16; decision 16). Outline as first written: `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. Decision 16: committed 261027 data, spike deleted, no Meteor budget. *Status:* todo — needs Files / Do / Verify detail.
+  - **Owner:** Codex implements and writes tests; Claude reviews each diff, runs the browser checks in the desktop app's browser pane, and decides done.
+  - **Approach:**
+    - **No build step, no npm** (N1): plain ES modules and one stylesheet. MapLibre GL JS stays pinned at `4.7.1` from unpkg, as in the spike. Basemap: OpenFreeMap `positron` (light) and `dark`, used as provided, with small color tweaks at most.
+    - **Engine unchanged:** the page and worker call `site/playground/core/` (`createEngine`, `canonical`) exactly as the oracle tests do. P2 adds no routing logic; anything that changes a canonical result is out of scope.
+    - **Page layout:**
+      - `site/playground/index.html`, `app.js` (UI state and map) and `worker.js` (loads the data, owns the engine, answers requests by id);
+      - `style.css`;
+      - `data/` (the committed 261027 export, decision 16).
+    - **Meteor radius: 500 m.** That's decision B's rule: the largest stress radius whose cases all finish within 2 s. All three passed; the worst median was 82.69 ms (`bay_bridge_toll_plaza_500`, `results/playground/feasibility.json`).
+    - **One active edit** (F5). Presets are the shipped precomputed results (`presets.json.gz`), labelled as precomputed.
+    - **Browser checks run outside `site/`:** a harness page under `tests/browser/` is served from the repo root locally. It drives the real `worker.js` and compares against committed oracle outputs, so no test page ships on Pages.
+    - **Pages deploys today only after a successful daily run** (`daily.yml` `pages` job), which Geofabrik's stall can block for days. P2e adds a deploy on push to `main` for `site/**`.
+  - **P2a — Shipped data, worker, spike removal.**
+    - **Files:**
+      - `site/playground/data/` (new, committed): exactly the files `meta.json` lists as shipped, plus `meta.json`. Claude runs the export locally (it needs `data/` and the RoutingKit binary; Codex has neither).
+      - `scripts/ship_playground_data.py` (new): copies the shipped allowlist from an export dir into `site/playground/data/` and fails on any extra or missing file (critique #1);
+      - `site/playground/core/protocol.js` (new): a pure request handler over an already-decoded export (`load.mjs`'s output in Node, the worker's in the browser), so the whole protocol is tested in Node;
+      - `site/playground/core/test/protocol.test.mjs` (new);
+      - `site/playground/worker.js` (new): only fetch, verify, decode, then `protocol.js`;
+      - `site/playground/core/test/cch_bench.mjs` (moved from `spike/`, reads an export dir via `load.mjs`, default `site/playground/data/`);
+      - `Makefile`: `bench-js` (`node --expose-gc site/playground/core/test/cch_bench.mjs`; local only, not in `make test` or CI);
+      - deleted: `site/playground/spike/` (tracked files), `scripts/playground_spike.py`, `scripts/serve_spike.py`. The three untracked `spike/*-verification.txt` notes move to `data/playground-spike/notes/` (gitignored), not deleted.
+    - **Do:**
+      - Export **outside `site/`**: `route-impact export-playground --snapshot 261027 --db data/playground-spike/261027.duckdb --order routingkit --out data/playground-261027`, then `route-impact playground-oracle --data data/playground-261027 --write-presets`, then `python scripts/ship_playground_data.py data/playground-261027 site/playground/data`. The RoutingKit run leaves `cch_order_input.bin` and `cch_order_output.bin` in the export dir; they never reach `site/` (Pages copies `site/` whole, and `.gitignore` doesn't stop that).
+      - No absolute local path or user name in any shipped file (`order_manifest.json.gz` embeds tool paths: make them repo-relative if they aren't).
+      - `worker.js` is the spike worker without the measurement extras:
+        - fetches `meta.json`, then every listed shipped file (normal HTTP caching, no `no-store`);
+        - checks sha256 and lengths as `load.mjs` does, including its order rule (hash if the manifest has one, otherwise `method == "identity"`);
+        - builds the engine once.
+      - **Message protocol (complete before any page code, critique #2):** `{id, type, ...}` → `{id, ok: true, result}` or `{id, ok: false, error}`.
+        - `load` → `meta`, preset names and labels, the load time, and the **baseline trips GeoJSON** (one MultiLineString per trip, simplified way polylines).
+        - `pick {lat, lon, max_m}` → `{way_id, name, oneway}` or `null` (uses `pick.js`, P2c; P2a ships the message with a stub that P2c fills).
+        - `edit` takes `{weapon: 'stomp' | 'flip', way_id}`, `{weapon: 'stomp', way_ids}` (compound), `{weapon: 'meteor', lat, lon, radius_m}` or `{preset}`. It returns the engine result plus, for display, way names and highlighted-road GeoJSON for the hit ways, and per affected row the trip label, `trip_ms` and `distance_ms`.
+        - `reset` → `{reset: true}`.
+        - The worker answers strictly in order. The page keeps one `latest` id; a reply with any other id is dropped, so a late edit, preset or load-retry reply never overwrites newer state. A running CCH query isn't interrupted.
+      - **Page states (used by P2b–P2c):** `loading → ready ⇄ pending → showing`, plus `error`. Rebuild is enabled in `pending` and `showing`; pressing it sends `reset`, becomes the latest request, and clears the page at once.
+      - **Feature checks in the worker:** `DecompressionStream` and `crypto.subtle` are present, else it posts a named error (N8).
+    - **Verify:**
+      - `ls site/playground/data` equals the shipped list in `meta.json` exactly (the script's check, rerun).
+      - Every shipped file ≤ 5,000,000 B.
+      - **One transfer rule for P2 (critique #7):** data (sum of the files in `site/playground/data/`) + own code (`site/playground/*.js|css|html` and `core/*.js`, gzip -9 sizes) + MapLibre 4.7.1 JS + CSS gzip -9 (measured 2026-10-30: 210,896 + 9,239 B) ≤ 10,000,000 B, tiles excluded. Computed by a one-line script, recorded. The spike's total was 9,663,640 B, so the headroom is ~65 kB: if the production export is larger, stop and record it rather than trim silently.
+      - Privacy: every shipped file, decompressed, contains no `/Users/`, `/home/`, `jarednarvaez` or `jarjar` (a small Python check over the decompressed bytes, not a raw grep of gzip).
+      - `make bench-js` → `memory_gate_pass: true` on the shipped data.
+      - `protocol.test.mjs` on the oracle fixtures: every message type, compound `way_ids`, an unknown preset error, a duplicate way id error, and the ordering rule (edit → edit → reset in a row ends with the network reset and only the last reply marked latest by a tiny page-side `latest` helper, also in `core/`).
+      - `make test` and `make lint` green, with the spike gone: nothing imports from `spike/`.
+  - **P2b — Page shell: map, sheet, buttons, themes, load and error states.**
+    - **Files:** `site/playground/index.html`, `site/playground/app.js`, `site/playground/style.css` (all new).
+    - **Do:**
+      - **Map (F1):**
+        - full-screen MapLibre centred on the Bay box, with the box outline;
+        - all baseline trip paths as one faint line layer, built in the worker from the shipped arrays and sent once after `load`;
+        - OpenFreeMap credits always visible above the sheet at every height (§5.9).
+      - **Sheet (F8):**
+        - three heights, *peek*, *half* and *full*, changed by tapping the grabber or labelled buttons (no drag; that's P4);
+        - at ≥ 900 px wide it becomes a floating card on the left;
+        - translucent blurred background (`backdrop-filter`, with a solid fallback), large radius, soft shadow;
+        - peek height holds the weapon toolbar (P2c fills it) and one status line, initially "Pick a weapon and tap a road".
+      - **Floating round buttons, top right:** Rebuild (disabled until there's an edit), recenter on the Bay, light/dark toggle. Each has an `aria-label` and is ≥ 44 px.
+      - **Theme:** follows `prefers-color-scheme`. The toggle overrides it for the visit and swaps to the matching map style. After every style load, the page re-adds its own sources and layers (box, baseline trips, and later results and highlights) from app state (critique #10).
+      - **Type and color:** system font stack; accent blue, grey "before", red broken, orange slowed, as tokens on `:root` with dark-mode values.
+      - **Footer line in the sheet:** "Snapshot 261027 · routed in your browser · sampled trips only"; the snapshot comes from `meta.json`, never hardcoded.
+      - **Loading and errors (N8, §5.7):**
+        - the sheet shows load progress, never a blank map;
+        - no WebGL, no Web Workers, a worker error or a failed fetch each give a plain message naming the cause, with Retry where retrying can help;
+        - the page states the bounded-box caveat once ("detours outside the box don't exist").
+    - **Verify (Claude, browser pane, local server from the repo root):**
+      - page loads with no console errors in light and dark;
+      - at 375×812 and 1280×800: the sheet changes height at all three stops and becomes the left card on desktop, and the attribution stays visible;
+      - with WebGL disabled (`?nowebgl` test hook or a devtools override) and with `data/` renamed, the right message shows;
+      - screenshots of phone and desktop attached to the PROGRESS entry;
+      - `make test` and `make lint` green.
+  - **P2c — Weapons and results.**
+    - **Files:**
+      - `site/playground/core/pick.js` (new): a pure grid index over the shipped way segments. `nearestWay(lat, lon, maxMetres)` returns the closest way within the tolerance, or null; ties go to the lower way index. It uses the same equirectangular metres as the Meteor test (`earth_radius_m` from `meta`).
+      - `site/playground/core/summary.js` (new): a pure function from an engine result + `meta` + way names to everything the sheet shows (numbers, message, mattered groups), so the wording logic is unit-tested without a browser;
+      - `site/playground/core/test/{pick,summary}.test.mjs` (new);
+      - `site/playground/{worker.js,app.js,index.html,style.css}`.
+    - **Do:**
+      - **Weapon toolbar (F2):** a segmented Stomp / Flip / Meteor control in the peek height (open-source icons, inline SVG; the license recorded in PROGRESS).
+        - **Stomp:** the tap goes to the worker's `nearestWay` with a 20 px tolerance converted to metres at the current zoom. No road → "No road here — zoom in".
+        - **Flip:** same pick; a two-way road (`way_oneway == 0`) gives "This road is two-way", and nothing runs.
+        - **Meteor:** fires at the tap with `radius_m: 500`. An expanding ring marks it; no motion under `prefers-reduced-motion`. No way hit → "Missed — no roads here".
+      - **Damage (F3)**, as large numbers:
+        - trips **broken**, trips **slowed ≥ 2 min**, **added minutes** (`added_ms` summed over slowed trips ÷ 60,000, rounded only for display), always with "of 2,057 sampled trips" from `meta.counts.trips`;
+        - broken trips are never added into the minutes, and no wording implies total traffic delay.
+      - **Routes (F4):** the engine's GeoJSON: before in grey, after in accent, at most 25 trips (the engine's cap); the destroyed or flipped roads are highlighted. The map pans so the tap stays visible above the sheet (§5.7).
+      - **What mattered (F4, §5.8):**
+        - A **one-way edit** (single Stomp or Flip) states that the one road is the cause. Any edit hitting **more than one way** (Meteor, or a compound Stomp such as the Bay Bridge preset) shows the attribution lists below, matching `procedure.js`'s `hitWays.length > 1` rule (critique #8).
+        - Meteor lists **single roads** (with the number of trips each recovers), **road groups** (runs) and the count of trips explained only by **several separate roads together**.
+        - Each road shows its name (or "unnamed road"), highlights on tap, and links to `https://www.openstreetmap.org/way/<id>`.
+        - No "attribution incomplete" state (decision 16).
+      - **"Nothing happened" (F6):** `candidate_trips == 0` → "No sampled trip used these roads". Candidates but no affected trip → "N trips rerouted, none slowed by 2 min or more". Both add "only the sampled trips were tested".
+      - **Try these (F7):** Bay Bridge and University Ave ramp buttons in the half height. Their results come from `presets.json.gz` and are marked "precomputed".
+      - **Full height:** the affected trips as a list: label, status, before → after minutes (or "no route").
+      - **Rebuild (F5):** resets the worker, clears the drawing and the sheet, and drops in-flight replies by id.
+      - The sheet rises to half after an edit with results; a screen-reader summary goes to the live region (P2d checks it).
+    - **Verify:**
+      - `make test-js` passes the new tests:
+        - `pick`: hand-placed points on a fixture (on a segment, at exactly the tolerance, just beyond it, equidistant from two ways), plus the agreement of `nearestWay` with a brute-force scan on 200 seeded points;
+        - `summary`: every message branch on oracle fixture results (stomp, `meteor_run`, `several_together`, a miss, candidates-but-none-affected, a broken trip), with exact strings; plus the real Bay Bridge preset result (from `site/playground/data/presets.json.gz`) gets the compound wording.
+      - In the browser pane:
+        - each weapon on a road, a two-way Flip, a Meteor on water, both presets and Rebuild behave as above;
+        - toggling the theme after a preset and after a live Meteor keeps the routes, highlights, sheet results and selection;
+        - screenshots in PROGRESS;
+        - no console errors.
+      - `make test` and `make lint` green.
+  - **P2d — Keyboard, screen reader, reduced motion; browser == oracle.**
+    - **Files:**
+      - `site/playground/{app.js,index.html,style.css}`;
+      - `scripts/playground_verify_set.py` (new): writes the frozen check set, seed recorded;
+      - `results/playground/p2_verify_set.json`, `results/playground/p2_oracle.json` and `results/playground/p2_browser_check.json` (new, committed);
+      - `tests/browser/playground_verify.html` and `tests/browser/playground_verify.js` (new; never shipped, served from the repo root).
+    - **Do:**
+      - **Without a pointer (N10, §5.9):**
+        - a crosshair at the map centre while the map has focus;
+        - arrow keys pan, `+`/`-` zoom, and **Enter fires the selected weapon at the crosshair** (Stomp and Flip take the nearest road);
+        - Tab order: weapons, map, sheet height buttons, results, Try these, floating buttons;
+        - focus always visible.
+      - **Screen reader:** every result is announced once through a polite live region in the same words as the sheet's summary. Numbers are always text, never only color.
+      - **Reduced motion:** no ring animation or animated camera moves under `prefers-reduced-motion`; camera jumps instead.
+      - **Check set** (`playground_verify_set.py --seed 2027`, frozen before the browser run):
+        - both presets as **live** edits (`stomp` with the 10 Bay Bridge way ids; `flip` 6320410);
+        - 10 Stomps on seeded random ways that lie on at least one baseline path;
+        - 3 Meteors at 500 m on the stress set's toll plaza, downtown SF and endpoint-isolating spots.
+      - `route-impact playground-oracle --data site/playground/data --stress results/playground/p2_verify_set.json --output results/playground/p2_oracle.json`.
+      - **The harness** drives the real `site/playground/worker.js` through its message protocol, runs every case, compares `canonical(result)` with the oracle by deep equality, also checks each precomputed preset equals its live run, and downloads `p2_browser_check.json` (per case: equal or not, latency, user agent; plus the export's `meta.json` sha256 and the git commit, critique #4).
+        - `canonical()` leaves out drawn paths, so for each drawn "after" path the harness also checks it starts at the trip's origin, ends at its destination, uses only edges active under the edit, and sums to `distance_ms`. Equal-cost ties may differ from the oracle; those checks don't depend on ties.
+      - **Repeated-edit check through the real page (critique #6):** P0's browser run saw reset + empty draw grow from ~48 to ~1,298 ms (`feasibility.json` `reset_note`, unexplained, on the draw side). The harness also opens `site/playground/` in an iframe and runs 50 alternating toll-plaza Meteor / Rebuild cycles through the page's own controls. It records latency to the next rendered frame and the map's source and layer counts.
+    - **Verify:**
+      - The harness in the browser pane reports 15/15 cases equal to the oracle, 2/2 presets equal to their live runs, and every drawn path valid. `p2_browser_check.json` is committed, and its counts are pasted into PROGRESS.
+      - 50 Meteor/Rebuild cycles: source and layer counts are the same after cycle 50 as after cycle 1, and the last 10 cycles' median latency is within 1.5× of the first 10's. Otherwise stop: it's a bug, not a gate change.
+      - **Keyboard-only run in the browser pane** (key presses only, no clicks, critique #9): every weapon including Flip, both presets, a road's OSM link, all three sheet heights, Rebuild, and Tab out of the map. Damage read with `read_page`.
+      - A MutationObserver on the live region records exactly one announcement per result.
+      - Collapsed sheet content isn't focusable.
+      - Every interactive element is ≥ 44 px (computed sizes, script).
+      - **Screen reader:** Claude can't run one. The README says "announced through an ARIA live region; not yet tested with a screen reader" unless Jared does a VoiceOver pass in P2e and it works.
+      - With reduced motion emulated, no animation runs.
+      - `make test` and `make lint` green.
+  - **P2e — Merge, deploy, smoke test, README link.**
+    - **Order:** P2a–P2d land on `playground`. Jared merges `playground` → `main` once P2d's Verify passes; this replaces "merge only after P2 Verify", because the deployed check below needs `main`. P2e works on `main`.
+    - **Files:**
+      - `.github/workflows/pages.yml` (new): the only Pages deploy (critique #3).
+        - **Triggers:**
+          - `push` to `main` on paths `site/**`, `results/**` and `.github/workflows/pages.yml`;
+          - `workflow_run: {workflows: [Daily], types: [completed], branches: [main]}`;
+          - `workflow_dispatch`.
+        - **Job condition:** `github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'`. A successful Daily that published nothing (an "already done" skip) still redeploys: harmless, and simpler than passing Daily's `publish` output across workflows.
+        - **Checkout:** `ref: main` (current tip), never the triggering run's `head_sha`, so the results commit made during the Daily run is included.
+        - `concurrency: {group: pages, cancel-in-progress: false}`.
+        - The build is unchanged: `mkdir _site && cp -R site results _site/`.
+      - `.github/workflows/daily.yml`: remove the `pages` job, so the deploy rule lives in one place. Daily's pushes use `GITHUB_TOKEN`, which doesn't trigger `push` workflows, so the `workflow_run` trigger covers them.
+      - `README.md`: a short "Fault playground" section with the link, what it shows, and its limits (one frozen snapshot, bounded box, 2,057 sampled trips, not total traffic). Every number comes from `meta.json` or `results/playground/`.
+      - `docs/PLAYGROUND.md` (Claude): F4, §5.8 and §7 updated for decision 16 (no cap, no "attribution incomplete") and the 500 m radius.
+    - **Verify:**
+      - `pages.yml` deploys from a push; the deployed `site/playground/data/` listing equals the committed allowlist.
+      - A Daily dispatch that **fails** (an unpublished date) triggers `pages.yml` and its job is skipped. A successful Daily dispatch deploys, and the deployed page shows that run's new `results/<date>/`.
+      - Smoke test on the deployed `https://jar-narvz.github.io/route-impact/site/playground/` in the browser pane at 375×812 and 1280×800:
+        - the page loads;
+        - both presets and one live Stomp run;
+        - no console errors;
+        - the results map at `site/?date=…` still works.
+      - Record the cold-load transfer (own code + data + MapLibre, tiles excluded; N2 target ≤ 10,000,000 B) and the preset and Stomp latencies in PROGRESS.
+      - **Phone (critique #6):** Jared opens the deployed page on his own phone and runs the Bay Bridge preset, the toll-plaza Meteor and Rebuild ×10. He reports the model and roughly how long each took. If a Meteor takes over 2 s, the attribution cap returns (decision 16's revisit clause).
+      - `make test` and `make lint` green.
+  - *Status:* todo — detail written 2026-10-30 and revised after the Codex critique (Review log); ready for Codex to start P2a.
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
 - **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
 
@@ -472,6 +637,19 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Meteor attribution budget: dropped.** No cap, no "attribution incomplete" state, no extra fixture. The always-empty `unchecked_candidates` field stays in the format so a cap can return without a format change. *Why:* with CCH the worst Meteor (toll plaza, 500 m) runs full attribution in a 75.15 ms median (Node, P0c-3) against the 2 s gate, and the browser acceptance run passed. Revisit only if P2's phone smoke test is slow.
 
 ## Review log
+### 2026-10-30 — Codex critique of the P2 plan (`codex exec --sandbox read-only`, 10 points)
+All 10 accepted; P2 was edited in place.
+1. **Files the exporter marks "not shipped" would reach Pages:** RoutingKit leaves `cch_order_input.bin` and `cch_order_output.bin` in the export dir, and Pages copies `site/` whole. Accepted: export to `data/playground-261027/`, copy the shipped allowlist with `scripts/ship_playground_data.py`, and check that the listing equals it. The privacy check scans decompressed bytes.
+2. **The worker protocol couldn't serve the page** (no pick, no compound edit, no baseline or display payloads). Accepted: the complete protocol is defined in P2a and tested in Node through a pure `core/protocol.js`.
+3. **`workflow_run` semantics were unspecified.** Accepted: `types: [completed]`, a `main` filter, a success condition, checkout of `main`'s tip, a shared `pages` concurrency group, the workflow file in push paths, and a failed-run skip check. Successful non-publishing Daily runs also redeploy (harmless).
+4. **Canonical equality can pass with a broken page.** Accepted: drawn paths are checked by origin, destination, active edges and cost (independent of ties); reports record the export hash and git commit; page-level checks are in P2c/P2d.
+5. **Stale replies and Rebuild lifecycle were undefined.** Accepted: page states plus a single `latest` id, with a Node test of the edit → edit → reset ordering.
+6. **The known reset/draw latency growth (~48 → ~1,298 ms, `feasibility.json` `reset_note`) wasn't checked, and there's no phone evidence.** Accepted: 50 Meteor/Rebuild cycles through the real page, with source and layer counts and a 1.5× drift bound, plus Jared's own phone run in P2e. A Meteor over 2 s brings the cap back.
+7. **Two different transfer budgets.** Accepted: one rule (data + own code + MapLibre JS/CSS, gzip -9, tiles excluded). MapLibre measured at 210,896 + 9,239 B, which leaves ~65 kB of headroom over the spike's data total.
+8. **The Bay Bridge compound Stomp would get single-road wording.** Accepted: wording follows the way count, as in `procedure.js`, with an exact test on the real preset.
+9. **`read_page` doesn't prove screen-reader support.** Accepted: a full keyboard flow, a MutationObserver one-announcement check, the 44 px check, and no focusable collapsed content. Screen-reader support is claimed only after a VoiceOver pass by Jared.
+10. **The theme toggle could drop overlays after an edit.** Accepted: layers are re-added from app state after each style load and tested after a preset and a live Meteor.
+
 ### 2026-10-30 — Adversarial Claude critique of the P1 plan (Claude subagent, read-only, 10 points; replaces the Codex critique while Codex budget is low)
 All 10 accepted; PLAN P1 rewritten the same day.
 1. **An uncapped full-recompute oracle would take hours on 34 real cases.** Accepted: full recompute only for the initial edit (origin chunks ≤ 64, numpy CSR); counterfactuals reroute only the affected trips; a no-outside-worsening assertion; ≤ 15 min local budget; never in pytest.
