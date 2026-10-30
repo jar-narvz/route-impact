@@ -7,8 +7,10 @@
      - Pages data: commit the export (9,663,640 B shipped at P0c-3) under `site/playground/data/`, or build it in a workflow? P1a left this "a P2 decision".
      - Whether `site/playground/spike/` and `scripts/playground_spike.py` are deleted in P2, or kept as the measured reference until launch.
      - The §5.8 Meteor attribution budget and its "attribution incomplete" fixture (deferred to P2 in PLAN P1): is it still needed now that CCH runs full attribution in ≤ 83 ms?
-  2. Push `playground` so CI checks the new Node step (`actions/setup-node@v4`, Node 22) — P1c Verify asks for CI green on push. Not yet pushed.
-  3. Then P2 (Nov 10–16), launch ~Nov 17.
+  2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
+  3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Not yet exercised by a scheduled run.
+  4. **Geofabrik stalled:** its NorCal state.txt stops at 2026-10-28T21:21Z and `norcal-261029` is still unpublished (checked 2026-10-30 ~19:30 UTC). If a dated snapshot is never published, every later daily run also fails, because OLD is always NEW−1. Design question for Jared: fall back to the newest published older snapshot?
+  5. Then P2 (Nov 10–16), launch ~Nov 17.
   - **Workflow (Jared, 2026-10-30 02:45):** Codex is back from the 03:40 session: Codex implements and writes tests, Claude reviews. If Codex hits a quota error, fall back to a Claude implementer subagent + adversarial Claude reviewer subagent and say so in the log entry. (P1a–P1b used Claude subagents.)
   - **Overnight 2026-10-30 (Jared):** autonomous from 03:40 — Claude commits each finished step itself as Jared, no co-author line, no push. Stop with a note here on anything needing Jared's call.
   - Leftovers:
@@ -57,6 +59,20 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-10-30 — Portable fixture gzip (fix outside PLAN, Jared approved)
+- **Agent:** Claude (small fix, no Codex). Not independently reviewed.
+- **Did:** CI run 41115457353 failed `test_fixture_builder_is_deterministic_and_committed` on `('stomp', 'cch_order.bin.gz')`, the first `.gz` file checked. `gzip.compress` takes the header's OS byte from zlib: `0x13` on this Mac (zlib 1.2.12), `0x03` on Linux. New `playground.gzip_bytes` writes a fixed header (mtime 0, XFL 2, OS 255) around a level-9 raw deflate stream plus CRC32/ISIZE; `_write_gzip` uses it, and the `gzip` import is gone from `playground.py`. Regenerated the 12 fixtures with `python tests/build_playground_fixtures.py`. The spike exporter (`scripts/playground_spike.py`) is unchanged; its data isn't committed.
+- **Changed:** `src/route_impact/playground.py`, `tests/fixtures/playground/*/` (every `.gz` + `meta.json`; no `expected.json` changed), `PROGRESS.md`.
+- **Verify (Claude):** `gzip_bytes` output equals `gzip.compress(raw, mtime=0)` except byte 10 (the OS byte), and round-trips, for empty, 1-byte, 100 kB random and 150 kB repetitive input. `cmp` on `stomp/edge_ms.bin.gz` old vs new: first difference at char 10; header `...0213` → `...02ff`. Only `.gz` and `meta.json` sha256 lines changed (276 files, 264+/264−). `make lint` clean; `make test` → `264 passed in 39.25s`, JS 47/47. Linux: CI run 41116882066 (`db3054f`, Ubuntu) → `264 passed in 58.88s`, JS 47/47 — the committed fixtures now match a Linux rebuild.
+- **Gotchas:** Bay exports made before this fix have different `.gz` sha256s; re-export before comparing hashes.
+
+### 2026-10-30 — Daily download retry + Node 24 actions (fix outside PLAN, Jared approved)
+- **Agent:** Claude (small fix, no Codex). Not independently reviewed.
+- **Did:** The first scheduled Daily run (41051491538) downloaded 261028, got 404 for 261029 (unpublished), waited 1200 s, then got HTTP 502 on the checksum manifest and exited 1 — `daily.sh` only retried "not published". `download.sh` now passes `--retry 3 --retry-delay 30` to both curls and reports HTTP 000/5xx as "Geofabrik temporarily unavailable"; a failed pbf transfer says "temporarily unavailable" too (the `.part` file resumes). `daily.sh` retries both messages on scheduled runs. Workflows: `checkout@v5`, `setup-python@v6`, `cache@v5` (the lowest majors on `node24`, checked in each `action.yml`), clearing the Node 20 deprecation warning. `setup-node@v4` → `@v5` is left for a separate commit on `playground` (main has no Node step).
+- **Changed:** `scripts/download.sh`, `scripts/daily.sh`, `.github/workflows/daily.yml`, `.github/workflows/ci.yml`, `PROGRESS.md`.
+- **Verify (Claude):** fake `curl` on PATH returning each code: 404 → "not published on Geofabrik"; 502 and 000 → "Geofabrik temporarily unavailable (HTTP …)"; 403 → "Failed to fetch checksum manifest" (not retried); every call carried `--retry 3`. `daily.sh` with a fake download that prints the 502 message, `DAILY_RETRIES=2 DAILY_RETRY_SECONDS=0`: "Snapshot 261028 unavailable; retrying in 0 seconds" then "unavailable after 2 attempts". `bash -n` OK; `make lint` clean; `make test` → `264 passed in 39.93s`, JS 47/47. The patch `git apply --check`s cleanly on `main`. Workflow changes not run on GitHub yet.
+- **Gotchas:** today's run would have failed anyway — Geofabrik hasn't published 261029 (see Current state item 4). Retries are bounded: 3 curl retries × 30 s inside each of `DAILY_RETRIES` (3) attempts 1200 s apart.
 
 <!--
 Template — copy above the newest entry:
