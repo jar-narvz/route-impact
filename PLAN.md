@@ -462,7 +462,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - Every shipped file ≤ 5,000,000 B.
       - **One transfer rule for P2 (critique #7):** data (sum of the files in `site/playground/data/`) + own code (`site/playground/*.js|css|html` and `core/*.js`, gzip -9 sizes) + MapLibre 4.7.1 JS + CSS gzip -9 (measured 2026-10-30: 210,896 + 9,239 B) ≤ 10,000,000 B, tiles excluded. Computed by a one-line script, recorded. The spike's total was 9,663,640 B, so the headroom is ~65 kB: if the production export is larger, stop and record it rather than trim silently.
       - Privacy: every shipped file, decompressed, contains no `/Users/`, `/home/`, `jarednarvaez` or `jarjar` (a small Python check over the decompressed bytes, not a raw grep of gzip).
-      - `make bench-js` → `memory_gate_pass: true` on the shipped data.
+      - `make bench-js` → `memory_gate_pass: true` on the shipped data (from decision 17: the median of 5 fresh whole-protocol runs ≤ 300,000,000 B).
       - `protocol.test.mjs` on the oracle fixtures: every message type, compound `way_ids`, an unknown preset error, a duplicate way id error, and the ordering rule (edit → edit → reset in a row ends with the network reset and only the last reply marked latest by a tiny page-side `latest` helper, also in `core/`).
       - `make test` and `make lint` green, with the spike gone: nothing imports from `spike/`.
   - **P2b — Page shell: map, sheet, buttons, themes, load and error states.**
@@ -496,7 +496,9 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `site/playground/core/pick.js` (new): a pure grid index over the shipped way segments. `nearestWay(lat, lon, maxMetres)` returns the closest way within the tolerance, or null; ties go to the lower way index. It uses the same equirectangular metres as the Meteor test (`earth_radius_m` from `meta`).
       - `site/playground/core/summary.js` (new): a pure function from an engine result + `meta` + way names to everything the sheet shows (numbers, message, mattered groups), so the wording logic is unit-tested without a browser;
       - `site/playground/core/test/{pick,summary}.test.mjs` (new);
-      - `site/playground/{worker.js,app.js,index.html,style.css}`.
+      - `site/playground/{worker.js,app.js,index.html,style.css}`;
+      - `site/playground/core/protocol.js` and `core/test/protocol.test.mjs`: the P2a `pick` stub now calls `pick.js` (added 2026-10-30; P2a said P2c fills it).
+      - **Worker memory (added 2026-10-30 after P2c's first run):** `site/playground/core/test/cch_bench.mjs` now measures the **whole worker protocol** (`createProtocol`, the `load` reply, then 50 × pick + toll-plaza Meteor), not the engine alone. The first P2c build measured 412 MB RSS after 50 edits that way, against the 300 MB gate, which the engine-only bench couldn't see. Two causes, both fixed in P2c: the picker's string-keyed `Map` of JS arrays becomes a typed-array CSR grid; and the baseline is drawn once per **unique way** (47,350 ways / 117,603 points instead of 331,995 per-trip ways / 795,528 points), sent as transferred typed arrays, not nested GeoJSON arrays built in the worker.
     - **Do:**
       - **Weapon toolbar (F2):** a segmented Stomp / Flip / Meteor control in the peek height (open-source icons, inline SVG; the license recorded in PROGRESS).
         - **Stomp:** the tap goes to the worker's `nearestWay` with a 20 px tolerance converted to metres at the current zoom. No road → "No road here — zoom in".
@@ -584,7 +586,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - Record the cold-load transfer (own code + data + MapLibre, tiles excluded; N2 target ≤ 10,000,000 B) and the preset and Stomp latencies in PROGRESS.
       - **Phone (critique #6):** Jared opens the deployed page on his own phone and runs the Bay Bridge preset, the toll-plaza Meteor and Rebuild ×10. He reports the model and roughly how long each took. If a Meteor takes over 2 s, the attribution cap returns (decision 16's revisit clause).
       - `make test` and `make lint` green.
-  - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · **P2b done 2026-10-30** (Codex code; Claude browser Verify, 4 fixes) · P2c–P2e todo.
+  - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · **P2b done 2026-10-30** (Codex code; Claude browser Verify, 4 fixes) · **P2c done 2026-10-30** (Codex code, three runs; whole-worker gate median 264 MB of 5, decision 17) · P2d–P2e todo.
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
 - **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
 
@@ -636,6 +638,12 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Pages data: commit a fixed export.** `route-impact export-playground --snapshot 261027` output goes in `site/playground/data/`, committed (~9.7 MB; each file ≤ 5,000,000 B). *Why:* building it in a workflow needs the 655 MB pbf and RoutingKit's C++ order tool in CI, and RoutingKit is offline-only. The game uses one frozen snapshot, so re-exports are rare and deliberate (~10 MB of history each).
     - **Spike files: delete in P2.** Remove `site/playground/spike/`, `scripts/playground_spike.py` and `scripts/serve_spike.py`, after moving the memory gate (`cch_bench.mjs`) into `site/playground/core/test/`. *Why:* everything in `site/` is published on Pages, so the prototype page would go live; `oracle.test.mjs` now does `check.mjs`'s job in CI; git history and `results/playground/feasibility.json` keep the measured reference.
     - **Meteor attribution budget: dropped.** No cap, no "attribution incomplete" state, no extra fixture. The always-empty `unchecked_candidates` field stays in the format so a cap can return without a format change. *Why:* with CCH the worst Meteor (toll plaza, 500 m) runs full attribution in a 75.15 ms median (Node, P0c-3) against the 2 s gate, and the browser acceptance run passed. Revisit only if P2's phone smoke test is slow.
+
+17. **Memory gate = median of 5 fresh runs; trim per-edit churn** (2026-10-30, Jared; Claude's recommendation). The whole-worker gate measured 279–325 MB RSS after 50 edits over 8 runs (6 of 8 ≤ 300 MB, median ≈ 292 MB), with heapUsed flat at 5.6 MB; the unchanged engine alone also varies 266–280 MB. A single RSS sample is noise ± ~25 MB near the limit.
+    - **Gate:** `make bench-js` runs the whole-protocol bench in 5 fresh processes. It passes if the **median** of "RSS after 50 edits" is ≤ 300,000,000 B, and records every run plus the max. The limit is unchanged; the median only removes the luck of one sample.
+    - **Trim first:** each edit's display geometry (before / after / hit lines) is sent as transferred typed arrays instead of GeoJSON built in the worker. `engine.js` stops building GeoJSON, and the page builds it on the main thread, as for the baseline.
+    - **Stop rule:** if the median is still over 300 MB after the trim, stop and bring Jared options (e.g. a lighter result view). Don't tune further or move the limit.
+    - *Why not raise the limit:* that lowers the bar right after missing it (decision 13). *Why trim at all:* the retained memory is real on a phone even though it's garbage, so cutting churn helps users, not just the number.
 
 ## Review log
 ### 2026-10-30 — Codex critique of the P2 plan (`codex exec --sandbox read-only`, 10 points)

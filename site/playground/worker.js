@@ -57,7 +57,13 @@ self.onmessage = ({data}) => {
         if (data.type !== 'load') throw new Error('Load required before other messages');
         await load();
       }
-      self.postMessage(protocol.handle(data));
+      const reply = protocol.handle(data);
+      const baseline = data.type === 'load' && reply.ok ? reply.result.baseline : null;
+      const display = data.type === 'edit' && reply.ok ? reply.result.display : null;
+      const transfers = baseline ? [baseline.coords.buffer, baseline.offsets.buffer] : [];
+      if (display) for (const lines of [display.before, display.after, display.hit])
+        transfers.push(lines.coords.buffer, lines.offsets.buffer, lines.ids.buffer);
+      self.postMessage(reply, transfers);
     } catch (error) { self.postMessage({id: data?.id, ok: false, error: String(error)}); }
   });
 };

@@ -3,7 +3,7 @@
 ## Current state
 - **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a committed (`186be1e`). **P2b done 2026-10-30**, uncommitted. **Next: P2c** (weapons and results).
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a `186be1e`, P2b `c391ba9` committed. **P2c done 2026-10-30** (log: "P2c follow-up: typed display + median-of-5 gate"), uncommitted. **Next: P2d** (keyboard, screen reader, reduced motion; browser == oracle harness).
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Not yet exercised by a scheduled run.
   4. **Geofabrik stalled:** its NorCal state.txt stops at 2026-10-28T21:21Z and `norcal-261029` is still unpublished (checked 2026-10-30 ~19:30 UTC). If a dated snapshot is never published, every later daily run also fails, because OLD is always NEW−1. Design question for Jared: fall back to the newest published older snapshot?
@@ -56,6 +56,54 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-10-30 — P2c follow-up: typed display + median-of-5 gate (**P2c done**)
+- **Agent:** Codex (code); Claude reran the gate and rechecked the browser. Jared agreed to Claude's recommendation (PLAN decision 17).
+- **Did:**
+  - `engine.js` no longer builds GeoJSON.
+  - `protocol.js` sends each edit's before (first 25 affected trips), after and hit lines as `{coords: Float32Array, offsets: Uint32Array, ids: Float64Array}`; `worker.js` transfers the 9 buffers.
+  - `app.js` builds the FeatureCollections on the main thread once per reply; layer order unchanged.
+  - `make bench-js` runs the whole-protocol bench in 5 fresh processes and gates on the median.
+- **Changed:** `site/playground/core/{engine.js,protocol.js}`, `site/playground/core/test/{protocol.test.mjs,cch_bench.mjs}`, `site/playground/{worker.js,app.js}`, `Makefile`, `PLAN.md` (decision 17, gate wording; Claude).
+- **Verify (Claude reran):**
+  - `make bench-js` → RSS after 50 edits **266,518,528 / 264,126,464 / 268,009,472 / 261,996,544 / 261,177,344 B; median 264,126,464; max 268,009,472; gate PASS**. Every run is under 300 MB, not just the median. heapUsed 5.83 MB in every run. Codex's own run: median 262,963,200, max 271,482,880 (one run at 181,911,552).
+    - Before the trim: median ≈ 292 MB, 6 of 8 runs passing. The engine alone (P2a): 266–280 MB. So the per-edit display churn is gone.
+  - `make test` → `264 passed in 38.80s`, JS `# pass 104` `# fail 0`; `make lint` clean; `node --check` OK.
+  - **Browser (375×812):** the Bay Bridge preset renders identically (2 / 169 / 2,859 of 2,057; red spans above the routes; precomputed tag). Tapping "Dwight D. Eisenhower Highway" sets it pressed (the selected layer reads from the new hit features; at overview zoom the 2-point way is too short to confirm by eye). Its OSM link goes to `https://www.openstreetmap.org/way/661905446`. No console errors.
+- **Review (Claude):** `engine.js`'s removed `geojson()` had no other users (oracle tests compare `canonical()`, which ignores it). The display builder keeps the engine's 25-trip cap and order. No findings.
+
+### 2026-10-30 — P2c: weapons and results (**not done: memory gate passes 6 of 8 runs**)
+- **Agent:** Codex, two runs (the build, then memory and UI fixes from Claude's browser findings); Claude reviewed, made three fixes, and ran the browser and memory checks.
+- **Did:**
+  - `core/pick.js`: a typed-array CSR grid for the nearest-way pick, 20 px tolerance.
+  - `core/summary.js`: all sheet wording, including miss / no-candidates / rerouted-none / damage, one-road vs attribution, plurals, and road groups with unique names + way count.
+  - The `protocol.js` `pick`. The baseline is now one line per unique way (47,350 ways / 117,603 points instead of 331,995 / 795,528), sent as transferred typed arrays.
+  - `app.js`: the weapon toolbar; Stomp / Flip via `pick`; the 500 m Meteor with an animated ring plus a centre marker; damage numbers; before / after / hit layers; the mattered list with OSM links and highlighting; Try these; the trips list; Rebuild; a short visible status plus one hidden `aria-live` announcement.
+  - `cch_bench.mjs` now measures the **whole worker protocol** (PLAN P2c "Worker memory").
+- **Changed:** `site/playground/core/{pick.js,summary.js,protocol.js}`, `site/playground/core/test/{pick,summary,protocol}.test.mjs`, `site/playground/core/test/cch_bench.mjs`, `site/playground/{app.js,worker.js,index.html,style.css}`, `PLAN.md` (P2c files: `protocol.js` and the worker-memory bullet).
+- **Verify (Claude):**
+  - `make test` → `264 passed in 41.42s`, JS `# pass 104` `# fail 0`; `make lint` clean; `node --check` OK.
+  - **Browser (375×812):**
+    - Bay Bridge preset: "Bay Bridge hit 10 roads", precomputed, **2 broken / 169 slowed / 2,859 added min of 2,057 sampled trips** (= oracle preset: added_ms 171,529,790). Single road "Dwight D. Eisenhower Highway · 1 trip"; "Several roads together: 170". Destroyed spans in red.
+    - Live Meteor, downtown SF (37.8002, −122.4228): "Meteor hit 168 roads", 2 broken.
+    - Meteor elsewhere in SF: "No sampled trip used these roads" + note.
+    - Stomp in Oakland: "1 trip rerouted, none slowed by 2 min or more".
+    - Flip on a two-way road: "This road is two-way", nothing run.
+    - Rebuild clears everything back to peek.
+    - Theme switch with the preset shown keeps routes, highlights and results.
+    - One `role=status` live region (`.sr-only`) holds the announcement.
+    - No console errors.
+  - Node check of the same Meteor through the protocol: 223 / 302 ways hit at two SF points, so the engine path matches the page.
+  - Screenshots (gitignored): `data/playground-bench/p2c-screens/`.
+  - **Memory (`make bench-js`, whole protocol, 8 runs):** RSS after 50 pick + toll-plaza edits 297,713,664 / 325,369,856 / 279,429,120 / 287,096,832 / 285,392,896 / 298,729,472 / 301,432,832 / 283,672,576 B. **6 of 8 ≤ 300,000,000**, median ≈ 292 MB. heapUsed flat at 5.64 MB; after load 217–239 MB.
+    - For scale: the engine alone measured 266–280 MB (P2a), and the first P2c build 412 MB (Map grid + per-trip baseline GeoJSON). What remains above the engine is allocator retention from per-edit display objects.
+- **Review (Claude):**
+  1. *Fixed (memory, by Codex on Claude's brief):* the first P2c build held 412 MB after 50 edits through the protocol. The picker's string-keyed Map of arrays added +30 MB heap; building the per-trip baseline GeoJSON left RSS at ~380 MB. Now typed CSR + a unique-way baseline as transferred typed arrays.
+  2. *Fixed (UI, by Codex):* "1 trips"; road groups repeating names ("Van Ness Avenue" ×16) and one OSM link per way; empty headings; the status line repeating the full announcement; Meteor invisible at overview zoom (centre marker added).
+  3. *Fixed (Claude):* the selected weapon showed near-white text on grey while hovered (`button:not(:disabled):hover` out-ranked `.weapons [aria-pressed]`).
+  4. *Fixed (Claude):* destroyed roads were hidden under the grey "before" routes (the `hit` layer sat below them); now above.
+  5. Open (polish): no-impact Stomp/Flip results don't name the road; the trips list shows ids only ("Trip ic-00001 · intercity") because no place names are shipped.
+  6. My first browser Meteor showed "Missed" because my click hit water during a camera animation (stale screenshot), not a bug; confirmed by intercepting the worker message.
 
 ### 2026-10-30 — P2b: page shell (map, sheet, buttons, themes, load and error states)
 - **Agent:** Codex (`codex exec --sandbox workspace-write`; no network, so it wrote the page blind); Claude reviewed, fixed four browser-found problems, and ran Verify in the browser pane (local `python3 -m http.server 8781` from the repo root; `.claude/launch.json` config `playground`).

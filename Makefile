@@ -64,7 +64,7 @@ bench:
 	PYTHON="$(PYTHON)" bash scripts/bench.sh $(SNAPSHOT) $(OLD)
 
 bench-js:
-	node --expose-gc site/playground/core/test/cch_bench.mjs
+	node site/playground/core/test/cch_bench.mjs
 
 test:
 	$(PYTHON) -m pytest

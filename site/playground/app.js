@@ -1,4 +1,8 @@
 import {createLatest} from './core/latest.js';
+import {summarize} from './core/summary.js';
+
+// PLAN decision B / results/playground/feasibility.json: largest passing stress radius.
+const METEOR_RADIUS_M = 500;
 
 const $ = id => document.getElementById(id);
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
@@ -19,6 +23,12 @@ const state = {
   presets: [],
   load_ms: null,
   result: null,
+  drawn: null,
+  summary: null,
+  weapon: null,
+  ring: null,
+  meteorCenter: null,
+  hint: null,
   selection: null,
   error: null,
   mapError: null,
@@ -29,6 +39,8 @@ let worker;
 let styleReady = false;
 let firstMapLoad = false;
 let fitted = false;
+let pendingRequest;
+let ringFrame;
 
 function renderSheet() {
   document.documentElement.dataset.sheetHeight = state.sheetHeight;
@@ -49,6 +61,10 @@ function renderSheet() {
 }
 
 function renderButtons() {
+  document.querySelectorAll('[data-weapon]').forEach(button => {
+    button.disabled = !['ready', 'pending', 'showing'].includes(state.phase);
+    button.setAttribute('aria-pressed', String(button.dataset.weapon === state.weapon));
+  });
   $('rebuild').disabled = !['pending', 'showing'].includes(state.phase);
   $('recenter').disabled = !map || !state.meta;
   const label = `Switch to ${state.theme === 'dark' ? 'light' : 'dark'} theme`;
@@ -64,9 +80,11 @@ function renderStatus() {
     showing: 'Results ready',
     error: '',
   };
-  $('status').textContent = messages[state.phase];
+  const status = state.hint ?? (state.phase === 'showing' ? (state.summary?.headline ?? state.summary?.message) : null) ?? messages[state.phase];
+  // Keep the visible peek line short; results are announced in the separate live region.
+  if ($('status').textContent !== status) $('status').textContent = status;
   $('progress').hidden = state.phase !== 'loading';
-  $('sheet').setAttribute('aria-busy', String(state.phase === 'loading'));
+  $('sheet').setAttribute('aria-busy', String(['loading', 'pending'].includes(state.phase)));
   $('error').hidden = !state.error;
   $('error').textContent = state.error?.message ?? '';
   $('retry').hidden = !state.error?.retryable;
@@ -78,6 +96,7 @@ function render() {
   renderSheet();
   renderButtons();
   renderStatus();
+  renderResults();
 }
 
 function fail(message, retryable = false) {
@@ -94,6 +113,27 @@ function setHeight(height) {
 }
 
 const emptyCollection = () => ({type: 'FeatureCollection', features: []});
+
+function baselineGeoJSON({coords, offsets}) {
+  const coordinates = [];
+  for (let line = 0; line < offsets.length - 1; line++) {
+    const points = [];
+    for (let p = offsets[line]; p < offsets[line+1]; p++) points.push([coords[2*p], coords[2*p+1]]);
+    coordinates.push(points);
+  }
+  return {type: 'Feature', properties: {}, geometry: {type: 'MultiLineString', coordinates}};
+}
+
+function linesToFeatures({coords, offsets, ids}, idProperty) {
+  const features = [];
+  for (let line = 0; line < ids.length; line++) {
+    const coordinates = [];
+    for (let p = offsets[line]; p < offsets[line+1]; p++) coordinates.push([coords[2*p], coords[2*p+1]]);
+    features.push({type: 'Feature', properties: {[idProperty]: ids[line]},
+      geometry: {type: 'LineString', coordinates}});
+  }
+  return {type: 'FeatureCollection', features};
+}
 
 function boxGeoJSON() {
   if (!state.meta) return emptyCollection();
@@ -117,9 +157,13 @@ function addOverlays(map) {
   const overlays = [
     {id: 'bay-box', data: boxGeoJSON(), color: '--muted', width: 1.5, opacity: 0.65, dash: [4, 3]},
     {id: 'baseline', data: state.baseline, color: '--before', width: 1, opacity: 0.18},
-    {id: 'hit', data: state.result?.hit_geojson, color: '--broken', width: 4, opacity: 0.8},
-    {id: 'before', data: null, color: '--before', width: 3, opacity: 0.8},
-    {id: 'after', data: null, color: '--accent', width: 3, opacity: 0.95},
+    {id: 'before', data: state.drawn?.before, color: '--before', width: 3, opacity: 0.8},
+    {id: 'after', data: state.drawn?.after, color: '--accent', width: 3, opacity: 0.95},
+    // Destroyed roads draw above the routes that used them, or 'before' would hide them.
+    {id: 'hit', data: state.drawn?.hit, color: '--broken', width: 4, opacity: 0.8},
+    {id: 'meteor-ring', data: state.ring, color: '--accent', width: 2, opacity: 0.9},
+    {id: 'selected', data: {type: 'FeatureCollection', features: (state.drawn?.hit?.features || [])
+      .filter(feature => state.selection?.includes(feature.properties.way_id))}, color: '--accent', width: 6, opacity: 1},
   ];
   for (const overlay of overlays) {
     const data = overlay.data ?? emptyCollection();
@@ -138,6 +182,14 @@ function addOverlays(map) {
       for (const [key, value] of Object.entries(paint)) map.setPaintProperty(overlay.id, key, value);
     }
   }
+  const center = state.meteorCenter ?? emptyCollection();
+  if (map.getSource('meteor-center')) map.getSource('meteor-center').setData(center);
+  else map.addSource('meteor-center', {type: 'geojson', data: center});
+  if (!map.getLayer('meteor-center')) map.addLayer({id: 'meteor-center', type: 'circle', source: 'meteor-center',
+    paint: {'circle-radius': 6, 'circle-color': 'transparent', 'circle-stroke-color': color('--accent'),
+      'circle-stroke-width': 2}}, beforeId);
+  else map.setPaintProperty('meteor-center', 'circle-stroke-color', color('--accent'));
+  map.moveLayer('selected', beforeId);
 }
 
 function recenter() {
@@ -215,6 +267,7 @@ function createMap() {
       renderStatus();
       syncMap();
     });
+    map.on('click', onMapClick);
     map.once('load', () => { firstMapLoad = true; });
     map.on('error', event => {
       if (firstMapLoad) return;
@@ -233,6 +286,7 @@ function createMap() {
 
 function sendRequest(type, payload = {}) {
   const id = latest.next();
+  pendingRequest = {id, type, ...payload};
   worker.postMessage({...payload, id, type});
   return id;
 }
@@ -243,6 +297,8 @@ function loadNetwork() {
   latest.next();
   state.phase = 'loading';
   state.error = null;
+  state.hint = null;
+  clearDrawing();
   setHeight('peek');
   render();
   if (typeof Worker === 'undefined') {
@@ -258,8 +314,31 @@ function loadNetwork() {
         fail(`The Bay road network could not load: ${String(data.error).replace(/^Error: /, '')}`, true);
         return;
       }
-      const {meta, presets, load_ms, baseline} = data.result;
-      Object.assign(state, {meta, presets, load_ms, baseline, phase: 'ready', error: null});
+      const request = pendingRequest;
+      if (request.type === 'load') {
+        const {meta, presets, load_ms, baseline} = data.result;
+        Object.assign(state, {meta, presets, load_ms, baseline: baselineGeoJSON(baseline), phase: 'ready', error: null});
+      } else if (request.type === 'pick') {
+        const picked = data.result;
+        if (!picked || request.weapon === 'flip' && !picked.oneway) {
+          state.phase = state.result ? 'showing' : 'ready';
+          state.hint = picked ? 'This road is two-way' : 'No road here — zoom in';
+        } else {
+          runEdit({weapon: request.weapon, way_id: picked.way_id}, request.tap);
+          return;
+        }
+      } else if (request.type === 'edit') {
+        const {display, ...result} = data.result;
+        state.result = result;
+        state.drawn = {before: linesToFeatures(display.before, 'trip'),
+          after: linesToFeatures(display.after, 'trip'), hit: linesToFeatures(display.hit, 'way_id')};
+        state.summary = summarize(data.result, {meta: state.meta, edit: request.edit});
+        $('announcement').textContent = state.summary.announcement;
+        state.phase = 'showing';
+        state.hint = null;
+        setHeight('half');
+        if (request.tap) panToTap(request.tap);
+      }
       syncMap();
       render();
     };
@@ -276,6 +355,170 @@ function loadNetwork() {
     fail(`The road network worker could not start: ${error.message}`, true);
   }
 }
+
+function element(tag, text, className) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (className) node.className = className;
+  return node;
+}
+
+function roadRow(ways, tripText, name) {
+  const row = element('div', undefined, 'road-row');
+  const button = element('button', name ?? ways.map(way => way.name || 'unnamed road').join(' + '));
+  button.type = 'button';
+  button.setAttribute('aria-pressed', String(ways.every(way => state.selection?.includes(way.way_id))));
+  button.addEventListener('click', () => {
+    state.selection = ways.map(way => way.way_id);
+    syncMap();
+    renderResults();
+  });
+  row.append(button);
+  if (tripText !== undefined) row.append(element('span', tripText, 'trip-count'));
+  for (const way of ways.slice(0, 1)) {
+    const link = element('a', 'OSM ↗');
+    link.href = `https://www.openstreetmap.org/way/${way.way_id}`;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.setAttribute('aria-label', `View ${way.name || 'unnamed road'} on OpenStreetMap`);
+    row.append(link);
+  }
+  if (ways.length > 1) row.append(element('span', `and ${ways.length - 1} more`, 'trip-count'));
+  return row;
+}
+
+function renderResults() {
+  const root = $('results'), trips = $('trips');
+  root.replaceChildren();
+  trips.replaceChildren();
+  const summary = state.summary;
+  if (summary) {
+    if (summary.headline) root.append(element('h2', summary.headline));
+    if (summary.precomputed) root.append(element('span', 'precomputed', 'tag'));
+    if (summary.message) root.append(element('p', summary.message));
+    if (summary.note) root.append(element('p', summary.note, 'caveat'));
+    if (summary.numbers) {
+      const numbers = element('div', undefined, 'numbers');
+      for (const [key, label] of [['broken', 'broken'], ['slowed', 'slowed ≥ 2 min'], ['added_minutes', 'added min']]) {
+        const number = element('div', undefined, key);
+        number.append(element('strong', summary.numbers[key].toLocaleString('en-US')), element('span', label));
+        numbers.append(number);
+      }
+      root.append(numbers, element('p', summary.numbers.sample, 'sample'));
+    }
+    if (summary.mattered) {
+      root.append(element('h3', 'Roads that mattered'));
+      const mattered = summary.mattered;
+      if (mattered.kind === 'one-road') root.append(element('p', mattered.text), roadRow([mattered.way]));
+      else {
+        if (mattered.singles.length) root.append(element('h4', 'Single roads'));
+        for (const single of mattered.singles) root.append(roadRow([single], single.trip_text));
+        if (mattered.runs.length) root.append(element('h4', 'Road groups'));
+        for (const run of mattered.runs) root.append(roadRow(run.ways, run.trip_text, run.name));
+        root.append(element('p', `Several roads together: ${mattered.several_together.toLocaleString('en-US')}`));
+      }
+    }
+    for (const trip of summary.trips) {
+      const row = element('li');
+      row.append(element('strong', trip.title), element('span', trip.status, trip.status),
+        element('span', trip.after_min === null ? `${trip.before_min} min → no route` : `${trip.before_min} → ${trip.after_min} min`));
+      trips.append(row);
+    }
+  }
+  const presets = $('presets');
+  presets.replaceChildren();
+  const fallback = {bay_bridge: 'Bay Bridge', university_ramp: 'University Ave ramp'};
+  for (const preset of state.presets) {
+    const label = state.meta.presets?.[preset.name]?.label ?? fallback[preset.name] ?? preset.label;
+    const button = element('button', label);
+    button.type = 'button';
+    button.disabled = !['ready', 'pending', 'showing'].includes(state.phase);
+    button.addEventListener('click', () => runEdit({preset: preset.name, label}));
+    presets.append(button);
+  }
+}
+
+function clearDrawing() {
+  cancelAnimationFrame(ringFrame);
+  $('announcement').textContent = '';
+  Object.assign(state, {result: null, drawn: null, summary: null, selection: null, ring: null, meteorCenter: null});
+  syncMap();
+}
+
+function panToTap(tap) {
+  const rect = $('sheet').getBoundingClientRect();
+  // Results target half height; the current CSS transition may start at peek or full.
+  const bottom = window.innerHeight / 2;
+  map.easeTo({center: [tap.lon, tap.lat], padding: desktop.matches
+    ? {left: rect.width + 32, right: 16, top: 16, bottom: 16}
+    : {left: 16, right: 16, top: 16, bottom: bottom + 8},
+  duration: reducedMotion.matches ? 0 : 600});
+}
+
+function drawRing(tap) {
+  state.meteorCenter = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates: [tap.lon, tap.lat]}};
+  syncMap();
+  const start = performance.now(), k = state.meta.earth_radius_m * Math.PI / 180;
+  const kx = k * Math.cos(tap.lat * Math.PI / 180);
+  function frame(now) {
+    const fraction = reducedMotion.matches ? 1 : Math.min(1, (now - start) / 600);
+    const radius = METEOR_RADIUS_M * fraction;
+    const coordinates = Array.from({length: 64}, (_, i) => {
+      const angle = i * 2 * Math.PI / 64;
+      return [tap.lon + Math.cos(angle) * radius / kx, tap.lat + Math.sin(angle) * radius / k];
+    });
+    coordinates.push(coordinates[0]);
+    state.ring = {type: 'Feature', properties: {}, geometry: {type: 'Polygon', coordinates: [coordinates]}};
+    if (map && styleReady) {
+      if (map.getSource('meteor-ring')) map.getSource('meteor-ring').setData(state.ring);
+      else syncMap();
+    }
+    if (fraction < 1) ringFrame = requestAnimationFrame(frame);
+  }
+  frame(start);
+}
+
+function runEdit(edit, tap) {
+  clearDrawing();
+  state.phase = 'pending';
+  state.hint = null;
+  if (edit.weapon === 'meteor') drawRing(tap);
+  sendRequest('edit', {edit, tap});
+  render();
+}
+
+function onMapClick(event) {
+  if (!['ready', 'showing', 'pending'].includes(state.phase)) return;
+  if (!state.weapon) {
+    state.hint = 'Pick a weapon first';
+    renderStatus();
+    return;
+  }
+  const tap = {lat: event.lngLat.lat, lon: event.lngLat.lng};
+  if (state.weapon === 'meteor') runEdit({weapon: 'meteor', ...tap, radius_m: METEOR_RADIUS_M}, tap);
+  else {
+    const metresPerPixel = 40075016.686 * Math.cos(tap.lat * Math.PI / 180) / (512 * 2 ** map.getZoom());
+    sendRequest('pick', {...tap, max_m: 20 * metresPerPixel, weapon: state.weapon, tap});
+    state.phase = 'pending';
+    state.hint = null;
+    render();
+  }
+}
+
+document.querySelectorAll('[data-weapon]').forEach(button => {
+  button.addEventListener('click', () => {
+    state.weapon = button.dataset.weapon;
+    renderButtons();
+  });
+});
+$('rebuild').addEventListener('click', () => {
+  sendRequest('reset');
+  clearDrawing();
+  state.phase = 'ready';
+  state.hint = null;
+  setHeight('peek');
+  render();
+});
 
 $('grabber').addEventListener('click', () => {
   setHeight(heights[(heights.indexOf(state.sheetHeight) + 1) % heights.length]);
