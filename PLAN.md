@@ -217,7 +217,32 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
        - single + maximal-run attribution with a search counter;
        - `measure.js` runs every stress case 5× and downloads the result JSON.
     4. **Record:** cold-load transfer (excluding tiles), decode time, peak heap, per-file gzip size, and for each case its affected trips and origins, searches, attribution completeness and median latency. Also record tile, style and icon licenses and the attribution text.
+  - **2026-10-29 — first measurement failed the gate; Jared chose "optimize once"** over the smaller box. The run was uncontrolled (hidden pane, two overlapping runs), but the pattern was consistent: Bay Bridge preset 34–46 s, chokepoint Meteors 9–18 s (75–85% of it attribution), most Stomps ≤ ~1 s. *Why optimize rather than shrink:* the cost is the number of searches, not graph size, so a smaller box would cut coverage without fixing the chokepoint cases. One pass, time-boxed to Oct 30, then a clean re-measure:
+    1. Precompute both presets in Python (impact + uncapped attribution) and ship them as labelled results.
+    2. A default Meteor attribution budget, set from the re-measure, with unchecked trips shown as "attribution incomplete".
+    3. Group reroutes by origin *or* destination (reverse search), whichever needs fewer searches.
+    4. A local-detour bound that skips the full search when a detour around the removed stretch is provably under 2 min. *Why this is safe:* the detour gives an upper bound on the new time.
+    5. Reuse typed arrays in the search instead of allocating them per search.
+    6. A run lock so measurements can't overlap.
+
+    If the re-measure still fails, the no-go path above applies unchanged.
   - **Verify:** `results/playground/feasibility.json` has every field above for every stress case; every file is ≤ 5,000,000 B; decisions A and B are written in PROGRESS with the numbers they rest on. No pytest is required for spike code. `make test` and `make lint` stay green.
+  - **2026-10-29 — result of the optimization pass:** 0 differences against the old worker, and the Python presets equal JS (`check.mjs --compare`). But each full search still costs ~60–70 ms (Node). Every live Stomp is ≤ 1,510 ms, but the Bay Bridge toll plaza Meteor fails at every radius: rerouting alone is 4,266 ms at 150 m, and 23.9–62.1 s with attribution.
+  - **Jared, 2026-10-29: cut nothing.** Keep the whole Bay box, free-aim Meteor and "roads that mattered". The playground launch moves past Nov 4 (target ~Nov 17) instead of shipping a reduced version. Applications on Nov 4 use the finished MVP. The 2 s gate is unchanged. Next is P0b.
+  - *Status:* spike done; gate not met by plain Dijkstra → P0b
+
+- **P0b — Faster exact routing (landmarks + parallel workers).**
+  - **Owner:** Codex writes; Claude verifies and measures.
+  - **Files:** `site/playground/spike/{worker.js,measure.js,check.mjs,index.html}`.
+  - **Do:**
+    1. **ALT:** A* with landmark lower bounds. About 16 landmarks (farthest-point selection, seeded), with forward and backward distances computed in the worker after load, on the *superset* graph where every reverse twin is active. Then the bounds stay admissible after any Stomp, Meteor or Flip. Multi-target searches use the minimum bound over the remaining targets.
+    2. **Parallel workers:** a pool of `min(navigator.hardwareConcurrency − 1, 8)` workers, each with its own copy of the graph. Searches are independent and are split across workers; results are merged deterministically.
+    3. **Same outputs:** results identical to the current worker on every stress case.
+  - **Verify:**
+    - `node site/playground/spike/check.mjs --compare` → 0 differences, and presets still equal Python. A test also asserts every landmark bound ≤ the true distance on sampled pairs.
+    - Then a clean browser measurement: pane visible, run lock, 5 repeats, into `results/playground/feasibility.json`. Record load time including landmark precompute, peak heap per worker, and per-case latency.
+    - Gate unchanged: every stress case ≤ 2 s (Meteor with its attribution budget), each file ≤ 5,000,000 B, total ≤ 10,000,000 B.
+  - **If it still misses:** P0c, customizable contraction hierarchies (CCH) via a WebAssembly build of RoutingKit (BSD-2), decided on the P0b numbers.
   - *Status:* todo
 - **P1 — Exporter + oracle + tests.** `route-impact export-playground`; Python oracle (Stomp/Flip/Meteor + full recompute on the exported graph, fixed endpoints, uncapped "mattered" set); pytest on fixtures; `node --test` JS vs oracle for Stomp, Flip, delete-parallel-winner, flip-into-existing-edge, Meteor with one road mattering, Meteor needing a contiguous run, "several roads together", 120 s boundary. *Status:* todo
 - **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. *Status:* todo
@@ -254,6 +279,12 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Not copied:** no global leaderboard (needs a backend), no 3D, no Apple assets (SF Symbols and SF Pro are licensed for Apple platforms only).
     - **Deadline fallback:** Meteor is the first thing dropped if P0 or time says so.
     - Details in docs/PLAYGROUND.md.
+
+13. **Cut nothing; move the playground launch instead** (2026-10-29, Jared + Claude). P0 showed plain Dijkstra (~60–70 ms per search on 213,910 vertices) can't meet the 2 s gate for chokepoint Meteors with attribution. Jared rejected cutting Meteor, the explanations or the area.
+    - **Plan:** make routing faster while keeping it exact: landmarks (ALT) + parallel workers (P0b), then CCH only if measured short (P0c).
+    - **Launch:** target ~Nov 17. Nov 4 applications use the finished MVP.
+    - **Gate:** stays at 2 s, not lowered after failing it.
+    - *Why ALT first:* deletions only lengthen routes, so landmark bounds computed with all twins active stay valid under every edit. Answers stay exact (checked by `check.mjs`), there's no extra download (landmarks are computed after load), and it's 1–2 days against several for CCH.
 
 ## Review log
 ### 2026-10-29 — Codex critique of the playground game + UI additions (`codex exec --sandbox read-only`, 9 points)

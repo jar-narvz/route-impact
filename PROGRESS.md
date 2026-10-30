@@ -1,7 +1,7 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** nothing in progress — **MVP done** (Steps 0–13 + 12b; Jared approved the README 2026-10-29). Next: resume bullet.
+- **Working on:** Phase 2, branch `playground`. P0 spike done and verified (`check.mjs --compare`: 0 differences; Python presets == JS). The gate isn't met by plain Dijkstra: the Bay Bridge toll plaza Meteor fails at every radius (Node: rerouting alone 4,266 ms at 150 m; 23.9–62.1 s with attribution); every live Stomp ≤ 1,510 ms. **Jared, 2026-10-29: cut nothing** (keep the Bay box, free-aim Meteor, "roads that mattered"); playground launch target ~Nov 17; Nov 4 applications use the MVP. Next: P0b (ALT + parallel workers, exact), then a clean browser measurement with the pane visible. Spike files are uncommitted until Jared commits them.
 - **Done:** design, plan critique, Steps 0–13 + 12b. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact results 23→27, README draft and Step 12 Verify committed 2026-10-29.
 - **Next session, in order:**
   1. ~~Jared commits Step 12 results + README~~ — done 2026-10-29.

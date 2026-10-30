@@ -1,0 +1,284 @@
+{
+  "seed": 2027,
+  "cases": [
+    {
+      "id": "bay_bridge",
+      "weapon": "stomp",
+      "way_ids": [
+        8921938,
+        23874736,
+        236348360,
+        236348361,
+        237731428,
+        497579295,
+        661905443,
+        661905446,
+        929579737,
+        1343738800
+      ],
+      "purpose": "Compound deletion of both Bay Bridge spans."
+    },
+    {
+      "id": "university_ramp",
+      "weapon": "flip",
+      "way_id": 6320410,
+      "purpose": "Reverse the University Avenue one-way off-ramp."
+    },
+    {
+      "id": "stomp_01",
+      "weapon": "stomp",
+      "way_ids": [
+        45473226
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_02",
+      "weapon": "stomp",
+      "way_ids": [
+        517296940
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_03",
+      "weapon": "stomp",
+      "way_ids": [
+        28357724
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_04",
+      "weapon": "stomp",
+      "way_ids": [
+        6382266
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_05",
+      "weapon": "stomp",
+      "way_ids": [
+        1113354536
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_06",
+      "weapon": "stomp",
+      "way_ids": [
+        415864958
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_07",
+      "weapon": "stomp",
+      "way_ids": [
+        417319249
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_08",
+      "weapon": "stomp",
+      "way_ids": [
+        1041356907
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_09",
+      "weapon": "stomp",
+      "way_ids": [
+        255178096
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_10",
+      "weapon": "stomp",
+      "way_ids": [
+        417289857
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_11",
+      "weapon": "stomp",
+      "way_ids": [
+        242980954
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_12",
+      "weapon": "stomp",
+      "way_ids": [
+        416213568
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_13",
+      "weapon": "stomp",
+      "way_ids": [
+        957912092
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_14",
+      "weapon": "stomp",
+      "way_ids": [
+        241299609
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_15",
+      "weapon": "stomp",
+      "way_ids": [
+        395438594
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_16",
+      "weapon": "stomp",
+      "way_ids": [
+        396980013
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_17",
+      "weapon": "stomp",
+      "way_ids": [
+        1343758310
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_18",
+      "weapon": "stomp",
+      "way_ids": [
+        983245490
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_19",
+      "weapon": "stomp",
+      "way_ids": [
+        27945479
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_20",
+      "weapon": "stomp",
+      "way_ids": [
+        1068255801
+      ],
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "sf_financial_150",
+      "weapon": "meteor",
+      "lat": 37.7946,
+      "lon": -122.3999,
+      "radius_m": 150,
+      "purpose": "Dense downtown street network, 150 m blast."
+    },
+    {
+      "id": "sf_financial_300",
+      "weapon": "meteor",
+      "lat": 37.7946,
+      "lon": -122.3999,
+      "radius_m": 300,
+      "purpose": "Dense downtown street network, 300 m blast."
+    },
+    {
+      "id": "sf_financial_500",
+      "weapon": "meteor",
+      "lat": 37.7946,
+      "lon": -122.3999,
+      "radius_m": 500,
+      "purpose": "Dense downtown street network, 500 m blast."
+    },
+    {
+      "id": "sf_union_square_150",
+      "weapon": "meteor",
+      "lat": 37.787936,
+      "lon": -122.40752,
+      "radius_m": 150,
+      "purpose": "Isolate a sampled trip endpoint, 150 m blast."
+    },
+    {
+      "id": "sf_union_square_300",
+      "weapon": "meteor",
+      "lat": 37.787936,
+      "lon": -122.40752,
+      "radius_m": 300,
+      "purpose": "Isolate a sampled trip endpoint, 300 m blast."
+    },
+    {
+      "id": "sf_union_square_500",
+      "weapon": "meteor",
+      "lat": 37.787936,
+      "lon": -122.40752,
+      "radius_m": 500,
+      "purpose": "Isolate a sampled trip endpoint, 500 m blast."
+    },
+    {
+      "id": "bay_bridge_toll_plaza_150",
+      "weapon": "meteor",
+      "lat": 37.825,
+      "lon": -122.315,
+      "radius_m": 150,
+      "purpose": "Bridge approach chokepoint, 150 m blast."
+    },
+    {
+      "id": "bay_bridge_toll_plaza_300",
+      "weapon": "meteor",
+      "lat": 37.825,
+      "lon": -122.315,
+      "radius_m": 300,
+      "purpose": "Bridge approach chokepoint, 300 m blast."
+    },
+    {
+      "id": "bay_bridge_toll_plaza_500",
+      "weapon": "meteor",
+      "lat": 37.825,
+      "lon": -122.315,
+      "radius_m": 500,
+      "purpose": "Bridge approach chokepoint, 500 m blast."
+    },
+    {
+      "id": "outer_sunset_150",
+      "weapon": "meteor",
+      "lat": 37.753,
+      "lon": -122.493,
+      "radius_m": 150,
+      "purpose": "Quiet residential street network, 150 m blast."
+    },
+    {
+      "id": "outer_sunset_300",
+      "weapon": "meteor",
+      "lat": 37.753,
+      "lon": -122.493,
+      "radius_m": 300,
+      "purpose": "Quiet residential street network, 300 m blast."
+    },
+    {
+      "id": "outer_sunset_500",
+      "weapon": "meteor",
+      "lat": 37.753,
+      "lon": -122.493,
+      "radius_m": 500,
+      "purpose": "Quiet residential street network, 500 m blast."
+    }
+  ]
+}
