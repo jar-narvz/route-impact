@@ -4,15 +4,16 @@ Ported from the browser-verified spike (`scripts/playground_spike.py`, b8bf17e);
 snapshot export reproduces the spike's array, order, name, label and exclusion bytes.
 """
 
-import gzip
 import hashlib
 import importlib.util
 import json
 import math
 import os
 import shutil
+import struct
 import subprocess
 import tomllib
+import zlib
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -117,8 +118,19 @@ def compact_json(value: Any) -> bytes:
     return json.dumps(value, separators=(",", ":"), allow_nan=False).encode()
 
 
+def gzip_bytes(raw: bytes) -> bytes:
+    """Gzip with a fixed header (mtime 0, OS 255) so macOS and Linux write identical bytes.
+
+    `gzip.compress` takes the header's OS byte from zlib (0x13 on macOS, 0x03 on Linux).
+    """
+    deflate = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS)
+    body = deflate.compress(raw) + deflate.flush()
+    header = b"\x1f\x8b\x08\x00" + struct.pack("<I", 0) + b"\x02\xff"
+    return header + body + struct.pack("<II", zlib.crc32(raw), len(raw) & 0xFFFFFFFF)
+
+
 def _write_gzip(out: Path, filename: str, raw: bytes, meta: dict) -> None:
-    packed = gzip.compress(raw, mtime=0)
+    packed = gzip_bytes(raw)
     (out / filename).write_bytes(packed)
     meta["files"] = [row for row in meta["files"] if row["file"] != filename]
     meta["files"].append(
