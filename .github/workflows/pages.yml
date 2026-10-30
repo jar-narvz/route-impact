@@ -1,0 +1,45 @@
+# The only Pages deploy. workflow_run covers Daily because its GITHUB_TOKEN pushes
+# don't trigger push workflows. A successful Daily that published nothing still
+# redeploys, which is harmless.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'results/**', '.github/workflows/pages.yml']
+  workflow_run:
+    workflows: [Daily]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
+    environment:
+      name: github-pages
+      url: '${{ steps.deploy.outputs.page_url }}site/'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - name: Build Pages artifact
+        run: mkdir _site && cp -R site results _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - uses: actions/deploy-pages@v4
+        id: deploy

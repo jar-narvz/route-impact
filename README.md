@@ -9,6 +9,8 @@ Real breakages are rare, so the tool is also evaluated by **fault injection**: i
 
 **Results map:** https://jar-narvz.github.io/route-impact/site/?date=2026-10-28 · daily reports live in [`results/`](results/).
 
+**Fault playground:** https://jar-narvz.github.io/route-impact/site/playground/: break Bay Area roads yourself and watch the sampled trips reroute, live in your browser.
+
 ## Quickstart
 Needs Python 3.11+ and GNU Make. `make setup` installs DuckDB's `spatial` extension once (network needed).
 
@@ -112,6 +114,21 @@ By fault type (single runs):
 
 Each single run took 125.96 s on average, after a one-time 18.19 s extract and 309.80 s of baseline routing, on the Mac described below.
 
+## Fault playground
+The same method as a game you run in the browser. Pick **Stomp** (delete the road you tap), **Flip** (reverse a one-way) or **Meteor** (delete every road within 500 m of the tap). The page reroutes the affected sampled trips and shows how many broke, how many slowed by 2 minutes or more, the added minutes, and which destroyed roads actually mattered: the same restore-one-edit root cause as the daily pipeline.
+
+- **What it routes:** the Bay Area box (37.2–38.1° N, 122.6–121.7° W) from snapshot 261027: 213,910 vertices, 551,760 directed edges and 180,633 OSM ways, with 2,057 sampled trips fully inside the box (`site/playground/data/meta.json`). Python exports the graph with the pipeline's own road rules; the browser never rebuilds it.
+- **How it's fast enough:** exact routing with customizable contraction hierarchies (CCH) in plain JavaScript, inside a Web Worker. An edit only re-customizes the changed part of the hierarchy. The node order is computed offline with RoutingKit. Shipped data is 9,664,256 B gzipped.
+- **How it's checked:** an independent Python oracle fully recomputes every case on the same exported graph. On a frozen set of 15 cases (both presets as live edits, 10 seeded Stomps, 3 Meteors) the browser matched it 15/15, and 75/75 drawn routes were valid against the shipped arrays (`results/playground/p2_browser_check.json`). In that run the worker answered each case in 93.8 ms or less, and 50 Meteor/Rebuild cycles through the real page stayed flat (median 117.6 ms from tap to drawn result; MacBook Pro M3 Max).
+- **Example:** deleting both Bay Bridge spans (10 ways) breaks 2 of the 2,057 sampled trips and slows 169 by 2 minutes or more, adding 2,859 minutes in total (`results/playground/p2_oracle.json`).
+
+Playground limits:
+- **One frozen snapshot and a bounded box.** Detours outside the box don't exist, so some numbers are worse than on the full NorCal graph.
+- **Sampled trips only.** "No sampled trip used these roads" doesn't mean an edit is harmless.
+- **Not total traffic.** Added minutes are summed over the sampled trips delayed by 2 minutes or more; broken trips are counted separately, not as minutes.
+- **Accessibility:** it works without a pointer (arrow keys plus Enter at a crosshair) and respects reduced motion. Results are announced through an ARIA live region; this has not yet been tested with a screen reader.
+- Timings are from one laptop; phone performance hasn't been measured.
+
 ## Limitations
 - **No turn restrictions, no traffic.** Routes use free-flow travel times from speed limits and class defaults. Turn-restriction relations are ignored, so a broken restriction is invisible and some routes are shorter than in reality.
 - **Thresholds are provisional.** They were set against snapshots 261023–261027, which had almost no major-road change. That's too little history to calibrate on, so they need revisiting after a few weeks of daily runs.
@@ -130,5 +147,7 @@ Each single run took 125.96 s on average, after a one-time 18.19 s extract and 3
 | `src/route_impact/` | CLI, graph, trips, impact, risk, root cause, report, faults, metrics |
 | `config/` | speeds, thresholds, trips, demo faults |
 | `site/index.html` | static results map |
+| `site/playground/` | fault playground: page, Web Worker, CCH engine (`core/`), shipped Bay data |
+| `tests/browser/` | browser harness that checks the playground against the Python oracle (not shipped) |
 | `results/` | daily outputs, fault suite scores, benchmark |
 | `docs/DESIGN.md` · `PLAN.md` · `PROGRESS.md` | design and reasoning · build plan · build log |

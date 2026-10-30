@@ -27,8 +27,6 @@ jobs:
     permissions:
       contents: write
       issues: write
-    outputs:
-      publish: ${{ steps.daily.outputs.publish }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -54,27 +52,3 @@ jobs:
           DATE: ${{ inputs.date }}
           TEST_HIGH: ${{ inputs.test_high }}
           GH_TOKEN: ${{ github.token }}
-
-  pages:
-    needs: run
-    if: needs.run.outputs.publish == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-      contents: read
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}site/
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.ref_name }}
-      - name: Build Pages artifact
-        run: mkdir _site && cp -R site results _site/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - uses: actions/deploy-pages@v4
-        id: deploy
