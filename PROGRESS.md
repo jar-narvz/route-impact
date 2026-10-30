@@ -1,16 +1,16 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P0c-3, branch `playground`. Integration done and verified by Claude on 2026-10-30, uncommitted:
-  - Files: `scripts/playground_spike.py`, `scripts/serve_spike.py`, `site/playground/spike/{engine.js,procedure.js,dijkstra.mjs,node-data.mjs,worker.js,check.mjs,measure.js,index.html,cch_bench.mjs,test/procedure.test.mjs}`, `pool.mjs` and `node-worker.cjs` deleted.
-  - Results:
-    - tests 30/30; `check.mjs` all 34 cases identical to the integer-ms Dijkstra, presets == Python;
-    - Float64→ms drift only in `added_ms` (6 cases);
-    - shipped data 9,663,640 B;
-    - bench toll plaza 500 m 69.65 ms;
-    - lint clean; pytest 181 passed.
+- **Working on:** Phase 2 P0c-3, branch `playground`. P0c-3 integration is committed (`971076e`). The worker memory fix is done and verified by Claude on 2026-10-30 but not committed:
+  - Files: `site/playground/spike/{cch.js,engine.js,procedure.js,cch_bench.mjs,test/cch.test.mjs,test/procedure.test.mjs}`.
+  - Results (`node --expose-gc site/playground/spike/cch_bench.mjs`, Node v22.14.0, M3 Max):
+    - Node RSS 207,306,752 B after load and 261,603,328 B after 50 edits, against a 300,000,000 B limit → pass;
+    - live memory (heap + ArrayBuffers) 106,155,623 → 106,810,255 B;
+    - peak RSS during load 217,104,384 B;
+    - slowest case: toll plaza 500 m, 75.15 ms median.
+  - Tests 32/32; `check.mjs` all 34 cases identical, presets == Python; drift unchanged; lint clean.
 - **Next session, start here:**
-  1. **Fix worker memory first.** Engine-alone Node RSS is 389.6 MB after load and 551.0 MB after 50 edits (+161.5 MB growth, likely undo logs or unpack/query buffers kept alive), against a 300 MB limit. Find the growth (heap snapshot or a per-structure byte count), fix it, and look at the load footprint (6,230,212 precomputed triangles = 2 × 24.9 MB `Uint32`; the topology build also holds temporaries). Then rerun `cch_bench.mjs` and `check.mjs`.
+  1. Jared commits the memory fix (commands in the 2026-10-30 log entry).
   2. **Browser acceptance run** (PLAN P0c Verify):
      - serve with `python scripts/serve_spike.py 8781`; port 8766 is taken by posting-triage;
      - Jared brings the browser pane on screen;
@@ -18,7 +18,7 @@
      - write `results/playground/feasibility.json`.
   3. If the gate passes, mark P0c done → P1 (Nov 6–9), P2 (Nov 10–16), launch ~Nov 17. P0c cutoff is Nov 5.
   4. Leftovers:
-     - Codex notes `site/playground/spike/p0b-verification.txt` and `p0c-verification.txt` are untracked; don't commit them.
+     - Codex notes `site/playground/spike/p0b-verification.txt` and `p0c-verification.txt`, `p0c-memory-verification.txt` are untracked; don't commit them.
      - Old spike files still sit in `data/playground-spike/` (harmless).
      - Check the first scheduled daily run (`results/2026-10-29/` on `main`).
      - Resume bullets await Jared's wording approval.
@@ -74,6 +74,39 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-30 — P0c-3: worker memory fix
+- **Agent:** Claude (diagnosis, brief, review, reruns); Codex (code + tests)
+- **Did:**
+  - Diagnosis: there was no leak. With `gc()` forced between samples, heapUsed stayed at 53.3 MB and ArrayBuffers at 196.6 MB across all 50 edits. The old +161 MB of RSS growth was GC lag. The real problem was the live footprint of ~250 MB:
+    - precomputed triangles: 49.9 MB;
+    - `saveBase` copy: 32.7 MB;
+    - the procedure's `wayEdges` arrays and `wayIndex` Map: 48 MB of heap;
+    - Set-based elimination temporaries during the topology build.
+  - Fixes:
+    - the engine uses on-demand triangles; on the real data the outputs were identical and the toll plaza went 65.1 → 66.2 ms;
+    - reset now undoes the outstanding update logs (LIFO) instead of copying back a saved base, with a full re-customize as the fallback after an exception;
+    - way→edges is a typed CSR, and OSM id lookup is a binary search over a sorted Float64Array (all 180,633 ids are unique, so this matches the Map);
+    - `buildCCH` elimination uses typed linked lists with slot reuse instead of Sets;
+    - the bench forces GC before each sample and records heap, ArrayBuffers and peak RSS.
+- **Changed:** `site/playground/spike/{cch.js,engine.js,procedure.js,cch_bench.mjs,test/cch.test.mjs,test/procedure.test.mjs}`, `PROGRESS.md`.
+- **Verify (Claude reran):**
+  - `node --test site/playground/spike/test/*.test.mjs` → `tests 32, pass 32, fail 0`. Plain `node --test <dir>/` fails on Node 22.14, so use the glob.
+  - `node --expose-gc site/playground/spike/cch_bench.mjs`:
+    - `{"after_load_rss":207306752,"after_50_rss":261603328,"growth":54296576}`; `memory_gate_pass: true`;
+    - live bytes 106,155,623 → 106,810,255;
+    - peak load RSS 217,104,384 B;
+    - triangle mode on-demand;
+    - max median 75.15 ms (toll plaza 500 m).
+  - `node site/playground/spike/check.mjs` → `All 34 cases identical; Python presets identical. Drift: {...,"confirmed_attribution":0,"added_ms":6}` (2:11.6).
+  - `ruff check .` → `All checks passed!`; `ruff format --check .` → `41 files already formatted`.
+- **Review (Claude):** no blocking findings.
+  - The remaining +54 MB of RSS growth over 50 edits is allocator retention from update-log churn: live bytes grew only 0.65 MB.
+  - Not done: a byte-level comparison of `first`/`upper` between the old and new `buildCCH` on the real data. Covered indirectly: all 34 stress cases are identical against the independent reference, and the fixture tests compare on-demand against precomputed triangles.
+- **Gotchas:** browser worker memory (`measureUserAgentSpecificMemory`) is still unmeasured; that happens in the acceptance run.
+- **Commit (Jared):**
+  - `git add site/playground/spike/cch.js site/playground/spike/engine.js site/playground/spike/procedure.js site/playground/spike/cch_bench.mjs site/playground/spike/test/cch.test.mjs site/playground/spike/test/procedure.test.mjs PROGRESS.md`
+  - `git commit -m "Cut CCH worker memory: on-demand triangles, log-based reset (P0c-3)"`
 
 ### 2026-10-29 — Step 12b: keep small fractions in impact.json
 - **Agent:** Codex (code + tests, two passes); Claude (review, reruns, Verify)

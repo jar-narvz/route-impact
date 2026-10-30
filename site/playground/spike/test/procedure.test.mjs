@@ -18,7 +18,9 @@ function graph(edges, baseline, baseMs) {
   const mask=a.edge_initially_active.slice(), d=makeDijkstra(a,n,mask);
   const run=test=>{mask.set(a.edge_initially_active);return createProcedure(meta,a).run(test,{mask,search:d.search,update:()=>null});};
   const cch=createEngine(meta,a,Uint32Array.from({length:n},(_,i)=>i),{});
-  return {run,cch};
+  assert.equal(cch.stats().buffers.savedBase,0);
+  assert.equal(cch.stats().triangleMode,'on-demand');
+  return {run,cch,meta,a};
 }
 test('broken recovers to a detour over threshold: restoring one road matters',()=>{
   // Paths 0→1→2 (destroyed); restoring way 100 permits a 300 s detour 1→3.
@@ -50,4 +52,15 @@ test('adjacent destroyed ways form a confirmed maximal run',()=>{
   assert.deepEqual(result.rows[0].confirmed_runs,[[100,101]]);
   assert.equal(result.rows[0].label,'run');
   assert.deepEqual(canonical(cch.edit(edit)),canonical(result));
+});
+
+test('typed way CSR preserves ascending edge ids and binary lookup handles unsorted OSM ids',()=>{
+  const {meta,a}=graph([[0,1,1,2],[0,2,1,0],[1,2,1,2],[1,3,1,1],[2,3,1,0]],[0,2,4],3);
+  a.way_osm_id=Float64Array.of(9000000001,17,8000000003,42);
+  const procedure=createProcedure(meta,a), mask=a.edge_initially_active.slice(), updates=[];
+  assert.deepEqual(procedure.hitWays({way_ids:[42,8000000003,9000000001,17]}),[3,2,0,1]);
+  assert.throws(()=>procedure.hitWays({way_id:999}),/^Error: Unknown OSM way 999$/);
+  procedure.run({weapon:'stomp',way_ids:[8000000003,9000000001,17]},
+    {mask,search:()=>[3],update:edges=>{updates.push([...edges]);return null;}});
+  assert.deepEqual(updates[0],[0,2,1,4,3]);
 });

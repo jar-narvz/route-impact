@@ -6,24 +6,59 @@ export function deriveSources(a, n) {
   for (let v = 0; v < n; v++) tail.fill(v, a.csr_offsets[v], a.csr_offsets[v + 1]);
   a.edge_source = tail;
 }
+// Own every outstanding update log so a replacing edit needs no base copy.
+export function createEditSession(cch, a, mask, procedure) {
+  const logs = [];
+  let initialLog;
+  function recover() {
+    logs.length = 0; initialLog = undefined;
+    mask.set(a.edge_initially_active);
+    cch.customize(a.edge_ms, mask);
+  }
+  const adapter = {mask, search: cch.queryMany, unpack: cch.unpack,
+    update(changed) {
+      const result = cch.update(changed);
+      if (!initialLog) initialLog = result.undo;
+      logs.push(result.undo);
+      return result;
+    },
+    undo(log) {
+      if (!logs.length || logs[logs.length - 1] !== log) throw new Error('Inconsistent edit log stack');
+      cch.undo(log); logs.pop();
+    }};
+  function reset() {
+    try { while (logs.length) adapter.undo(logs[logs.length - 1]); }
+    catch { recover(); }
+    initialLog = undefined;
+  }
+  function run(test) {
+    initialLog = undefined;
+    try {
+      const result = procedure.run(test, adapter);
+      if (logs.length !== 1 || logs[0] !== initialLog) throw new Error('Inconsistent edit log stack after procedure');
+      return result;
+    } catch (error) { recover(); throw error; }
+  }
+  return {reset, run};
+}
 export function createEngine(meta, a, order, presets) {
   deriveSources(a, meta.counts.vertices);
-  const cch = buildCCH({n: meta.counts.vertices, order, tail: a.edge_source, head: a.edge_target});
+  const cch = buildCCH({n: meta.counts.vertices, order, tail: a.edge_source, head: a.edge_target, precomputeTriangles: false});
   const mask = a.edge_initially_active.slice();
-  cch.customize(a.edge_ms, mask); cch.saveBase();
+  cch.customize(a.edge_ms, mask);
   const procedure = createProcedure(meta, a);
-  const adapter = {mask, search: cch.queryMany, update: cch.update, undo: cch.undo, unpack: cch.unpack};
+  const session = createEditSession(cch, a, mask, procedure);
   function edit(test) {
-    if (test.weapon === 'reset') { cch.restoreBase(); return {reset: true}; }
+    if (test.weapon === 'reset') { session.reset(); return {reset: true}; }
     const start = performance.now();
     // Each edit replaces the previous edit. Measurements also report an explicit reset.
-    cch.restoreBase();
+    session.reset();
     let result;
     if (test.preset) {
       if (!presets[test.preset]) throw new Error(`Unknown preset ${test.preset}`);
       result = structuredClone(presets[test.preset]);
       result.precomputed = true;
-    } else result = procedure.run(test, adapter);
+    } else result = session.run(test);
     result.geojson = geojson(result);
     result.timings ||= {};
     result.timings.total_ms = performance.now() - start;

@@ -3,9 +3,21 @@ export function createProcedure(meta, a) {
   const now = () => performance.now();
   const allTrips = Array.from(a.trip_origin, (_, i) => i);
   const baseline = a.trip_ms;
-  const wayEdges = Array.from({length: meta.counts.ways}, () => []);
-  for (let e = 0; e < a.edge_way.length; e++) wayEdges[a.edge_way[e]].push(e);
-  const wayIndex = new Map(Array.from(a.way_osm_id, (id, w) => [id, w]));
+  const wayEdgeOffsets = new Uint32Array(meta.counts.ways + 1);
+  for (const w of a.edge_way) wayEdgeOffsets[w + 1]++;
+  for (let w = 0; w < meta.counts.ways; w++) wayEdgeOffsets[w + 1] += wayEdgeOffsets[w];
+  const wayEdgeList = new Uint32Array(a.edge_way.length), cursor = wayEdgeOffsets.slice();
+  for (let e = 0; e < a.edge_way.length; e++) wayEdgeList[cursor[a.edge_way[e]]++] = e;
+  const wayEdges = w => wayEdgeList.subarray(wayEdgeOffsets[w], wayEdgeOffsets[w + 1]);
+  const wayPermutation = Uint32Array.from(a.way_osm_id, (_, w) => w);
+  wayPermutation.sort((x, y) => a.way_osm_id[x] - a.way_osm_id[y]);
+  const sortedOsmIds = Float64Array.from(wayPermutation, w => a.way_osm_id[w]);
+  function wayIndex(id) {
+    let lo = 0, hi = sortedOsmIds.length;
+    while (lo < hi) { const mid = (lo + hi) >>> 1; if (sortedOsmIds[mid] < id) lo = mid + 1; else hi = mid; }
+    if (lo === sortedOsmIds.length || sortedOsmIds[lo] !== id) throw new Error(`Unknown OSM way ${id}`);
+    return wayPermutation[lo];
+  }
   const path = t => a.trip_path_edges.subarray(a.trip_path_offsets[t], a.trip_path_offsets[t + 1]);
   const osm = w => a.way_osm_id[w];
   function groups(trips) {
@@ -53,10 +65,10 @@ export function createProcedure(meta, a) {
     const begin = now(), destroyed = new Set(hitWays);
     const changed = [];
     timed(timings, 'initial_edit_update_ms', () => {
-      for (const w of hitWays) for (const e of wayEdges[w]) if (engine.mask[e]) { engine.mask[e] = 0; changed.push(e); }
+      for (const w of hitWays) for (const e of wayEdges(w)) if (engine.mask[e]) { engine.mask[e] = 0; changed.push(e); }
       if (test.weapon === 'flip') for (const w of hitWays) {
         if (!meta.counts || !a.way_oneway[w]) throw new Error('Flip requires a one-way');
-        for (const e of wayEdges[w]) if (a.edge_initially_active[e]) {
+        for (const e of wayEdges(w)) if (a.edge_initially_active[e]) {
           const twin = a.edge_twin[e];
           if (twin < 0) throw new Error('Missing reverse twin');
           engine.mask[twin] = 1; changed.push(twin);
@@ -80,7 +92,7 @@ export function createProcedure(meta, a) {
       let log;
       timed(timings, `${phase}_restore_update_ms`, () => {
         const restored = [];
-        for (const w of ways) for (const e of wayEdges[w]) if (engine.mask[e] !== a.edge_initially_active[e]) {
+        for (const w of ways) for (const e of wayEdges(w)) if (engine.mask[e] !== a.edge_initially_active[e]) {
           restored.push([e, engine.mask[e]]); engine.mask[e] = a.edge_initially_active[e];
         }
         const update = engine.update(restored.map(([e]) => e)); addCounts(phase, update); log = {restored, update};
@@ -139,10 +151,7 @@ export function createProcedure(meta, a) {
 
   function hitWays(test) {
     if (test.weapon === 'meteor') return meteor(test);
-    return (test.way_ids || [test.way_id]).map(id => {
-      if (!wayIndex.has(id)) throw new Error(`Unknown OSM way ${id}`);
-      return wayIndex.get(id);
-    });
+    return (test.way_ids || [test.way_id]).map(wayIndex);
   }
   return {run: (test, engine) => procedure(test, hitWays(test), engine, baseline, meta.slow_seconds * 1000), path, hitWays};
 }

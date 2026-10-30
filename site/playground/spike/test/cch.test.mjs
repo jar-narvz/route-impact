@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import {buildCCH} from '../cch.js';
+import {createEditSession} from '../engine.js';
+import {createProcedure} from '../procedure.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/grid6_order.json', import.meta.url)));
 function random(seed) {
@@ -147,4 +149,53 @@ test('MAX_SAFE_INTEGER active sum bound at customize and update', () => {
   assert.throws(() => c.update([count - 1]), /MAX_SAFE_INTEGER/);
   weights[count - 1] = 2097151; const log = c.update([count - 1]);
   c.undo(log.undo); assert.equal(active[count - 1], 0);
+});
+
+test('engine undo-log reset and throw/inconsistent-stack recovery restore pristine compound metric', () => {
+  const topology={n:4,order:[0,1,2,3],tail:[0,1,2],head:[1,2,3],precomputeTriangles:false};
+  const cch=buildCCH(topology), a={edge_ms:Uint32Array.of(10,20,30),
+    edge_initially_active:Uint8Array.of(1,1,1),edge_way:Uint32Array.of(0,1,2),
+    way_osm_id:Float64Array.of(100,101,102),trip_origin:Uint32Array.of(0),trip_destination:Uint32Array.of(3),
+    trip_ms:Uint32Array.of(60),trip_path_edges:Uint32Array.of(0,1,2),trip_path_offsets:Uint32Array.of(0,3)};
+  const mask=a.edge_initially_active.slice(), weights=a.edge_ms.slice();
+  cch.customize(a.edge_ms,mask); const pristine=metric(cch);
+  let customizations=0;
+  const realCustomize=cch.customize;
+  cch.customize=(...args)=>{customizations++;return realCustomize(...args);};
+  const procedure=createProcedure({counts:{ways:3},slow_seconds:120},a);
+  const edit={weapon:'stomp',way_ids:[100,101,102]};
+  function pristineState() {
+    same(cch,pristine); assert.deepEqual(mask,a.edge_initially_active);
+    assert.deepEqual(a.edge_ms,weights); assert.equal(cch.query(0,3),60);
+  }
+  const session=createEditSession(cch,a,mask,procedure);
+  const result=session.run(edit);
+  assert.deepEqual(result.rows[0].confirmed_runs,[[100,101,102]]);
+  assert.equal(result.counts.single.jobs,3); assert.equal(result.counts.run.jobs,1);
+  assert.deepEqual(a.edge_ms,weights); assert.deepEqual(mask,Uint8Array.of(0,0,0));
+  session.reset(); pristineState(); assert.equal(customizations,0);
+  // Throw while a counterfactual update is outstanding, before its undo.
+  const failing=createEditSession(cch,a,mask,{run(test,adapter) {
+    let searches=0;
+    return procedure.run(test,{...adapter,search(...args){
+      if (++searches === 2) throw new Error('forced query failure');
+      return adapter.search(...args);
+    }});
+  }});
+  assert.throws(()=>failing.run(edit),/forced query failure/);
+  pristineState(); failing.reset(); pristineState(); assert.equal(customizations,1);
+  const inconsistent=createEditSession(cch,a,mask,{run(test,adapter) {
+    procedure.run(test,adapter); mask[0]=1; adapter.update([0]); return {};
+  }});
+  assert.throws(()=>inconsistent.run(edit),/Inconsistent edit log stack/);
+  pristineState(); assert.equal(customizations,2);
+  const replaced=createEditSession(cch,a,mask,{run(test,adapter) {
+    mask[0]=0; const initial=adapter.update([0]); adapter.undo(initial.undo);
+    mask[1]=0; adapter.update([1]); return {};
+  }});
+  assert.throws(()=>replaced.run(edit),/Inconsistent edit log stack/);
+  pristineState(); assert.equal(customizations,3);
+  // A stale log at reset must also recover through full customization.
+  session.run(edit); realCustomize(a.edge_ms,mask); session.reset();
+  pristineState(); assert.equal(customizations,4);
 });

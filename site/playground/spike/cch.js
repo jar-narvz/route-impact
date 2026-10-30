@@ -76,32 +76,59 @@ export function buildCCH({n, order, tail, head, precomputeTriangles = true}) {
     if (v >= n || seen[v]) throw new RangeError('Order must be a permutation');
     seen[v] = 1; rank[v] = r;
   }
-  const neighbours = Array.from({length: n}, () => new Set());
+  // Forward-star lists reuse eliminated slots. Passing a deduplicated list to
+  // its parent adds fewer entries than we just freed, so input size is a bound.
+  let neighbourHead = new Int32Array(n).fill(-1);
+  let neighbourNext = new Int32Array(tail.length), neighbourValue = new Uint32Array(tail.length);
+  let freeSlot = -1, usedSlots = 0;
+  function appendNeighbour(v, y) {
+    let slot;
+    if (freeSlot >= 0) { slot = freeSlot; freeSlot = neighbourNext[slot]; }
+    else slot = usedSlots++;
+    neighbourValue[slot] = y; neighbourNext[slot] = neighbourHead[v]; neighbourHead[v] = slot;
+  }
   for (let e = 0; e < tail.length; e++) {
     if (!Number.isInteger(tail[e]) || !Number.isInteger(head[e]) || tail[e] < 0 || head[e] < 0 || tail[e] >= n || head[e] >= n)
       throw new RangeError('Invalid input endpoint');
     const a = rank[tail[e]], b = rank[head[e]];
-    if (a !== b) neighbours[Math.min(a, b)].add(Math.max(a, b));
+    if (a !== b) appendNeighbour(Math.min(a, b), Math.max(a, b));
   }
-  const parent = new Int32Array(n).fill(-1), degree = new Uint32Array(n);
-  // Elimination-tree union: pass the higher neighbours to the lowest one.
-  // Subsequent eliminations complete their clique without quadratic Set writes.
+  const parent = new Int32Array(n).fill(-1), first = new Uint32Array(n + 1);
+  let upperStorage = new Uint32Array(Math.max(16, tail.length));
+  // Sort/deduplicate only the vertex being eliminated, write its upper slice,
+  // and pass the remaining upper neighbours to its parent.
   for (let v = 0; v < n; v++) {
-    let p = n;
-    for (const y of neighbours[v]) if (y < p) p = y;
-    if (p < n) {
-      parent[v] = p;
-      for (const y of neighbours[v]) if (y !== p) neighbours[p].add(y);
+    const ys = [];
+    for (let slot = neighbourHead[v]; slot >= 0;) {
+      ys.push(neighbourValue[slot]);
+      const next = neighbourNext[slot];
+      neighbourNext[slot] = freeSlot; freeSlot = slot; slot = next;
     }
-    degree[v] = neighbours[v].size;
+    neighbourHead[v] = -1;
+    ys.sort((a, b) => a - b);
+    let count = 0;
+    for (let i = 0; i < ys.length; i++) if (!i || ys[i] !== ys[i - 1]) ys[count++] = ys[i];
+    const end = first[v] + count;
+    if (end >= 0x7fffffff) throw new RangeError('CCH ids exceed witness capacity');
+    if (end > upperStorage.length) {
+      const grown = new Uint32Array(Math.max(end, upperStorage.length * 2));
+      grown.set(upperStorage); upperStorage = grown;
+    }
+    if (count) {
+      const p = ys[0]; parent[v] = p;
+      for (let i = 0; i < count; i++) {
+        upperStorage[first[v] + i] = ys[i];
+        if (i) appendNeighbour(p, ys[i]);
+      }
+    }
+    first[v + 1] = end;
   }
-  const first = offsets(degree), m = first[n];
-  if (m >= 0x7fffffff) throw new RangeError('CCH ids exceed witness capacity');
-  const upper = new Uint32Array(m), lower = new Uint32Array(m);
-  for (let x = 0; x < n; x++) {
-    upper.set([...neighbours[x]].sort((a, b) => a - b), first[x]);
-    lower.fill(x, first[x], first[x + 1]); neighbours[x] = null;
-  }
+  const neighbourTemporaryBytes = neighbourHead.byteLength + neighbourNext.byteLength + neighbourValue.byteLength;
+  neighbourHead = neighbourNext = neighbourValue = null;
+  const upperTemporaryBytes = upperStorage.byteLength;
+  const m = first[n], upper = upperStorage.slice(0, m), lower = new Uint32Array(m);
+  upperStorage = null;
+  for (let x = 0; x < n; x++) lower.fill(x, first[x], first[x + 1]);
   function find(x, y) {
     let a = first[x], b = first[x + 1];
     while (a < b) { const mid = (a + b) >>> 1; if (upper[mid] < y) a = mid + 1; else b = mid; }
@@ -117,13 +144,15 @@ export function buildCCH({n, order, tail, head, precomputeTriangles = true}) {
     inputArc[e] = a; inputDir[e] = d; inputCounts[2 * a + d]++;
   }
   const inputFirst = offsets(inputCounts), inputIds = new Uint32Array(inputFirst[2 * m]);
-  const cursor = inputFirst.slice();
+  const cursor = inputCounts;
+  cursor.set(inputFirst.subarray(0, 2 * m));
   for (let e = 0; e < tail.length; e++) if (inputArc[e] >= 0)
     inputIds[cursor[2 * inputArc[e] + inputDir[e]]++] = e;
   // Incoming CSR supports sorted lower-neighbour intersection on demand.
   const incomingCounts = new Uint32Array(n);
   for (const y of upper) incomingCounts[y]++;
-  const incomingFirst = offsets(incomingCounts), incoming = new Uint32Array(m), pos = incomingFirst.slice();
+  const incomingFirst = offsets(incomingCounts), incoming = new Uint32Array(m), pos = incomingCounts;
+  pos.set(incomingFirst.subarray(0, n));
   for (let a = 0; a < m; a++) incoming[pos[upper[a]]++] = a;
   function triangles(a, visit) {
     let i = incomingFirst[lower[a]], j = incomingFirst[upper[a]];
@@ -315,6 +344,8 @@ export function buildCCH({n, order, tail, head, precomputeTriangles = true}) {
     }
     return {onDemand, precomputed};
   }
+  // Keep only the size in the stats closure, so construction scratch can die.
+  const constructionTemporaryBufferBytes = seen.byteLength + inputCounts.byteLength + incomingCounts.byteLength + neighbourTemporaryBytes + upperTemporaryBytes;
   function stats() {
     const structures = {order, rank, first, upper, lower, parent, inputArc, inputDir, inputFirst, inputIds,
       incomingFirst, incoming, triangleCounts, triangleFirst, triangleA, triangleB, up, down, upFirst, upSecond,
@@ -323,8 +354,8 @@ export function buildCCH({n, order, tail, head, precomputeTriangles = true}) {
     buffers.savedBase = base ? base.metric.reduce((sum, x) => sum + x.byteLength, 0) + base.weights.byteLength + base.active.byteLength : 0;
     return {n, inputArcs: tail.length, cchArcs: m, triangles: triangleCount, precomputedTriangles: triangleA ? triangleCount : 0,
       triangleMode: triangleA ? 'precomputed' : 'on-demand', buffers, totalBufferBytes: Object.values(buffers).reduce((a, b) => a + b, 0),
-      constructionTemporaryBufferBytes: seen.byteLength + degree.byteLength + inputCounts.byteLength + cursor.byteLength + incomingCounts.byteLength + pos.byteLength,
-      constructionNote: 'Set/Array storage is engine-managed; RSS samples include it. Explicit temporaries exclude engine-managed objects.',
+      constructionTemporaryBufferBytes,
+      constructionNote: 'Array storage is engine-managed; RSS samples include it. Explicit temporaries exclude engine-managed objects.',
       alternativeTriangleBytes: {precomputed: triangleFirst.byteLength + triangleCounts.byteLength + 8 * triangleCount,
         onDemand: triangleFirst.byteLength + triangleCounts.byteLength}};
   }
