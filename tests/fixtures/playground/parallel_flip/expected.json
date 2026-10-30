@@ -1,0 +1,30 @@
+{
+  "ways_hit": 1,
+  "candidate_trips": 1,
+  "affected_trips": 1,
+  "broken": 0,
+  "slowed": 1,
+  "added_ms": 130000,
+  "rows": [
+    {
+      "trip": 0,
+      "status": "slowed",
+      "distance_ms": 140000,
+      "added_ms": 130000,
+      "candidates": [
+        301
+      ],
+      "confirmed_singles": [
+        301
+      ],
+      "confirmed_runs": [],
+      "tested_candidates": [
+        301
+      ],
+      "unchecked_candidates": [],
+      "tested_runs": 0,
+      "total_runs": 0,
+      "label": "single"
+    }
+  ]
+}

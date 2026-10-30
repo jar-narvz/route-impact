@@ -404,7 +404,10 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `git mv` `site/playground/spike/test/{cch.test.mjs,procedure.test.mjs}`, `site/playground/spike/dijkstra.mjs` and `site/playground/spike/fixtures/grid6_order.json` → `site/playground/core/test/`;
       - `site/playground/core/test/oracle.test.mjs` (new);
       - import paths only in `site/playground/spike/{worker.js,measure.js,check.mjs,cch_bench.mjs,node-data.mjs}`;
-      - `procedure.js`: `canonical()` numeric run sort; Meteor constants read from `meta`;
+      - `procedure.js`:
+        - `canonical()` uses the numeric run sort;
+        - Meteor constants are read from `meta`, and the Meteor arithmetic is rewritten to the oracle's exact operation order (`segment_distances2` in `playground_oracle.py`: `k = R*π/180`, the segment vector as a difference of scaled points). Otherwise taps at exactly r can differ by 1 ulp (P1b review #1);
+        - duplicate way ids are rejected, as in the oracle (P1b review #5);
       - `Makefile` (`test-js: node --test 'site/playground/core/test/*.test.mjs'`, with the glob quoted; `make test` runs pytest, then `test-js`);
       - `.github/workflows/ci.yml` (`actions/setup-node@v4`, `node-version: '22'`, before tests);
       - `AGENTS.md` (Commands: `make test` now needs Node ≥ 22). Claude edits AGENTS.md.
@@ -414,7 +417,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `node site/playground/spike/check.mjs` → still "All 34 cases identical", so the move didn't change behaviour.
       - `node --expose-gc site/playground/spike/cch_bench.mjs` → memory gate still passes.
       - `make test` and `make lint` green; CI green on push (Jared pushes).
-  - *Status:* **P1a done 2026-10-30** (Claude subagent code, adversarial Claude review, Claude reran Verify: 197 passed, real export 21/21 hashes == spike) · P1b todo · P1c todo
+  - *Status:* **P1a done 2026-10-30** (Claude subagent code, adversarial Claude review, Claude reran Verify: 197 passed, real export 21/21 hashes == spike) · **P1b done 2026-10-30** (Claude subagent code, adversarial Claude review with a fuzz of ~600 graphs and 0 mismatches; Claude reran: 264 passed, real 34/34 == reference-ms.json, presets equal) · P1c todo (includes the P1b review's JS follow-ups #1 and #5)
 - **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. *Status:* todo
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
 - **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)

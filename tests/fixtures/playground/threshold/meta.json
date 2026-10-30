@@ -1,0 +1,315 @@
+{
+  "format_version": 1,
+  "byte_order": "little",
+  "snapshot": "fixture-threshold",
+  "counts": {
+    "vertices": 4,
+    "edges": 10,
+    "ways": 3,
+    "trips": 2,
+    "initially_active_edges": 6,
+    "excluded_trips": 0
+  },
+  "box": {
+    "min_lat": 37.2,
+    "max_lat": 38.1,
+    "min_lon": -122.6,
+    "max_lon": -121.7
+  },
+  "projection_lat": 37.65,
+  "metres_per_degree": 111195.0802,
+  "earth_radius_m": 6371008.8,
+  "simplification_tolerance_m": 0,
+  "geometry_coordinate_order": "lat,lon",
+  "geometry_scale": 1000000,
+  "geometry_scope": "hand-made fixture polylines (unsimplified)",
+  "slow_seconds": 120,
+  "presets": {},
+  "highway_classes": [
+    "residential"
+  ],
+  "baseline_tie_rule": "Minimum parallel edge by (integer ms, edge id); scipy CSR Dijkstra strict improvement in sorted vertex order (deterministic for the recorded scipy version).",
+  "cch_order": {
+    "method": "identity",
+    "file": "cch_order.bin.gz",
+    "manifest_file": "order_manifest.json.gz"
+  },
+  "local_files": [],
+  "arrays": [
+    {
+      "name": "csr_offsets",
+      "dtype": "<u4",
+      "length": 5,
+      "file": "csr_offsets.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "edge_target",
+      "dtype": "<u4",
+      "length": 10,
+      "file": "edge_target.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "edge_ms",
+      "dtype": "<u4",
+      "length": 10,
+      "file": "edge_ms.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "edge_way",
+      "dtype": "<u4",
+      "length": 10,
+      "file": "edge_way.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "edge_initially_active",
+      "dtype": "u1",
+      "length": 10,
+      "file": "edge_initially_active.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "edge_twin",
+      "dtype": "<i4",
+      "length": 10,
+      "file": "edge_twin.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "way_osm_id",
+      "dtype": "<f8",
+      "length": 3,
+      "file": "way_osm_id.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "way_oneway",
+      "dtype": "u1",
+      "length": 3,
+      "file": "way_oneway.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "way_highway",
+      "dtype": "u1",
+      "length": 3,
+      "file": "way_highway.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "geometry_offsets",
+      "dtype": "<u4",
+      "length": 4,
+      "file": "geometry_offsets.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "geometry_coords",
+      "dtype": "<i4",
+      "length": 16,
+      "file": "geometry_coords.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "trip_origin",
+      "dtype": "<u4",
+      "length": 2,
+      "file": "trip_origin.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "trip_destination",
+      "dtype": "<u4",
+      "length": 2,
+      "file": "trip_destination.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "trip_ms",
+      "dtype": "<f8",
+      "length": 2,
+      "file": "trip_ms.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "trip_weight",
+      "dtype": "<f8",
+      "length": 2,
+      "file": "trip_weight.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "trip_path_offsets",
+      "dtype": "<u4",
+      "length": 3,
+      "file": "trip_path_offsets.bin.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "trip_path_edges",
+      "dtype": "<u4",
+      "length": 2,
+      "file": "trip_path_edges.bin.gz",
+      "byte_offset": 0
+    }
+  ],
+  "files": [
+    {
+      "file": "cch_order.bin.gz",
+      "raw_bytes": 16,
+      "gzip_bytes": 31,
+      "sha256": "f5e5187b090b59e4b7b84113632a642685f1792c75a7af4d67fcc5cbd6f46553"
+    },
+    {
+      "file": "csr_offsets.bin.gz",
+      "raw_bytes": 20,
+      "gzip_bytes": 34,
+      "sha256": "5d18ff3258274f595c749a3e2442f77a6a947e431c092084384f3506089cd574"
+    },
+    {
+      "file": "edge_target.bin.gz",
+      "raw_bytes": 40,
+      "gzip_bytes": 34,
+      "sha256": "715397ba8ed54ad88eb2fa26020c188bd33f8a6e217e91d62e97617390966283"
+    },
+    {
+      "file": "edge_ms.bin.gz",
+      "raw_bytes": 40,
+      "gzip_bytes": 45,
+      "sha256": "ebd67ed0b286dfab61f9f8f26e7c71ad6f56a8d73fb54946d5101446f26849d4"
+    },
+    {
+      "file": "edge_way.bin.gz",
+      "raw_bytes": 40,
+      "gzip_bytes": 36,
+      "sha256": "b7190309e1d09cc3f967c44a3290431ad262610166fd7d5c84ceeb7ca228b52e"
+    },
+    {
+      "file": "edge_initially_active.bin.gz",
+      "raw_bytes": 10,
+      "gzip_bytes": 26,
+      "sha256": "0cd057145845d4a33fffe74aa7a54544c9ddd55c8897db8682c51d50864d93ce"
+    },
+    {
+      "file": "edge_twin.bin.gz",
+      "raw_bytes": 40,
+      "gzip_bytes": 48,
+      "sha256": "5681463820911f4535764c7c060ae17945492a82f78540d11a8fa5806a8660b5"
+    },
+    {
+      "file": "way_osm_id.bin.gz",
+      "raw_bytes": 24,
+      "gzip_bytes": 35,
+      "sha256": "6f97469a816405fabebe32f677ba21b078466fca5b8fb6c0ec38687f8788cbaa"
+    },
+    {
+      "file": "way_oneway.bin.gz",
+      "raw_bytes": 3,
+      "gzip_bytes": 23,
+      "sha256": "d438a257101da83dc55441ec03d683580c9ab254243eeba9697579f5fabe2468"
+    },
+    {
+      "file": "way_highway.bin.gz",
+      "raw_bytes": 3,
+      "gzip_bytes": 23,
+      "sha256": "36e57dcff221b4339b3fd51acf38c99cd34a19f6a469a784eb056e97b4851bc8"
+    },
+    {
+      "file": "geometry_offsets.bin.gz",
+      "raw_bytes": 16,
+      "gzip_bytes": 31,
+      "sha256": "f548ac8105860cbfa6c40e3baeb88e48c9f31237712c00e786b89f713abb481a"
+    },
+    {
+      "file": "geometry_coords.bin.gz",
+      "raw_bytes": 64,
+      "gzip_bytes": 58,
+      "sha256": "be89f1a9c3a3c6a8ff448d6970d690860fd72ba1228539f7cb4315bf12171fac"
+    },
+    {
+      "file": "trip_origin.bin.gz",
+      "raw_bytes": 8,
+      "gzip_bytes": 26,
+      "sha256": "9870527cc716d34ec7da8c0fd93971551c7016276f6d6cb7aa45e598f09424f7"
+    },
+    {
+      "file": "trip_destination.bin.gz",
+      "raw_bytes": 8,
+      "gzip_bytes": 23,
+      "sha256": "5d6ddc2e6c8276d5b897d1d1d220204325641b3630145369936dd47316164d69"
+    },
+    {
+      "file": "trip_ms.bin.gz",
+      "raw_bytes": 16,
+      "gzip_bytes": 29,
+      "sha256": "4b22611eda495a87075d0f45e8aefc1a1a65ab478f384ab0d822c849cec03eae"
+    },
+    {
+      "file": "trip_weight.bin.gz",
+      "raw_bytes": 16,
+      "gzip_bytes": 28,
+      "sha256": "561b481a891659c4b52962f751dffe109943bf51b85c894340e181db7860fdae"
+    },
+    {
+      "file": "trip_path_offsets.bin.gz",
+      "raw_bytes": 12,
+      "gzip_bytes": 29,
+      "sha256": "fa7ad9d25874c0a50b72b0b3cb70eb2401b20654066851f8ba4c51472d3a27bb"
+    },
+    {
+      "file": "trip_path_edges.bin.gz",
+      "raw_bytes": 8,
+      "gzip_bytes": 26,
+      "sha256": "a7aed5f4e4dcbd4e35c93ab6072956e5f046ae32c17462fc20441e86ba4ba73f"
+    },
+    {
+      "file": "order_manifest.json.gz",
+      "raw_bytes": 96,
+      "gzip_bytes": 101,
+      "sha256": "ea5a269e501e650bf62c2db708fe340ee7c73aaf44fd43b9d4e2bfd48bf39bc0"
+    },
+    {
+      "file": "excluded_trips.json.gz",
+      "raw_bytes": 2,
+      "gzip_bytes": 22,
+      "sha256": "6731668a37f6a3ed10d77860e21c7ba693c377a061571ffa58564d1d699c1798"
+    },
+    {
+      "file": "way_names.json.gz",
+      "raw_bytes": 31,
+      "gzip_bytes": 38,
+      "sha256": "b4366df4b1fc352b262c7441c33174424478f2cd318821d5eb864be2154b5f81"
+    },
+    {
+      "file": "trip_labels.json.gz",
+      "raw_bytes": 59,
+      "gzip_bytes": 54,
+      "sha256": "e91fd14181b22ac247d6530094584eb38e295c3a6f37285f09af3091301f7245"
+    },
+    {
+      "file": "meta.json",
+      "raw_bytes": 7891,
+      "gzip_bytes": 7891
+    }
+  ],
+  "json_arrays": [
+    {
+      "name": "way_names",
+      "dtype": "json",
+      "length": 3,
+      "file": "way_names.json.gz",
+      "byte_offset": 0
+    },
+    {
+      "name": "trip_labels",
+      "dtype": "json",
+      "length": 2,
+      "file": "trip_labels.json.gz",
+      "byte_offset": 0
+    }
+  ],
+  "total_shipped_bytes": 8691
+}

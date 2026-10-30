@@ -1,13 +1,14 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P1, branch `playground`. P0c is done (gate passed, committed `84aa8eb`). P1 is planned in PLAN.md (P1a/P1b/P1c), with the plan critiqued by an adversarial Claude subagent (10/10 accepted, logged in the Review log). **P1a (production exporter) is done and verified 2026-10-30, uncommitted.**
+- **Working on:** Phase 2 P1, branch `playground`. P1a committed (`b2edc58`). **P1b (Python oracle) is done and verified 2026-10-30, uncommitted.** Stopped here at Jared's request; P1c not started.
 - **Next session, start here:**
-  1. Jared commits P1a (commands in the 2026-10-30 P1a log entry).
-  2. **P1b — Python oracle:** a Claude subagent implements it from the PLAN spec, including the canonical-v1 field table, then an adversarial Claude subagent reviews it. The real-data check (34 stress cases == `reference-ms.json`, ≤ 15 min) runs locally.
-  3. P1c: move the JS core out of the spike and add `node --test` checks against the oracle, plus a Node 22 step in CI. Then P2 (Nov 10–16), launch ~Nov 17.
+  1. Jared commits P1b (commands in the 2026-10-30 P1b log entry).
+  2. **P1c**, per PLAN: move `cch.js`, `procedure.js` and `engine.js` into `site/playground/core/`; add `load.mjs` and `oracle.test.mjs` against the 12 fixtures; Makefile `test-js`; Node 22 in CI; the AGENTS.md Commands line. Include the P1b review's JS follow-ups: the Meteor arithmetic in the oracle's operation order, and rejecting duplicate way ids. Same workflow: an implementer subagent, then an adversarial review subagent, then Claude reruns Verify.
+  3. Then P2 (Nov 10–16), launch ~Nov 17.
   - **Workflow change (Jared, 2026-10-30):** Codex usage is running low, so don't use Codex. Same workflow, different agents: a Claude Code subagent implements and writes tests; a separate, adversarial Claude subagent reviews the diff (and critiques plans) where Codex used to.
   - Leftovers:
+     - Follow-up (P1a review #4): the Earth radius is in both `config/playground.toml` and `impact.py` `Snapper`; make one the source.
      - Codex notes `site/playground/spike/p0b-verification.txt` and `p0c-verification.txt`, `p0c-memory-verification.txt` are untracked; don't commit them.
      - Old spike files still sit in `data/playground-spike/` (harmless).
      - Check the first scheduled daily run (`results/2026-10-29/` on `main`).
@@ -64,6 +65,40 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-30 — P1b: Python oracle (`route-impact playground-oracle`)
+- **Agent:** Claude subagent (code + tests, two passes); adversarial Claude subagent (review + fuzz); Claude (reran Verify)
+- **Did:**
+  - `src/route_impact/playground_oracle.py` was written from the PLAN spec (canonical-v1 table) without reading `procedure.js`. It reads the shipped arrays with hash checks and applies a Stomp, Flip, Meteor or compound edit as a mask change.
+  - The initial edit gets a full recompute of every trip (scipy, origin chunks of ≤ 64). A two-sided check against the path-rule candidates follows: Flip may make untouched trips faster (§5.4); Stomp and Meteor may not change them at all.
+  - Counterfactuals (uncapped §5.8: singles, then maximal runs) reroute only the affected trips.
+  - CLI: `playground-oracle --data DIR (--case JSON | --stress FILE --output OUT [--jobs N] | --write-presets)`. `--write-presets` refuses format 0.
+  - 12 hand-built fixtures in `tests/fixtures/playground/`, built by `tests/build_playground_fixtures.py` through P1a's `write_export`.
+- **Changed:** `src/route_impact/playground_oracle.py` (new), `src/route_impact/cli.py`, `tests/build_playground_fixtures.py` (new), `tests/test_playground_oracle.py` (new, 67 tests), `tests/fixtures/playground/**` (new, 12 directories, 116 KB), `PLAN.md`, `PROGRESS.md`.
+- **Verify (Claude reran):**
+  - `make test` → `264 passed in 39.09s`; `make lint` → `All checks passed!`, `46 files already formatted`.
+  - Real data (local): `/usr/bin/time -l route-impact playground-oracle --data data/playground-spike --stress results/playground/stress_set.json --output <scratch>`, before the fixes: 256.89 s real, 571,506,688 B max RSS (parent process only).
+  - Claude's own comparison, with the numeric run sort on both sides: `34/34 equal` to `reference-ms.json` (818 affected rows, 601 with confirmed runs).
+  - After the fixes, the implementer's run gave 265.32 s and `34/34` again by Claude's script. Presets `bay_bridge` and `university_ramp` match the spike's `presets.json` by canonical shape (implementer's comparison).
+- **Review (adversarial Claude):** 7 findings, none blocking. The reviewer fuzzed ~600 random graphs against its own brute-force version: 0 mismatches.
+  - Fixed:
+    - #2 `--write-presets` overwrote format-0 directories;
+    - #3 no multi-way Flip or duplicate-run fixtures (added `flip_pair`, `repeated_run`, and a test for a single plus a run on one row);
+    - #4 the full-recompute check was one-sided;
+    - #6 stress-run errors lacked case ids, duplicate ids collapsed silently, and the export reloaded per case (now once per worker);
+    - #7 swapped lat/lon was accepted (taps outside the box now raise), twins weren't validated at load (`check_twins` added), and two wrong test comments.
+  - JS side, moved to P1c in PLAN: #1, the Meteor floating-point order differs from JS by 1 ulp in `k`, so JS switches to the oracle's order; #5, duplicate way ids are rejected in JS too.
+- **Deviations:**
+  - `--jobs` and `--output` are beyond the PLAN's CLI signature: a process pool, because scipy's Dijkstra holds the GIL.
+  - Each worker process keeps the export in a `functools.cache` set up by the pool initializer. That is per-process state, accepted against AGENTS.md's "no global state" because the pool needs it.
+  - Presets also carry `drawn` (the first 25 non-broken rows), matching the spike.
+- **Gotchas:**
+  - Each worker uses ~184 MB on the Bay export, so 8 workers is ~1.5 GB.
+  - Spike `meta.json` (format 0) has no `earth_radius_m`; for format 0 only, the oracle falls back to the toml.
+  - `du` shows the fixtures as 1.2 MB because of block size; the content is 116 KB.
+- **Commit (Jared):**
+  - `git add src/route_impact/playground_oracle.py src/route_impact/cli.py tests/build_playground_fixtures.py tests/test_playground_oracle.py tests/fixtures/playground PLAN.md PROGRESS.md`
+  - `git commit -m "Add playground oracle: full recompute + uncapped attribution (P1b)"`
 
 ### 2026-10-30 — P1a: production exporter (`route-impact export-playground`)
 - **Agent:** Claude subagent (code + tests, two passes); adversarial Claude subagent (review); Claude (plan, reran Verify)

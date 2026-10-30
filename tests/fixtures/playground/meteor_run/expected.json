@@ -1,0 +1,62 @@
+{
+  "ways_hit": 3,
+  "candidate_trips": 3,
+  "affected_trips": 2,
+  "broken": 0,
+  "slowed": 2,
+  "added_ms": 600000,
+  "rows": [
+    {
+      "trip": 0,
+      "status": "slowed",
+      "distance_ms": 300000,
+      "added_ms": 280000,
+      "candidates": [
+        501,
+        502
+      ],
+      "confirmed_singles": [],
+      "confirmed_runs": [
+        [
+          501,
+          502
+        ]
+      ],
+      "tested_candidates": [
+        501,
+        502
+      ],
+      "unchecked_candidates": [],
+      "tested_runs": 1,
+      "total_runs": 1,
+      "label": "run"
+    },
+    {
+      "trip": 1,
+      "status": "slowed",
+      "distance_ms": 355000,
+      "added_ms": 320000,
+      "candidates": [
+        501,
+        502,
+        504
+      ],
+      "confirmed_singles": [],
+      "confirmed_runs": [
+        [
+          501,
+          502
+        ]
+      ],
+      "tested_candidates": [
+        501,
+        502,
+        504
+      ],
+      "unchecked_candidates": [],
+      "tested_runs": 1,
+      "total_runs": 1,
+      "label": "run"
+    }
+  ]
+}

@@ -11,7 +11,14 @@ from tempfile import TemporaryDirectory
 from route_impact.extract import extract
 from route_impact.faults import Fault, run_suite, run_what_if
 from route_impact.impact import compute_impact, read_trips, serialisable
-from route_impact.playground import export_playground, load_config
+from route_impact.playground import export_playground, load_config, write_json
+from route_impact.playground_oracle import (
+    default_jobs,
+    load_export,
+    run_case,
+    run_stress,
+    write_presets,
+)
 from route_impact.report import render_markdown, write_report
 from route_impact.risk import load_thresholds
 from route_impact.trips import generate
@@ -63,9 +70,21 @@ def main(argv: list[str] | None = None) -> int:
     playground.add_argument("--config", type=Path, default=Path("config/playground.toml"))
     playground.add_argument("--thresholds", type=Path, default=Path("config/thresholds.toml"))
     playground.add_argument("--demo-faults", type=Path, default=Path("config/demo_faults.toml"))
+    oracle = subparsers.add_parser(
+        "playground-oracle", help="Recompute playground edits in Python (the test oracle)"
+    )
+    oracle.add_argument("--data", type=Path, required=True, help="Playground export directory")
+    mode = oracle.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--case", help="Edit as JSON text, or a path to a JSON file")
+    mode.add_argument("--stress", type=Path, help="Stress-set JSON; needs --output")
+    mode.add_argument("--write-presets", action="store_true", help="Write presets.json.gz")
+    oracle.add_argument("--output", type=Path, help="Write JSON here instead of stdout")
+    oracle.add_argument("--jobs", type=int, default=default_jobs(), help="Processes for --stress")
     args = parser.parse_args(argv)
     if args.command == "export-playground":
         return run_export_playground(args)
+    if args.command == "playground-oracle":
+        return run_playground_oracle(args)
     if args.command in {"what-if", "faults"}:
         try:
             options = {
@@ -191,6 +210,33 @@ def run_export_playground(args: argparse.Namespace) -> int:
         return 0
     except Exception as error:  # noqa: BLE001 — export failures are tool errors.
         print(f"export-playground: {error}", file=sys.stderr)
+        return 2
+
+
+def run_playground_oracle(args: argparse.Namespace) -> int:
+    """Run one case, the stress set, or the presets through the Python oracle."""
+    try:
+        if args.write_presets:
+            meta = write_presets(args.data)
+            row = next(r for r in meta["files"] if r["file"] == "presets.json.gz")
+            print(f"presets.json.gz: raw={row['raw_bytes']} gzip={row['gzip_bytes']}")
+            return 0
+        if args.stress is not None:
+            if args.output is None:
+                raise ValueError("--stress needs --output")
+            stress = json.loads(args.stress.read_text(encoding="utf-8"))
+            result = run_stress(args.data, stress, jobs=args.jobs)
+        else:
+            inline = args.case.lstrip().startswith("{")
+            text = args.case if inline else Path(args.case).read_text(encoding="utf-8")
+            result = run_case(load_export(args.data), json.loads(text))
+        if args.output is None:
+            print(json.dumps(result, indent=2, allow_nan=False))
+        else:
+            write_json(args.output, result)
+        return 0
+    except Exception as error:  # noqa: BLE001 — oracle failures are tool errors.
+        print(f"playground-oracle: {error}", file=sys.stderr)
         return 2
 
 
