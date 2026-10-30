@@ -305,7 +305,116 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `measureUserAgentSpecificMemory` throws SecurityError in this embedded browser even with cross-origin isolation, so memory comes from the Node fallback.
       - MapLibre's transfer size isn't measured (cross-origin, reported as 0); the transfer total leaves it out.
       - Browser reset time rose from ~48 to ~1,298 ms over the run; the Node engine reset maxes at 0.29 ms, so the cost is on the draw side. Reset is outside the gate.
-- **P1 — Exporter + oracle + tests.** `route-impact export-playground`; Python oracle (Stomp/Flip/Meteor + full recompute on the exported graph, fixed endpoints, uncapped "mattered" set); pytest on fixtures; `node --test` JS vs oracle for Stomp, Flip, delete-parallel-winner, flip-into-existing-edge, Meteor with one road mattering, Meteor needing a contiguous run, "several roads together", 120 s boundary. *Status:* todo
+- **P1 — Exporter + oracle + tests** (design: PLAYGROUND §5.1–5.4, §5.8, §5.10; Nov 6–9, started early 2026-10-30; plan revised after the Claude critique, see Review log).
+  - **Owner (from 2026-10-30, Codex budget low):** a Claude Code subagent implements and writes tests; a separate adversarial Claude subagent reviews; Claude reruns Verify and decides done.
+  - **Approach:** promote the browser-verified spike (`b8bf17e`) into tested production code without redesigning it.
+    - The spike's on-disk format (`meta.json` + gzipped little-endian arrays, `Uint32` integer-ms edges) becomes `format_version` 1.
+    - `scripts/playground_spike.py` and `site/playground/spike/` stay as the measured reference until P2; only the spike's import paths change in P1c.
+    - **Cap deferred to P2:** P1 is uncapped, so every row has `unchecked_candidates == []` and `tested_candidates == candidates`, asserted. The §5.8 budget and its "attribution incomplete" fixture come in P2.
+    - **Real-data checks are local** (Claude runs them on the Mac, results recorded in PROGRESS), never pytest or CI.
+  - **P1a — Production exporter.**
+    - **Files:**
+      - `src/route_impact/playground.py` (new): the export, plus a shared format-v1 writer, `write_export(dir, arrays, json_files, meta)`, which writes the gzips and finalizes `meta.json`'s self-referential sizes and hashes;
+      - `src/route_impact/cli.py`: `export-playground` subcommand;
+      - `config/playground.toml` (new): box, `projection_lat = 37.65` (pinned; the box midpoint is 37.650000000000006), metres per degree 111195.0802, earth radius 6371008.8, simplification tolerance 5 m, geometry scale 1e6. `slow_seconds` stays in `thresholds.toml`;
+      - `tests/test_playground_export.py` (new).
+    - **Do:**
+      - Port `export()` and its helpers from `scripts/playground_spike.py`: box trip filter, box cut, LSCC on the unedited graph, snapping, every parallel edge, inactive reverse twins, `round_ms`, simplified and quantized geometry, integer-ms baselines and paths, exclusions with reasons, `format_version: 1`.
+      - The projection and geometry constants are copied into `meta.json` from the toml.
+      - Drop the Float64 backups and `--presets-only`.
+      - CLI: `route-impact export-playground --snapshot YYMMDD [--db PATH] [--trips CSV] [--out DIR] [--order routingkit|identity]`. The default `--out` is `data/playground/` (gitignored), and committing data for Pages is a P2 decision.
+      - `--order routingkit` calls `scripts/cch_order/order.py`, which needs the binary in `data/`. `identity` is for tests only and is recorded in `meta.json` (any permutation is correct, §5.10).
+      - `cch_order_input.bin` is written and listed in `meta.json` as not shipped.
+      - Build the baselines' CSR with numpy (lexsort, then min per (u, v)); never let coo→csr sum duplicates.
+      - Output is deterministic: the same input gives byte-identical files.
+      - DuckDB connections set `threads` and `memory_limit`.
+      - `meta.json` records the presets from `demo_faults.toml` (any way outside the box reported). Their results are written by P1b.
+    - **Verify:**
+      - `pytest tests/test_playground_export.py` on the town fixtures (box override, `--trips tests/fixtures/town_trips.csv`, `--order identity`) asserts:
+        - vertex, edge and trip counts;
+        - every pipeline `Edge` gives exactly one active row, so parallel edges are kept;
+        - every one-way edge has exactly one inactive reverse twin, paired both ways;
+        - excluded trips have reasons;
+        - `round_ms` on exact pairs: 1.4995 s → 1500, 2.0005 s → 2001, 0.0004 s → 0, 0.0005 s → 1, and negative or > 2³²−1 raises;
+        - every baseline equals a ~20-line pure-Python `heapq` Dijkstra that relaxes every active edge directly, with no collapse; each path is continuous, active, and sums to `trip_ms`;
+        - a synthetic case with a zero-ms edge and equal-ms parallel edges exercises the CSR build;
+        - exporting twice gives identical bytes;
+        - the `meta.json` sizes and hashes match the files.
+      - **Real export (local):** `route-impact export-playground --snapshot 261027 --db data/playground-spike/261027.duckdb --out <scratch>`. SHA-256 must equal the spike's `meta.json` entries for every `*.bin.gz` array file, plus `cch_order.bin.gz`, `way_names.json.gz`, `trip_labels.json.gz` and `excluded_trips.json.gz`.
+        - Excluded, with reasons: `meta.json` (`format_version` and `git_commit` change, plus new keys), `presets.json.gz` (written in P1b) and `order_manifest.json.gz` (embeds tool paths and the git commit).
+        - The order matches only with the same `data/cch_order` binary on this Mac; that is stated, not assumed elsewhere.
+      - `make test` and `make lint` stay green.
+  - **P1b — Python oracle.**
+    - **Files:**
+      - `src/route_impact/playground_oracle.py` (new);
+      - `src/route_impact/cli.py`: the `playground-oracle --data DIR (--case JSON | --stress FILE | --write-presets)` subcommand;
+      - `src/route_impact/playground.py`: only to call `write_export` when re-finalizing after `presets.json.gz`;
+      - `tests/build_playground_fixtures.py` (new): builds the fixtures through `write_export`, so there's one format writer;
+      - `tests/test_playground_oracle.py` (new);
+      - `tests/fixtures/playground/<case>/` (new, tiny, committed).
+    - **Do:**
+      - The oracle reads an export directory (shipped arrays only, never DuckDB) and applies one Stomp, Flip, Meteor or compound way-id edit as an active-mask change.
+      - **Initial edit, full recompute:** route every trip from scratch on the edited mask, in origin chunks of ≤ 64 (scipy `dijkstra(indices=…)`), on a numpy-built CSR collapsed by minimum over active edges.
+        - Fixed endpoints.
+        - Assert that no trip outside the path-rule `candidate_trips` got worse (the §5.4 incremental-vs-full check).
+      - **Counterfactuals** reroute only the affected trips that share the restored way or run, grouped by origin.
+      - **The canonical-v1 schema**, which the JS `canonical()` must also produce:
+        | Field | Rule |
+        |---|---|
+        | `rows` | ascending dense trip index; `trip` is the dense index, not `trip_id` |
+        | `status` | `broken` if unreachable; `slowed` if `distance − trip_ms ≥ slow_seconds × 1000` (exactly 120,000 ms is slowed) |
+        | `distance_ms` / `added_ms` | `null` for broken rows; top-level `added_ms` sums slowed rows only |
+        | when counterfactuals run | `weapon == meteor` or more than one way hit, so a 1-way Meteor and a multi-way Flip are tested. Restoring a way returns it to its initial state, which deactivates its twins |
+        | single Stomp or Flip | `confirmed_singles = tested_candidates = hitWays`, untested; `total_runs = tested_runs = 0` |
+        | singles | tested per candidate way; recovery has the pipeline's meaning: a broken trip recovers when it becomes reachable; a slowed trip when its delay drops below `slow_seconds` |
+        | runs | only for trips with no confirmed single. A run is a maximal stretch of consecutive changed edges on the baseline path; its value is the sorted *set* of ways, kept only if it has ≥ 2 ways. `total_runs` counts distinct way-sets per trip; `tested_runs` counts the runs tested |
+        | `label` | `single`, `run`, or `several_together` |
+        | sort order | all id lists ascending; `confirmed_runs` sorted as numeric tuples. P1c changes JS `canonical()` from `localeCompare` to match |
+        | `unchecked_candidates` | always `[]` in P1 (uncapped) |
+        | way ids | OSM ids in candidate, tested and confirmed fields |
+      - **Meteor hit test:**
+        - equirectangular metres at the tap's latitude with `earth_radius_m` from `meta.json`;
+        - clamped segment projection, hit if distance² ≤ r²;
+        - coordinates are (lat, lon) divided by `geometry_scale`;
+        - a way with fewer than 2 points is never hit.
+      - The oracle is written from this spec. It ports neither `procedure.js` nor the spike's `precompute_presets`.
+      - `--write-presets` writes `presets.json.gz` for `demo_faults.toml` and re-finalizes `meta.json` through `write_export`.
+      - **Fixtures**, one directory each, every one with hand-derived expected answers:
+        - Stomp;
+        - Flip;
+        - deleting the parallel winner exposes the next edge, and a Flip twin parallels an existing edge (one fixture);
+        - a Meteor where one road matters;
+        - a Meteor that needs a contiguous run;
+        - "several roads together";
+        - trips at 119,999 / 120,000 ms;
+        - a broken trip that recovers to a detour ≥ 120 s, which counts as mattering;
+        - Meteor geometry: a segment crossing the circle with both endpoints outside, a segment at exactly r (counts), one at r + 1e-6 m (doesn't), and a way hit only on its last segment;
+        - a zero-ms edge.
+    - **Verify:**
+      - `pytest tests/test_playground_oracle.py` asserts the hand-derived answers for every fixture, independent of the oracle's own output, and the uncapped invariants.
+      - **Real data (local, ≤ 15 min wall time, recorded):** the oracle on `data/playground-spike/` for all 34 stress cases.
+        - Its canonical output must equal `data/playground-spike/reference-ms.json`: the JS procedure run on the independent integer Dijkstra (`check.mjs`). Agreement shows the independently written oracle and the JS bookkeeping match.
+        - The two presets must equal the spike's `presets.json` by `canonical()`; drawn paths may differ on ties.
+        - Use the numeric run sort on both sides of the comparison.
+      - `make test` and `make lint` green.
+  - **P1c — JS core promoted + `node --test` against the oracle.**
+    - **Files:**
+      - `git mv` `cch.js`, `procedure.js` and `engine.js` → `site/playground/core/`;
+      - `site/playground/core/load.mjs` (new): generic Node loader for an export directory, with presets optional and no fixed path;
+      - `git mv` `site/playground/spike/test/{cch.test.mjs,procedure.test.mjs}`, `site/playground/spike/dijkstra.mjs` and `site/playground/spike/fixtures/grid6_order.json` → `site/playground/core/test/`;
+      - `site/playground/core/test/oracle.test.mjs` (new);
+      - import paths only in `site/playground/spike/{worker.js,measure.js,check.mjs,cch_bench.mjs,node-data.mjs}`;
+      - `procedure.js`: `canonical()` numeric run sort; Meteor constants read from `meta`;
+      - `Makefile` (`test-js: node --test 'site/playground/core/test/*.test.mjs'`, with the glob quoted; `make test` runs pytest, then `test-js`);
+      - `.github/workflows/ci.yml` (`actions/setup-node@v4`, `node-version: '22'`, before tests);
+      - `AGENTS.md` (Commands: `make test` now needs Node ≥ 22). Claude edits AGENTS.md.
+    - **Do:** `oracle.test.mjs` loads each `tests/fixtures/playground/<case>/` with `load.mjs`, runs `createEngine(...).edit(case)`, and asserts `canonical(result)` deep-equals the oracle's `expected.json`.
+    - **Verify:**
+      - `make test-js` → all fixtures equal the oracle; the moved suites pass.
+      - `node site/playground/spike/check.mjs` → still "All 34 cases identical", so the move didn't change behaviour.
+      - `node --expose-gc site/playground/spike/cch_bench.mjs` → memory gate still passes.
+      - `make test` and `make lint` green; CI green on push (Jared pushes).
+  - *Status:* **P1a done 2026-10-30** (Claude subagent code, adversarial Claude review, Claude reran Verify: 197 passed, real export 21/21 hashes == spike) · P1b todo · P1c todo
 - **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. *Status:* todo
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
 - **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
@@ -355,6 +464,19 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
 15. **CCH metric arithmetic: `Float64` holding integer ms, `Infinity` for no arc** (2026-10-29, Claude). The P0c-2 checkpoint stopped at the Uint32 design's own bound: the finite weights sum to 4,813,448,868 ms > 2³² − 1. That bound was overly conservative but was my spec, and Codex correctly refused to bend it. *Why Float64:* exact for integers below 2⁵³ (≈ 1.9 million× the Bay total), so no sentinel or guarded add; ~7.5 MB more memory. Checkpoint data so far: 935,530 CCH arcs (1.7× the 551,760 input arcs), 6,230,212 triangles, build 486.8 ms, Meteor hit counts identical to P0b.
 
 ## Review log
+### 2026-10-30 — Adversarial Claude critique of the P1 plan (Claude subagent, read-only, 10 points; replaces the Codex critique while Codex budget is low)
+All 10 accepted; PLAN P1 rewritten the same day.
+1. **An uncapped full-recompute oracle would take hours on 34 real cases.** Accepted: full recompute only for the initial edit (origin chunks ≤ 64, numpy CSR); counterfactuals reroute only the affected trips; a no-outside-worsening assertion; ≤ 15 min local budget; never in pytest.
+2. **Nobody writes `presets.json.gz`.** Accepted: `playground-oracle --write-presets` plus a shared `write_export` finalizer; presets are compared by `canonical()`, not bytes.
+3. **`reference-ms.json` is JS `procedure.js` on an independent Dijkstra, not fully independent.** Accepted: relabelled in Verify; the oracle is written from an explicit spec so agreement is meaningful.
+4. **Canonical conventions were unstated.** Accepted: field table in P1b; numeric run sort replaces `localeCompare` on both sides.
+5. **Meteor geometry formula unpinned.** Accepted: constants in `config/playground.toml` → `meta.json`, read by both sides; ring-edge fixtures added.
+6. **P1a hash equality would fail for unrelated reasons.** Accepted: `projection_lat` pinned at 37.65; `--db` and `--trips` flags; an exact list of files that must match, plus excluded files with reasons; order equality tied to this Mac's binary.
+7. **Baseline checks shared the same scipy-collapse code path.** Accepted: a pure-Python `heapq` reference with no collapse; zero-ms and equal-ms parallel fixtures.
+8. **P1c's Files list was incomplete.** Accepted: every moved, imported and loader file named; the fixture builder goes through `write_export`; the spike changes are limited to import paths.
+9. **CI/Node: no setup-node; globs need quoting.** Accepted: setup-node 22, a quoted glob, and the AGENTS.md Commands line.
+10. **§5.8 cap silently dropped; loose details.** Accepted: the cap is explicitly deferred to P2 with uncapped invariants asserted; exact `round_ms` pairs; two fixtures merged; real-data runs are local.
+
 ### 2026-10-29 — Codex critique of the P0c CCH design (`codex exec --sandbox read-only`, 10 points)
 All 10 accepted; docs/PLAYGROUND.md §5.10 and PLAN P0c rewritten the same day.
 1. **Partial re-customization was wrong for increases.** Accepted, and it was a real bug in my draft: a running `min` keeps stale cheap shortcuts after deletions. Now: recompute the direct-input minimum and all lower triangles from scratch, in rank order, propagating transitively; checked against full customization after every transition.

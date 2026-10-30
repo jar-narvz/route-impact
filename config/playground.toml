@@ -1,0 +1,24 @@
+# Fault playground export constants (docs/PLAYGROUND.md §5.1–5.3).
+# `route-impact export-playground` copies every value into meta.json, so the browser
+# and the P1b oracle read the same numbers. slow_seconds stays in thresholds.toml.
+
+# Bay box: a trip is kept only if both raw endpoints are inside; an edge only if
+# both its end vertices are inside (edges leaving the box are dropped whole).
+[box]
+min_lat = 37.2
+max_lat = 38.1
+min_lon = -122.6
+max_lon = -121.7
+
+[geometry]
+# Pinned, not derived: the box midpoint is 37.650000000000006, which would change
+# the simplified polylines' bytes.
+projection_lat = 37.65
+# Metres per degree of latitude for the local equirectangular projection.
+metres_per_degree = 111195.0802
+# Mean Earth radius, the value Snapper uses; recorded for the Meteor hit test.
+earth_radius_m = 6371008.8
+# Douglas–Peucker tolerance; a few metres is invisible at street zoom.
+simplification_tolerance_m = 5
+# Coordinates ship as round(degrees × scale) in Int32 (microdegrees).
+geometry_scale = 1000000

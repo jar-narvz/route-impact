@@ -1,21 +1,13 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P0c-3, branch `playground`. P0c-3 integration is committed (`971076e`). The worker memory fix is done and verified by Claude on 2026-10-30 but not committed:
-  - Files: `site/playground/spike/{cch.js,engine.js,procedure.js,cch_bench.mjs,test/cch.test.mjs,test/procedure.test.mjs}`.
-  - Results (`node --expose-gc site/playground/spike/cch_bench.mjs`, Node v22.14.0, M3 Max):
-    - Node RSS 207,306,752 B after load and 261,603,328 B after 50 edits, against a 300,000,000 B limit → pass;
-    - live memory (heap + ArrayBuffers) 106,155,623 → 106,810,255 B;
-    - peak RSS during load 217,104,384 B;
-    - slowest case: toll plaza 500 m, 75.15 ms median.
-  - Tests 32/32; `check.mjs` all 34 cases identical, presets == Python; drift unchanged; lint clean.
-- **P0c gate passed (2026-10-30, Claude):** browser acceptance run in the built-in pane. All 36 cases × 5 repeats match the reference; slowest median 82.69 ms; transfer 9,727,543 B; page ready 644 ms; memory 261,603,328 B via Node (the browser memory API is unavailable in the pane). Result file: `results/playground/feasibility.json`.
+- **Working on:** Phase 2 P1, branch `playground`. P0c is done (gate passed, committed `84aa8eb`). P1 is planned in PLAN.md (P1a/P1b/P1c), with the plan critiqued by an adversarial Claude subagent (10/10 accepted, logged in the Review log). **P1a (production exporter) is done and verified 2026-10-30, uncommitted.**
 - **Next session, start here:**
-  1. Jared commits the gate results (commands in the 2026-10-30 browser-run log entry). Memory fix committed as `b8bf17e`.
-  2. Optional: rerun the acceptance page in real Chrome to get a browser memory number (`measureUserAgentSpecificMemory`) and MapLibre's transfer size.
-  3. P1 — Exporter + oracle + tests (Nov 6–9; can start early). Then P2 (Nov 10–16), launch ~Nov 17.
+  1. Jared commits P1a (commands in the 2026-10-30 P1a log entry).
+  2. **P1b — Python oracle:** a Claude subagent implements it from the PLAN spec, including the canonical-v1 field table, then an adversarial Claude subagent reviews it. The real-data check (34 stress cases == `reference-ms.json`, ≤ 15 min) runs locally.
+  3. P1c: move the JS core out of the spike and add `node --test` checks against the oracle, plus a Node 22 step in CI. Then P2 (Nov 10–16), launch ~Nov 17.
   - **Workflow change (Jared, 2026-10-30):** Codex usage is running low, so don't use Codex. Same workflow, different agents: a Claude Code subagent implements and writes tests; a separate, adversarial Claude subagent reviews the diff (and critiques plans) where Codex used to.
-  4. Leftovers:
+  - Leftovers:
      - Codex notes `site/playground/spike/p0b-verification.txt` and `p0c-verification.txt`, `p0c-memory-verification.txt` are untracked; don't commit them.
      - Old spike files still sit in `data/playground-spike/` (harmless).
      - Check the first scheduled daily run (`results/2026-10-29/` on `main`).
@@ -72,6 +64,37 @@ Template — copy above the newest entry:
 - **Review:** <reviewer> — <approved | findings + how resolved>
 - **Gotchas:**
 -->
+
+### 2026-10-30 — P1a: production exporter (`route-impact export-playground`)
+- **Agent:** Claude subagent (code + tests, two passes); adversarial Claude subagent (review); Claude (plan, reran Verify)
+- **Did:**
+  - Ported the spike exporter into `src/route_impact/playground.py`: format v1, constants in `config/playground.toml` (copied into `meta.json`), and a shared `write_export` writer that P1b will reuse.
+  - CLI: `route-impact export-playground --snapshot YYMMDD --db PATH [--trips] [--out] [--order routingkit|identity] [--config] [--thresholds] [--demo-faults]`.
+  - The output is written to a temp directory and swapped into place only on success. Git state and the RoutingKit binary are checked before the graph build, and `meta.json` records `git_commit` and `git_dirty`. The DuckDB file is opened read-only.
+- **Changed:** `src/route_impact/playground.py` (new), `src/route_impact/cli.py`, `config/playground.toml` (new), `tests/test_playground_export.py` (new, 16 tests), `PLAN.md` (P1 sub-steps, Review log, status), `PROGRESS.md`.
+- **Verify (Claude reran):**
+  - `make test` → `197 passed in 38.30s`; `make lint` → `All checks passed!`, `43 files already formatted`.
+  - Real export: `route-impact export-playground --snapshot 261027 --db data/playground-spike/261027.duckdb --out <scratch>/p1a-claude --order routingkit`, exit 0, 2:14.77. Counts: 213,910 vertices, 551,760 edges, 2,057 trips, 3,603 excluded; `TOTAL shipped: 9651695 B`.
+  - Claude's own hash script: `21/21 match` against the spike's `meta.json`: all 17 arrays, `cch_order.bin.gz`, `way_names`, `trip_labels`, `excluded_trips`. The post-fix export (`p1a-export2`) also gives `21/21`. Its shipped total is 9,651,716 B, because `meta.json` gains `git_dirty`.
+- **Review (adversarial Claude):** 8 findings, none blocking.
+  - Fixed:
+    - #1 non-atomic output;
+    - #2 late git and binary checks, plus no dirty flag;
+    - #3 untested `--data-dir` and auto-extract (removed; `--db` is now required);
+    - #5 weak CSR assertions;
+    - #6 `round_ms` exact-half pair (added 0.0025 → 3);
+    - #8 the west-box LSCC check compared `cut_graph` with itself (now an independent scipy check).
+  - Kept:
+    - #4: the Earth radius lives in both the toml and `impact.py` `Snapper`. Fixing it needs `impact.py`, outside P1a, so it's a follow-up.
+    - #7: the determinism test runs both exports in one interpreter. This is a recorded limitation; there's no dependency on hash order today.
+  - Extra CLI flags `--config`, `--thresholds` and `--demo-faults` are a deviation from the spec, matching other subcommands; one CLI test covers `--config`.
+- **Gotchas:**
+  - The order hash matches only with this Mac's `data/cch_order` binary.
+  - `--out` replacement deletes the old directory whole if it contains a `meta.json`; a non-empty directory without one is refused.
+  - `make` needs the venv activated (`source .venv/bin/activate`).
+- **Commit (Jared):**
+  - `git add src/route_impact/playground.py src/route_impact/cli.py config/playground.toml tests/test_playground_export.py PLAN.md PROGRESS.md`
+  - `git commit -m "Add export-playground: production Bay graph exporter (P1a)"`
 
 ### 2026-10-30 — P0c Verify: browser acceptance run
 - **Agent:** Claude

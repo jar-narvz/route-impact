@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from route_impact.extract import extract
 from route_impact.faults import Fault, run_suite, run_what_if
 from route_impact.impact import compute_impact, read_trips, serialisable
+from route_impact.playground import export_playground, load_config
 from route_impact.report import render_markdown, write_report
 from route_impact.risk import load_thresholds
 from route_impact.trips import generate
@@ -51,7 +52,20 @@ def main(argv: list[str] | None = None) -> int:
     faults.add_argument("--n", type=int, required=True)
     faults.add_argument("--seed", type=int, required=True)
     faults.add_argument("--results-dir", type=Path, default=Path("results"))
+    playground = subparsers.add_parser(
+        "export-playground", help="Export the Bay box graph for the fault playground"
+    )
+    playground.add_argument("--snapshot", required=True)
+    playground.add_argument("--db", type=Path, required=True, help="Extracted snapshot DuckDB")
+    playground.add_argument("--trips", type=Path, default=Path("config/trips.csv"))
+    playground.add_argument("--out", type=Path, default=Path("data/playground"))
+    playground.add_argument("--order", choices=("routingkit", "identity"), default="routingkit")
+    playground.add_argument("--config", type=Path, default=Path("config/playground.toml"))
+    playground.add_argument("--thresholds", type=Path, default=Path("config/thresholds.toml"))
+    playground.add_argument("--demo-faults", type=Path, default=Path("config/demo_faults.toml"))
     args = parser.parse_args(argv)
+    if args.command == "export-playground":
+        return run_export_playground(args)
     if args.command in {"what-if", "faults"}:
         try:
             options = {
@@ -152,6 +166,32 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     print("not implemented yet")
     return 2
+
+
+def run_export_playground(args: argparse.Namespace) -> int:
+    """Export the playground files from an already extracted snapshot database."""
+    try:
+        if len(args.snapshot) != 6 or not args.snapshot.isascii() or not args.snapshot.isdigit():
+            raise ValueError("snapshot must be YYMMDD")
+        options = {
+            "trips_path": args.trips,
+            "config": load_config(args.config),
+            "thresholds_path": args.thresholds,
+            "demo_faults_path": args.demo_faults,
+            "order": args.order,
+        }
+        if not args.db.is_file():
+            raise FileNotFoundError(f"Database not found: {args.db}")
+        meta = export_playground(args.db, args.snapshot, args.out, **options)
+        for row in meta["files"]:
+            print(f"{row['file']}: raw={row['raw_bytes']} gzip={row['gzip_bytes']}")
+        print(
+            f"TOTAL shipped: {meta['total_shipped_bytes']} B; counts: {json.dumps(meta['counts'])}"
+        )
+        return 0
+    except Exception as error:  # noqa: BLE001 — export failures are tool errors.
+        print(f"export-playground: {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
