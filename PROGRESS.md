@@ -1,20 +1,12 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P0b measured, 2026-10-29 (branch `playground`; Codex code + `results/playground/feasibility.json` uncommitted).
-  - **Clean browser run:** pane visible, P=8 workers, 5 repeats, 72 cases. Page ready 2,912.7 ms (landmarks 1,904.8 ms).
-  - **Passes:** every Stomp ≤ 543.1 ms median; presets ~10 ms; Financial District / Union Square / Sunset Meteors ≤ 665 ms with full attribution.
-  - **Fails:** toll plaza Meteor with full attribution 2,674.7 / 4,811.7 / 6,470.8 ms (150/300/500 m); with budget 40, 1,422–1,516 ms but incomplete. Data transfer 15,413,857 B vs the 10,000,000 B target (largest file 3,646,398 B, under the 5 MB per-file limit).
-  - **Next:** P0c (CCH), Jared chose it 2026-10-29; design §5.10 revised after Codex critique. Measurements file renamed to `results/playground/feasibility_p0b.json`.
-  - Local spike server now on port 8781; port 8766 is used by posting-triage.
-  - **Exact:** `P=1 … 0 differences`, `P=4 … 0 differences`, Python presets checked; landmark bounds on 500 pairs: max ratio 0.9999999996 (never above 1).
-  - **Speed (Node):** total edit wall 189,431.99 → 151,093.76 ms with 1 worker (ALT alone: ~17% of vertices settled per search, but per-step bound cost eats most of the gain) → 36,486.09 ms with 4 workers.
-  - **Gate, 4 workers:**
-    - every Stomp ≤ 844 ms; sf_union_square_500 1,100 ms;
-    - toll plaza uncapped 3,953 / 7,948 / 10,262 ms (150/300/500 m); with attribution budget 40: 1,697 / 2,189 / 2,191 ms (attribution incomplete);
-    - bay_bridge live 9,153 ms (ships as a preset).
-  - **Memory concern:** each worker holds 54,760,960 B of landmark tables plus its own graph copy; Node peak 1.22 GB at P=4.
-  - **Next:** clean browser measurement (pane visible, P = min(cores − 1, 8)) into `results/playground/feasibility.json`, then decide on P0c (CCH).
+- **Working on:** Phase 2 P0c, branch `playground`. **P0c-1 done 2026-10-29** (Claude, uncommitted):
+  - Files: `scripts/cch_order/{Makefile,main.cpp,order.py}` and `site/playground/spike/fixtures/grid6_order.json`.
+  - `make -C scripts/cch_order` clones RoutingKit `54d49bb0…` into `data/routingkit/` and builds `data/cch_order/cch_order` with fixed flags.
+  - `python scripts/cch_order/order.py --spike data/playground-spike`: 213,910 nodes, 272,836 undirected edges, 6.0 s; writes `cch_order.bin.gz` (525,982 B) and `order_manifest.json` (input sha256 `80977322…`, output `c06aa07d…`).
+  - Rebuild + rerun is byte-identical. `make lint` clean; `make test` 181 passed in 40.76 s.
+  - **Next:** P0c-2 (Codex: JS CCH core + network-free tests + toll-plaza checkpoint, due Nov 1).
 - **Done:** design, plan critique, Steps 0–13 + 12b. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact results 23→27, README draft and Step 12 Verify committed 2026-10-29.
 - **Next session, in order:**
   1. ~~Jared commits Step 12 results + README~~ — done 2026-10-29.
