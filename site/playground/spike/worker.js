@@ -2,6 +2,8 @@
 'use strict';
 let meta, a, labels, names, mask, wayEdges, edgeTrips, grid, wayIndex;
 let distances, pred, touched, touchedCount, heap, reverseOffsets, reverseEdges, presetResults = {};
+let editChanges, potentialCache, roundoff;
+let landmarks = [], lastSettled = 0, editSettled, computeMs = 0, session;
 const R = 6371008.8, DEG = Math.PI / 180;
 const GRID_LAT = 250 / (R * DEG), GRID_LON = GRID_LAT / Math.cos(37.65 * DEG);
 const constructors = {'<f8': Float64Array, '<u4': Uint32Array, '<i4': Int32Array, u1: Uint8Array};
@@ -77,6 +79,10 @@ function buildIndices() {
     }
   }
   mask = a.edge_initially_active.slice();
+  // Every shortest path is simple (positive costs), with fewer than V additions.
+  // Four times V*epsilon covers both accumulated distances and subtraction.
+  roundoff = 4 * meta.counts.vertices * Number.EPSILON;
+  potentialCache = new Float64Array(meta.counts.vertices);
   distances = new Float64Array(meta.counts.vertices).fill(Infinity);
   pred = new Int32Array(meta.counts.vertices).fill(-1);
   touched = new Int32Array(meta.counts.vertices); touchedCount = 0; heap = new Heap();
@@ -124,9 +130,11 @@ async function load(message) {
   labels = JSON.parse(new TextDecoder().decode(decoded.get('trip_labels.json.gz')));
   if (decoded.has('presets.json.gz')) presetResults = JSON.parse(new TextDecoder().decode(decoded.get('presets.json.gz')));
   buildIndices();
+  const indexed = now();
+  const landmarkInfo = buildLandmarks();
   return {type: 'loaded', meta, timings: {fetch_ms: fetched - start,
-    decompress_ms: decompressed - fetched, index_build_ms: now() - decompressed, total_ms: now() - start},
-    resources: performance.getEntriesByType('resource').map(e => ({name: e.name,
+    decompress_ms: decompressed - fetched, index_build_ms: indexed - decompressed, landmark_ms: now() - indexed, total_ms: now() - start},
+    landmarks: landmarkInfo, heap: workerHeap(), resources: performance.getEntriesByType('resource').map(e => ({name: e.name,
       transferSize: e.transferSize, encodedBodySize: e.encodedBodySize, decodedBodySize: e.decodedBodySize}))};
 }
 
@@ -185,33 +193,118 @@ function groupTrips(trips) {
   return chosen;
 }
 
-function walk(origin, targets, reverse = false, limit = Infinity, wantPaths = false) {
-  // Keep hot-loop references local as well as reusing their backing buffers.
+// Float64 throughout. Fixed full-initial-target potential: never changes on settlement.
+// A downward error allowance covers subtraction/accumulation roundoff. The full
+// initial target envelope is consistent in real arithmetic; conservative floating
+// corrections can perturb consistency, so improved vertices are always reopened.
+// g values always use original Float64 edge sums.
+function safeDifference(x, y) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return 0;
+  return x - y - (x + y) * roundoff;
+}
+
+function lowerBound(v, t, reverse = false) {
+  let bound = 0;
+  for (const {forward, backward} of landmarks) {
+    const f = reverse ? backward : forward, b = reverse ? forward : backward;
+    const out = safeDifference(f[t], f[v]), back = safeDifference(b[v], b[t]);
+    // Unreachable landmark distances contribute no bound.
+    if (out > bound) bound = out;
+    if (back > bound) bound = back;
+  }
+  return Math.max(0, bound * (1 - roundoff));
+}
+
+function walk(origin, targets, reverse = false, limit = Infinity, wantPaths = false, superset = false, useALT = true) {
   const distance = distances, predecessor = pred, queue = heap, visited = touched;
   const active = mask, sources = a.edge_source, targetsByEdge = a.edge_target, costs = a.edge_seconds;
-  const reversed = reverseEdges;
   let count = touchedCount;
   for (let i = 0; i < count; i++) { const v = visited[i]; distance[v] = Infinity; predecessor[v] = -1; }
-  count = 0; queue.length = 0;
-  distance[origin] = 0; visited[count++] = origin; queue.push(origin, 0);
+  count = 0; queue.length = 0; lastSettled = 0;
+  const potential = useALT && landmarks.length ? potentialCache : null;
+  if (potential) potential.fill(-1);
+  const tables = landmarks.map(l => reverse ? [l.backward, l.forward] : [l.forward, l.backward]);
+  const targetBounds = potential ? [...targets].map(t => tables.map(([f, b]) => [f[t], b[t]])) : [];
+  const h = v => {
+    if (!potential) return 0;
+    if (potential[v] >= 0) return potential[v];
+    let value = Infinity;
+    for (const target of targetBounds) {
+      let bound = 0;
+      for (let k = 0; k < tables.length; k++) {
+        const out = safeDifference(target[k][0], tables[k][0][v]), back = safeDifference(tables[k][1][v], target[k][1]);
+        if (out > bound) bound = out;
+        if (back > bound) bound = back;
+      }
+      value = Math.min(value, Math.max(0, bound * (1 - roundoff)));
+      if (value === 0) break;
+    }
+    potential[v] = value;
+    return value;
+  };
+  distance[origin] = 0; visited[count++] = origin; queue.push(origin, h(origin));
   const offsets = reverse ? reverseOffsets : a.csr_offsets;
   while (queue.length && targets.size) {
-    queue.pop(); const u = queue.node, cost = queue.cost;
-    if (cost !== distance[u]) continue;
-    if (cost > limit) break;
+    queue.pop(); const u = queue.node, cost = distance[u];
+    if (queue.cost !== cost + h(u)) continue;
+    if (queue.cost > limit) break;
+    lastSettled++;
     targets.delete(u); if (!targets.size) break;
     for (let i = offsets[u]; i < offsets[u + 1]; i++) {
-      const e = reverse ? reversed[i] : i;
-      if (!active[e]) continue;
+      const e = reverse ? reverseEdges[i] : i;
+      if (!superset && !active[e]) continue;
       const v = reverse ? sources[e] : targetsByEdge[e], next = cost + costs[e];
       if (next <= limit && next < distance[v]) {
         if (distance[v] === Infinity) visited[count++] = v;
-        distance[v] = next; if (wantPaths) predecessor[v] = e; queue.push(v, next);
+        distance[v] = next; if (wantPaths) predecessor[v] = e; queue.push(v, next + h(v));
       }
     }
   }
   touchedCount = count;
 }
+
+function buildLandmarks() {
+  const start = now(), nearest = new Float64Array(meta.counts.vertices).fill(Infinity);
+  landmarks = [];
+  // LCG seed 2027; farthest ties resolve by vertex index, including components.
+  let vertex = ((Math.imul(2027, 1664525) + 1013904223) >>> 0) % meta.counts.vertices;
+  const selected = new Set();
+  for (let k = 0; k < Math.min(16, meta.counts.vertices); k++) {
+    selected.add(vertex);
+    walk(vertex, new Set([-1]), false, Infinity, false, true, false);
+    const forward = distances.slice();
+    walk(vertex, new Set([-1]), true, Infinity, false, true, false);
+    const backward = distances.slice();
+    landmarks.push({vertex, forward, backward});
+    let farthest = -1, best = -1;
+    for (let v = 0; v < nearest.length; v++) {
+      nearest[v] = Math.min(nearest[v], forward[v], backward[v]);
+      if (!selected.has(v) && nearest[v] > best) { best = nearest[v]; farthest = v; }
+    }
+    if (farthest < 0) break;
+    vertex = farthest;
+  }
+  return {seed: 2027, count: landmarks.length, vertices: landmarks.map(l => l.vertex), selection: 'farthest-point superset distance, vertex-index ties',
+    bytes: landmarks.length * meta.counts.vertices * 16, precompute_ms: now() - start};
+}
+
+function workerHeap() {
+  return performance.memory ? {usedJSHeapSize: performance.memory.usedJSHeapSize} :
+    typeof process !== 'undefined' ? process.memoryUsage() : null;
+}
+
+// Independent search job: reset mask from the coordinator's edit, then restore ways.
+function executeJob(job) {
+  const start = now();
+  const savedMask = mask.slice();
+  mask.set(a.edge_initially_active);
+  for (const [e, active] of job.changes) mask[e] = active;
+  for (const w of job.ways || []) for (const e of wayEdges[w]) mask[e] = a.edge_initially_active[e];
+  const result = search(job.vertex, job.trips, job.wantPaths, job.reverse);
+  mask.set(savedMask);
+  return {entries: [...result], settled: lastSettled, compute_ms: now() - start};
+}
+
 
 function search(origin, trips, wantPaths = false, reverse = false) {
   const endpoint = t => reverse ? a.trip_origin[t] : a.trip_destination[t];
@@ -243,7 +336,7 @@ function detourOK(t, cache, counters) {
       const started = now();
       walk(source, new Set([target]), false, cost + meta.slow_seconds);
       counters.bound_ms += now() - started;
-      cache.set(key, distances[target]); counters.bound++;
+      cache.set(key, distances[target]); counters.bound++; editSettled.bound += lastSettled;
     }
     const detour = cache.get(key); run = [];
     if (!Number.isFinite(detour)) return false;
@@ -260,7 +353,19 @@ function classify(t, seconds) {
   return !Number.isFinite(seconds) ? 'broken' : seconds - a.trip_seconds[t] >= meta.slow_seconds ? 'slowed' : 'ok';
 }
 
-function attribution(affected, destroyed, budget, counters) {
+function* attribution(affected, destroyed, budget, counters) {
+  function* dispatch(jobs) {
+    if (!jobs.length) return;
+    const searches = jobs.filter(job => !job.fast);
+    const replies = searches.length ? yield searches.map(({group, ways}) => ({...group, ways, changes: editChanges})) : [];
+    let index = 0;
+    for (const {record, phase, fast, trip} of jobs) {
+      if (fast) { record(trip, true); continue; }
+      const reply = replies[index++];
+      editSettled[phase] += reply.settled; computeMs += reply.compute_ms;
+      for (const [t, result] of reply.entries) record(t, recovers(t, result.seconds));
+    }
+  }
   const rows = new Map(), singleJobs = new Map();
   for (const [t, impact] of affected) {
     const candidates = [...new Set(Array.from(path(t), e => a.edge_way[e]).filter(w => destroyed.has(w)))];
@@ -274,7 +379,7 @@ function attribution(affected, destroyed, budget, counters) {
   }
   const recovers = (t, seconds) => rows.get(t).impact === 'broken' ? Number.isFinite(seconds) :
     Number.isFinite(seconds) && seconds - a.trip_seconds[t] < meta.slow_seconds;
-  function test(ways, trips, phase, record) {
+  function prepare(ways, trips, phase, record, jobs) {
     const saved = [];
     for (const w of ways) for (const e of wayEdges[w]) {
       saved.push([e, mask[e]]); mask[e] = a.edge_initially_active[e];
@@ -282,23 +387,24 @@ function attribution(affected, destroyed, budget, counters) {
     try {
       const remaining = [];
       for (const t of trips) {
-        if (path(t).every(e => mask[e])) record(t, true);
+        if (path(t).every(e => mask[e])) jobs.push({fast: true, trip: t, record, phase});
         else remaining.push(t);
       }
-      for (const {vertex: origin, trips: group, reverse} of groupTrips(remaining)) {
+      for (const group of groupTrips(remaining)) {
         if (counters.attribution >= budget) break;
-        const results = search(origin, group, false, reverse);
         counters.attribution++; counters[phase]++;
-        for (const t of group) record(t, recovers(t, results.get(t).seconds));
+        jobs.push({group, ways, record, phase});
       }
     } finally { for (const [e, active] of saved) mask[e] = active; }
   }
   // Most widely used candidates first; stable way index resolves ties.
   const jobs = [...singleJobs].sort((x, y) => y[1].length - x[1].length || x[0] - y[0]);
-  for (const [w, trips] of jobs) test([w], trips, 'single', (t, recovered) => {
+  const singles = [];
+  for (const [w, trips] of jobs) prepare([w], trips, 'single', (t, recovered) => {
     rows.get(t).tested_candidates.push(w);
     if (recovered) rows.get(t).confirmed_singles.push(w);
-  });
+  }, singles);
+  yield* dispatch(singles);
   const runJobs = new Map();
   for (const [t, row] of rows) {
     row.unchecked_candidates = row.candidates.filter(w => !row.tested_candidates.includes(w));
@@ -318,12 +424,14 @@ function attribution(affected, destroyed, budget, counters) {
     // Identical runs require just one counterfactual search per trip.
     row.runs = [...new Map(row.runs.map(r => [r.join(','), r])).values()];
   }
+  const runs = [];
   for (const {ways, trips} of [...runJobs.values()].sort((x, y) => y.trips.size - x.trips.size)) {
-    test(ways, [...trips], 'run', (t, recovered) => {
+    prepare(ways, [...trips], 'run', (t, recovered) => {
       rows.get(t).testedRuns++;
       if (recovered) rows.get(t).confirmed_runs.push(ways);
-    });
+    }, runs);
   }
+  yield* dispatch(runs);
   return [...rows.values()].map(row => {
     const incomplete = row.unchecked_candidates.length > 0 || row.testedRuns < row.runs.length;
     const label = incomplete ? 'incomplete' : row.confirmed_singles.length ? 'single' :
@@ -349,8 +457,9 @@ function routeFeature(edges, trip, phase, status) {
     geometry: {type: 'LineString', coordinates}} : null;
 }
 
-function edit(message) {
+function* edit(message) {
   if (!mask) throw new Error('Load the graph before editing');
+  editSettled = {bound: 0, reroute: 0, single: 0, run: 0}; computeMs = 0;
   const start = now(); mask.set(a.edge_initially_active);
   if (message.preset) {
     const result = presetResults[message.preset];
@@ -363,7 +472,7 @@ function edit(message) {
       if (before) features.push(before); if (after) features.push(after);
     }
     return {...result, precomputed: true, searches: 0, bound_searches: 0, reroute_searches: 0,
-      attribution_searches: 0, single_searches: 0, run_searches: 0,
+      attribution_searches: 0, single_searches: 0, run_searches: 0, settled_vertices: editSettled, settled_total: 0,
       geojson: {type: 'FeatureCollection', features},
       timings: {lookup_ms: now() - start, bound_ms: 0, reroute_ms: 0, attribution_ms: 0, total_ms: now() - start}};
   }
@@ -389,6 +498,8 @@ function edit(message) {
       mask[a.edge_twin[e]] = 1;
     }
   } else for (const w of ways) for (const e of wayEdges[w]) mask[e] = 0;
+  editChanges = [];
+  for (let e = 0; e < mask.length; e++) if (mask[e] !== a.edge_initially_active[e]) editChanges.push([e, mask[e]]);
   const candidates = new Set();
   for (const w of ways) for (const e of wayEdges[w]) {
     if (a.edge_initially_active[e] && !mask[e]) for (const t of edgeTrips[e]) candidates.add(t);
@@ -399,8 +510,11 @@ function edit(message) {
   const full = [...candidates].sort((x, y) => x - y).filter(t => !detourOK(t, cache, counters));
   const groups = groupTrips(full);
   let broken = 0, slowed = 0, added = 0;
-  for (const {vertex: origin, trips, reverse} of groups) {
-    const results = search(origin, trips, tripResults.length < 25, reverse); counters.reroute++;
+  // Paths for every group keep merging independent of completion order and the 25-trip cap.
+  const rerouted = groups.length ? yield groups.map(g => ({...g, changes: editChanges, wantPaths: true})) : [];
+  for (let index = 0; index < groups.length; index++) {
+    const {trips} = groups[index], reply = rerouted[index], results = new Map(reply.entries);
+    editSettled.reroute += reply.settled; computeMs += reply.compute_ms; counters.reroute++;
     for (const t of trips) {
       const result = results.get(t), status = classify(t, result.seconds);
       if (status === 'ok') continue;
@@ -421,7 +535,7 @@ function edit(message) {
   const budget = message.budget === undefined ? Infinity : message.budget;
   if (!(budget >= 0)) throw new Error('Attribution budget must be nonnegative');
   const compound = weapon === 'meteor' || message.id === 'bay_bridge' || (weapon === 'stomp' && ways.length > 1);
-  const causes = compound ? attribution(affected, new Set(ways), budget, counters) :
+  const causes = compound ? yield* attribution(affected, new Set(ways), budget, counters) :
     [...affected].map(([t]) => ({trip_id: labels[t].trip_id, confirmed_singles: ways.map(w => a.way_osm_id[w]),
       confirmed_runs: [], label: 'single'}));
   return {type: 'edited', weapon, ways_hit: ways.length, way_ids: ways.map(w => a.way_osm_id[w]),
@@ -429,18 +543,78 @@ function edit(message) {
     rerouted_origins: groups.length, broken, slowed, added_seconds: added,
     searches: counters.reroute + counters.attribution + counters.bound, bound_searches: counters.bound, reroute_searches: counters.reroute,
     attribution_searches: counters.attribution, single_searches: counters.single, run_searches: counters.run, attribution_complete: causes.every(c => c.label !== 'incomplete'),
+    settled_vertices: editSettled, settled_total: Object.values(editSettled).reduce((x, y) => x + y, 0),
     attribution: causes, trips: tripResults, geojson: {type: 'FeatureCollection', features},
-    timings: {lookup_ms: lookupEnd - start, bound_ms: counters.bound_ms, reroute_ms: rerouteEnd - lookupEnd, attribution_ms: now() - rerouteEnd, total_ms: now() - start}};
+    timings: {search_compute_ms: computeMs + counters.bound_ms, lookup_ms: lookupEnd - start, bound_ms: counters.bound_ms, reroute_ms: rerouteEnd - lookupEnd, attribution_ms: now() - rerouteEnd, total_ms: now() - start}};
 }
 
-if (typeof module !== 'undefined') module.exports = {initialize(data) {
-  meta = data.meta; a = data.arrays; labels = data.labels; presetResults = data.presets || {}; buildIndices();
-}, edit};
+function advance(message) {
+  if (message.type === 'edit') session = edit(message);
+  const step = session.next(message.replies);
+  return step.done ? step.value : {type: 'jobs', jobs: step.value};
+}
+
+function initialize(data) {
+  meta = data.meta; a = data.arrays; labels = data.labels; presetResults = data.presets || {};
+  buildIndices(); return buildLandmarks();
+}
+
+function validateBounds(count = 500) {
+  let seed = 2027, maxRatio = 0;
+  const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed % meta.counts.vertices; };
+  mask.set(a.edge_initially_active);
+  for (let i = 0; i < count; i++) {
+    const v = random(), t = random();
+    for (const reverse of [false, true]) {
+      const bound = lowerBound(v, t, reverse);
+      for (const superset of [true, false]) {
+        walk(v, new Set([t]), reverse, Infinity, false, superset, false);
+        const exact = distances[t];
+        for (const l of landmarks) {
+          const f = reverse ? l.backward : l.forward, b = reverse ? l.forward : l.backward;
+          const individual = Math.max(0, safeDifference(f[t], f[v]), safeDifference(b[v], b[t])) * (1 - roundoff);
+          if (individual > exact) throw new Error('Inadmissible individual landmark bound');
+        }
+        if (bound > exact) throw new Error('Inadmissible landmark bound');
+        if (exact > 0 && Number.isFinite(exact)) maxRatio = Math.max(maxRatio, bound / exact);
+      }
+    }
+  }
+  return {pairs: count, seed: 2027, max_ratio: maxRatio};
+}
+
+function validatePaths(result) {
+  for (const row of result.trips) {
+    if (row.seconds === null) continue;
+    const t = labels.findIndex(label => label.trip_id === row.trip_id);
+    let v = a.trip_origin[t], seconds = 0;
+    for (const e of row.new_path) {
+      if (!mask[e] || a.edge_source[e] !== v) throw new Error('Invalid drawn edge');
+      v = a.edge_target[e]; seconds += a.edge_seconds[e];
+    }
+    if (v !== a.trip_destination[t] || Math.abs(seconds - row.seconds) > 1e-7) throw new Error('Invalid drawn route time');
+  }
+  return true;
+}
+
+if (typeof module !== 'undefined') module.exports = {initialize, advance, executeJob, validateBounds, validatePaths,
+  presetTimes(message) {
+    // Drive the edit locally to establish precisely the same active mask.
+    let reply = advance({...message, type: 'edit'});
+    while (reply.type === 'jobs') reply = advance({type: 'resume', replies: reply.jobs.map(executeJob)});
+    // executeJob may restore ways; establish the final edit mask again.
+    mask.set(a.edge_initially_active);
+    for (const [e, active] of editChanges) mask[e] = active;
+    return presetResults[message.id].trip_statuses.map(row => {
+      const result = search(a.trip_origin[row.trip_index], [row.trip_index]).get(row.trip_index);
+      return {...row, seconds: result.seconds, status: classify(row.trip_index, result.seconds)};
+    });
+  }};
 
 if (typeof self !== 'undefined') self.onmessage = async ({data: message}) => {
   try {
-    const result = message.type === 'load' ? await load(message) : message.type === 'edit' ? edit(message) :
-      (() => { throw new Error(`Unknown message type: ${message.type}`); })();
+    const result = message.type === 'load' ? await load(message) :
+      message.type === 'job' ? executeJob(message.job) : advance(message);
     self.postMessage({...result, requestId: message.requestId});
   } catch (error) { self.postMessage({type: 'error', requestId: message.requestId, error: error.message, stack: error.stack}); }
 };

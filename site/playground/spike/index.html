@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Route impact P0 feasibility spike</title>
+  <title>Route impact P0b exact ALT + worker pool spike</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <style>
     body { margin: 0; font: 15px system-ui, sans-serif; }
@@ -15,12 +15,12 @@
     pre { overflow: auto; background: #f2f3f4; padding: 12px; }
   </style>
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="measure.js" defer></script>
+  <script src="measure.js" type="module"></script>
 </head>
 <body>
   <div id="map" aria-label="Bay Area affected routes"></div>
   <main>
-    <h1>P0 feasibility spike — snapshot 261027</h1>
+    <h1>P0b exact ALT + worker pool spike — snapshot 261027</h1>
     <p>Fixed sampled endpoints, bounded Bay graph: detours outside the box do not exist.
       Routes show contracted graph vertices. Grey is before; blue is after. At most 25 affected trips are drawn.</p>
     <p id="status" role="status" aria-live="polite">Loading map and graph…</p>

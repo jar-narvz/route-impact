@@ -1,13 +1,14 @@
 /* Real browser measurements only. Never writes feasibility.json in the repository. */
 'use strict';
+import {RoutingPool} from './pool.mjs';
 const statusLine = document.getElementById('status');
 const errorLine = document.getElementById('error');
 const runButton = document.getElementById('run');
 const downloadButton = document.getElementById('download');
 const retryButton = document.getElementById('retry');
 let running = false;
-let worker, map, loadData, measurements, nextId = 0, latestId = 0;
-const pending = new Map();
+const P = Math.min(Math.max((navigator.hardwareConcurrency || 2) - 1, 1), 8);
+let pool, map, loadData, measurements, nextId = 0;
 const heapSamples = [];
 const heap = () => performance.memory ? {
   usedJSHeapSize: performance.memory.usedJSHeapSize,
@@ -24,14 +25,27 @@ function fail(error) {
   statusLine.textContent = 'Failed. See the error above.';
   retryButton.hidden = false;
 }
-function request(payload) {
-  const requestId = ++nextId;
-  latestId = requestId;
-  return new Promise((resolve, reject) => {
+function createClient() {
+  const worker = new Worker('worker.js'), pending = new Map();
+  worker.onmessage = ({data}) => {
+    const item = pending.get(data.requestId);
+    if (!item) return;
+    pending.delete(data.requestId);
+    if (data.type === 'error') item.reject(new Error(data.error));
+    else item.resolve(data);
+  };
+  worker.onerror = event => {
+    const error = new Error(event.message || 'Worker failed');
+    for (const item of pending.values()) item.reject(error);
+    pending.clear(); fail(error);
+  };
+  return payload => new Promise((resolve, reject) => {
+    const requestId = ++nextId;
     pending.set(requestId, {resolve, reject});
     worker.postMessage({...payload, requestId});
   });
 }
+const request = payload => pool.edit(payload);
 function resourceRows() {
   return performance.getEntriesByType('resource').filter(e =>
     e.name.includes('/data/playground-spike/') || /maplibre-gl@4\.7\.1\/dist\/maplibre-gl\.(js|css)/.test(e.name)
@@ -58,28 +72,17 @@ async function initialize() {
         fail(error); reject(error);
       });
     });
-    worker = new Worker('worker.js');
-    worker.onmessage = ({data}) => {
-      const item = pending.get(data.requestId);
-      if (!item) return;
-      pending.delete(data.requestId);
-      if (data.requestId !== latestId) { item.reject(new Error('Stale worker response ignored')); return; }
-      if (data.type === 'error') item.reject(new Error(data.error));
-      else item.resolve(data);
-    };
-    worker.onerror = event => {
-      const error = new Error(event.message || 'Worker failed');
-      for (const item of pending.values()) item.reject(error);
-      pending.clear(); fail(error);
-    };
+    const clients = Array.from({length: P}, createClient);
+    pool = new RoutingPool(clients);
     const beforeHeap = sampleHeap(), start = performance.now();
-    const [loaded] = await Promise.all([request({type: 'load'}), mapReady]);
+    const [workers] = await Promise.all([Promise.all(clients.map(client => client({type: 'load'}))), mapReady]);
+    const loaded = workers[0];
     map.addSource('affected-routes', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
     map.addLayer({id: 'before-routes', type: 'line', source: 'affected-routes',
       filter: ['==', ['get', 'phase'], 'before'], paint: {'line-color': '#777', 'line-width': 3, 'line-opacity': 0.65}});
     map.addLayer({id: 'after-routes', type: 'line', source: 'affected-routes',
       filter: ['==', ['get', 'phase'], 'after'], paint: {'line-color': '#007aff', 'line-width': 3}});
-    loadData = {page_ready_ms: performance.now() - start, worker_timings: loaded.timings,
+    loadData = {P, workers, page_ready_ms: performance.now() - start, worker_timings: loaded.timings,
       files: loaded.meta.files, meta: {snapshot: loaded.meta.snapshot, git_commit: loaded.meta.git_commit,
         counts: loaded.meta.counts, simplification_tolerance_m: loaded.meta.simplification_tolerance_m,
         presets: loaded.meta.presets},
@@ -154,6 +157,8 @@ async function runStressSet() {
         affected_trips: first.affected_trips, affected_origins: first.affected_origins,
         candidate_trips: first.candidate_trips, rerouted_origins: first.rerouted_origins,
         broken: first.broken, slowed: first.slowed, added_seconds: first.added_seconds,
+        settled_vertices: first.settled_vertices, settled_total: first.settled_total,
+        search_compute_ms: runs.map(r => r.timings.search_compute_ms),
         searches: first.searches, bound_searches: first.bound_searches, reroute_searches: first.reroute_searches,
         attribution_searches: first.attribution_searches, single_searches: first.single_searches, run_searches: first.run_searches,
         attribution_complete: runs.every(r => r.attribution_complete),
