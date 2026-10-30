@@ -1,0 +1,114 @@
+{
+  "seed": 2027,
+  "snapshot": "261027",
+  "note": "Frozen P2d checks: live presets, baseline-used Stomps, and stress Meteors.",
+  "cases": [
+    {
+      "id": "bay_bridge_live",
+      "weapon": "stomp",
+      "way_ids": [
+        8921938,
+        23874736,
+        236348360,
+        236348361,
+        237731428,
+        497579295,
+        661905443,
+        661905446,
+        929579737,
+        1343738800
+      ],
+      "purpose": "Live compound deletion matching the Bay Bridge preset."
+    },
+    {
+      "id": "university_ramp_live",
+      "weapon": "flip",
+      "way_id": 6320410,
+      "purpose": "Live reversal matching the University Avenue ramp preset."
+    },
+    {
+      "id": "stomp_01",
+      "weapon": "stomp",
+      "way_id": 45473226,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_02",
+      "weapon": "stomp",
+      "way_id": 517296940,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_03",
+      "weapon": "stomp",
+      "way_id": 28357724,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_04",
+      "weapon": "stomp",
+      "way_id": 6382266,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_05",
+      "weapon": "stomp",
+      "way_id": 1113354536,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_06",
+      "weapon": "stomp",
+      "way_id": 415864958,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_07",
+      "weapon": "stomp",
+      "way_id": 417319249,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_08",
+      "weapon": "stomp",
+      "way_id": 1041356907,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_09",
+      "weapon": "stomp",
+      "way_id": 255178096,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "stomp_10",
+      "weapon": "stomp",
+      "way_id": 417289857,
+      "purpose": "Seeded deletion of a way used by a baseline trip."
+    },
+    {
+      "id": "bay_bridge_toll_plaza_500",
+      "weapon": "meteor",
+      "lat": 37.825,
+      "lon": -122.315,
+      "purpose": "Bridge approach chokepoint, 500 m blast.",
+      "radius_m": 500
+    },
+    {
+      "id": "sf_financial_500",
+      "weapon": "meteor",
+      "lat": 37.7946,
+      "lon": -122.3999,
+      "purpose": "Dense downtown street network, 500 m blast.",
+      "radius_m": 500
+    },
+    {
+      "id": "sf_union_square_500",
+      "weapon": "meteor",
+      "lat": 37.787936,
+      "lon": -122.40752,
+      "purpose": "Isolate a sampled trip endpoint, 500 m blast.",
+      "radius_m": 500
+    }
+  ]
+}

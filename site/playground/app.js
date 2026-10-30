@@ -6,7 +6,7 @@ const METEOR_RADIUS_M = 500;
 
 const $ = id => document.getElementById(id);
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const desktop = matchMedia('(min-width: 900px)');
 const heights = ['peek', 'half', 'full'];
 const styles = {
@@ -41,6 +41,33 @@ let firstMapLoad = false;
 let fitted = false;
 let pendingRequest;
 let ringFrame;
+let resolveReady;
+const ready = new Promise(resolve => { resolveReady = resolve; });
+const drawWaiters = new Map();
+const afterDraw = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+function finishRequest(id, error) {
+  const waiter = drawWaiters.get(id);
+  if (!waiter) return;
+  drawWaiters.delete(id);
+  if (error) waiter.reject(new Error(error));
+  else {
+    const style = styleReady ? Promise.resolve() : new Promise((resolve, reject) => {
+      if (!map) reject(new Error('Map unavailable'));
+      else map.once('style.load', resolve);
+    });
+    style.then(afterDraw)
+      .then(() => waiter.resolve({ms: performance.now() - waiter.start, phase: state.phase}), waiter.reject);
+  }
+}
+
+function measured(action) {
+  const start = performance.now();
+  return new Promise((resolve, reject) => {
+    const id = action();
+    drawWaiters.set(id, {start, resolve, reject});
+  });
+}
 
 function renderSheet() {
   document.documentElement.dataset.sheetHeight = state.sheetHeight;
@@ -200,7 +227,7 @@ function recenter() {
     padding: desktop.matches
       ? {top: 48, bottom: 48, left: 428, right: 80}
       : {top: 16, bottom: sheetHeight + 8, left: 24, right: 64},
-    duration: reducedMotion.matches ? 0 : 600,
+    duration: reducedMotion() ? 0 : 600,
   });
 }
 
@@ -259,6 +286,8 @@ function createMap() {
       center: [-122.15, 37.65], zoom: 8.5,
       dragRotate: false, attributionControl: false,
     });
+    map.keyboard.disable();
+    map.getCanvas().tabIndex = -1;
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.AttributionControl({compact: false}), 'bottom-right');
     map.once('style.load', () => {
@@ -268,7 +297,11 @@ function createMap() {
       syncMap();
     });
     map.on('click', onMapClick);
-    map.once('load', () => { firstMapLoad = true; });
+    map.once('load', () => {
+      firstMapLoad = true;
+      // Attribution remains pointer-accessible without inserting links into the map's Tab stop.
+      $('map').querySelectorAll('a, button').forEach(node => { node.tabIndex = -1; });
+    });
     map.on('error', event => {
       if (firstMapLoad) return;
       state.mapError = `The basemap couldn't load: ${event.error?.message ?? 'style load failed'}. Routing still works.`;
@@ -299,6 +332,7 @@ function loadNetwork() {
   state.error = null;
   state.hint = null;
   clearDrawing();
+  $('announcement').textContent = '';
   setHeight('peek');
   render();
   if (typeof Worker === 'undefined') {
@@ -311,6 +345,7 @@ function loadNetwork() {
     worker.onmessage = ({data}) => {
       if (worker !== activeWorker || !latest.isLatest(data.id)) return;
       if (!data.ok) {
+        finishRequest(data.id, data.error);
         fail(`The Bay road network could not load: ${String(data.error).replace(/^Error: /, '')}`, true);
         return;
       }
@@ -318,6 +353,7 @@ function loadNetwork() {
       if (request.type === 'load') {
         const {meta, presets, load_ms, baseline} = data.result;
         Object.assign(state, {meta, presets, load_ms, baseline: baselineGeoJSON(baseline), phase: 'ready', error: null});
+        resolveReady();
       } else if (request.type === 'pick') {
         const picked = data.result;
         if (!picked || request.weapon === 'flip' && !picked.oneway) {
@@ -341,10 +377,12 @@ function loadNetwork() {
       }
       syncMap();
       render();
+      finishRequest(data.id);
     };
     worker.onerror = event => {
       if (worker !== activeWorker) return;
       event.preventDefault();
+      for (const id of drawWaiters.keys()) finishRequest(id, event.message || 'Worker failed');
       fail(`The road network worker failed: ${event.message || 'worker script could not load'}`, true);
     };
     worker.onmessageerror = () => {
@@ -371,8 +409,12 @@ function roadRow(ways, tripText, name) {
   button.addEventListener('click', () => {
     state.selection = ways.map(way => way.way_id);
     syncMap();
-    renderResults();
+    document.querySelectorAll('.road-row button').forEach(control => {
+      const ids = JSON.parse(control.dataset.ways);
+      control.setAttribute('aria-pressed', String(ids.every(id => state.selection.includes(id))));
+    });
   });
+  button.dataset.ways = JSON.stringify(ways.map(way => way.way_id));
   row.append(button);
   if (tripText !== undefined) row.append(element('span', tripText, 'trip-count'));
   for (const way of ways.slice(0, 1)) {
@@ -415,7 +457,8 @@ function renderResults() {
         for (const single of mattered.singles) root.append(roadRow([single], single.trip_text));
         if (mattered.runs.length) root.append(element('h4', 'Road groups'));
         for (const run of mattered.runs) root.append(roadRow(run.ways, run.trip_text, run.name));
-        root.append(element('p', `Several roads together: ${mattered.several_together.toLocaleString('en-US')}`));
+        if (mattered.several_together)
+          root.append(element('p', `Several roads together: ${mattered.several_together.toLocaleString('en-US')}`));
       }
     }
     for (const trip of summary.trips) {
@@ -426,6 +469,8 @@ function renderResults() {
     }
   }
   const presets = $('presets');
+  // Re-rendering replaces the buttons, so keep keyboard focus on the preset just pressed.
+  const focusedPreset = presets.contains(document.activeElement) ? document.activeElement.dataset.preset : null;
   presets.replaceChildren();
   const fallback = {bay_bridge: 'Bay Bridge', university_ramp: 'University Ave ramp'};
   for (const preset of state.presets) {
@@ -433,26 +478,28 @@ function renderResults() {
     const button = element('button', label);
     button.type = 'button';
     button.disabled = !['ready', 'pending', 'showing'].includes(state.phase);
+    button.dataset.preset = preset.name;
     button.addEventListener('click', () => runEdit({preset: preset.name, label}));
     presets.append(button);
+    if (preset.name === focusedPreset) button.focus();
   }
 }
 
 function clearDrawing() {
   cancelAnimationFrame(ringFrame);
-  $('announcement').textContent = '';
   Object.assign(state, {result: null, drawn: null, summary: null, selection: null, ring: null, meteorCenter: null});
   syncMap();
 }
 
 function panToTap(tap) {
+  if (!map) return;
   const rect = $('sheet').getBoundingClientRect();
   // Results target half height; the current CSS transition may start at peek or full.
   const bottom = window.innerHeight / 2;
   map.easeTo({center: [tap.lon, tap.lat], padding: desktop.matches
     ? {left: rect.width + 32, right: 16, top: 16, bottom: 16}
     : {left: 16, right: 16, top: 16, bottom: bottom + 8},
-  duration: reducedMotion.matches ? 0 : 600});
+  duration: reducedMotion() ? 0 : 600});
 }
 
 function drawRing(tap) {
@@ -461,7 +508,7 @@ function drawRing(tap) {
   const start = performance.now(), k = state.meta.earth_radius_m * Math.PI / 180;
   const kx = k * Math.cos(tap.lat * Math.PI / 180);
   function frame(now) {
-    const fraction = reducedMotion.matches ? 1 : Math.min(1, (now - start) / 600);
+    const fraction = reducedMotion() ? 1 : Math.min(1, (now - start) / 600);
     const radius = METEOR_RADIUS_M * fraction;
     const coordinates = Array.from({length: 64}, (_, i) => {
       const angle = i * 2 * Math.PI / 64;
@@ -483,18 +530,22 @@ function runEdit(edit, tap) {
   state.phase = 'pending';
   state.hint = null;
   if (edit.weapon === 'meteor') drawRing(tap);
-  sendRequest('edit', {edit, tap});
+  const id = sendRequest('edit', {edit, tap});
   render();
+  return id;
 }
 
 function onMapClick(event) {
+  fireAt({lat: event.lngLat.lat, lon: event.lngLat.lng});
+}
+
+function fireAt(tap) {
   if (!['ready', 'showing', 'pending'].includes(state.phase)) return;
   if (!state.weapon) {
     state.hint = 'Pick a weapon first';
     renderStatus();
     return;
   }
-  const tap = {lat: event.lngLat.lat, lon: event.lngLat.lng};
   if (state.weapon === 'meteor') runEdit({weapon: 'meteor', ...tap, radius_m: METEOR_RADIUS_M}, tap);
   else {
     const metresPerPixel = 40075016.686 * Math.cos(tap.lat * Math.PI / 180) / (512 * 2 ** map.getZoom());
@@ -511,14 +562,20 @@ document.querySelectorAll('[data-weapon]').forEach(button => {
     renderButtons();
   });
 });
-$('rebuild').addEventListener('click', () => {
-  sendRequest('reset');
+function rebuild() {
+  // Rebuild disables itself, which would drop keyboard focus to the page; hand it to the weapons.
+  const hadFocus = document.activeElement === $('rebuild');
+  const id = sendRequest('reset');
+  $('announcement').textContent = '';
   clearDrawing();
   state.phase = 'ready';
   state.hint = null;
   setHeight('peek');
   render();
-});
+  if (hadFocus) (document.querySelector('[data-weapon][aria-pressed="true"]') ?? document.querySelector('[data-weapon]')).focus();
+  return id;
+}
+$('rebuild').addEventListener('click', rebuild);
 
 $('grabber').addEventListener('click', () => {
   setHeight(heights[(heights.indexOf(state.sheetHeight) + 1) % heights.length]);
@@ -539,3 +596,41 @@ systemTheme.addEventListener('change', event => {
 document.documentElement.dataset.theme = state.theme;
 render();
 if (createMap()) loadNetwork();
+
+$('map').addEventListener('keydown', event => {
+  if (event.target !== $('map')) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    document.querySelector(`[data-weapon="${state.weapon || 'stomp'}"]`).focus();
+    return;
+  }
+  if (!map) return;
+  const pans = {ArrowLeft: [-100, 0], ArrowRight: [100, 0], ArrowUp: [0, -100], ArrowDown: [0, 100]};
+  const duration = reducedMotion() ? 0 : 200;
+  if (pans[event.key]) map.panBy(pans[event.key], {duration});
+  else if (event.key === '+' || event.key === '=') map.zoomIn({duration});
+  else if (event.key === '-') map.zoomOut({duration});
+  else if (event.key === 'Enter') {
+    const center = map.getCenter();
+    fireAt({lat: center.lat, lon: center.lng});
+  } else return;
+  event.preventDefault();
+});
+
+if (new URLSearchParams(location.search).has('test')) {
+  window.__playground = {
+    ready,
+    fireMeteor: (lat, lon) => measured(() => runEdit({weapon: 'meteor', lat, lon, radius_m: METEOR_RADIUS_M}, {lat, lon})),
+    rebuild: () => measured(rebuild),
+    counts() {
+      if (!map || !styleReady) throw new Error('Map style is not ready');
+      const style = map.getStyle();
+      const own = [boxGeoJSON(), state.baseline, state.drawn?.before, state.drawn?.after,
+        state.drawn?.hit, state.ring, state.meteorCenter,
+        {type: 'FeatureCollection', features: (state.drawn?.hit?.features || [])
+          .filter(feature => state.selection?.includes(feature.properties.way_id))}];
+      return {sources: Object.keys(style.sources).length, layers: style.layers.length,
+        features: own.reduce((sum, data) => sum + (data?.type === 'Feature' ? 1 : data?.features?.length || 0), 0)};
+    },
+  };
+}

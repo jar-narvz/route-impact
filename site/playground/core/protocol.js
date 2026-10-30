@@ -64,7 +64,7 @@ export function createProtocol({meta, a, order, presets, loadMs}) {
     return {coords, offsets};
   }
 
-  function edit(test) {
+  function edit(test, debug) {
     const result = engine.edit(test);
     let hits;
     if (test.preset) {
@@ -80,6 +80,7 @@ export function createProtocol({meta, a, order, presets, loadMs}) {
       after: pathLines(result.drawn || [], row => row.edges),
       hit: lines(emit => { for (const w of hits) emit(w, a.way_osm_id[w]); }),
     };
+    if (debug === true) result.debug = {drawn: (result.drawn || []).map(({trip, edges}) => ({trip, edges: Array.from(edges)}))};
     delete result.drawn;
     // Display fields sit beside the engine's row; `label` stays the attribution label.
     result.rows = result.rows.map(row => {
@@ -108,7 +109,7 @@ export function createProtocol({meta, a, order, presets, loadMs}) {
             oneway: Boolean(a.way_oneway[picked.way])} : null;
           break;
         }
-        case 'edit': result = edit(message.edit); break;
+        case 'edit': result = edit(message.edit, message.debug); break;
         case 'reset': result = engine.edit({weapon: 'reset'}); break;
         default: throw new Error(`Unknown message type ${message.type}`);
       }

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>P2 playground verification</title>
+  <style>
+    body { font: 16px system-ui; margin: 24px; color: #172536; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px; border: 1px solid #bbc; text-align: left; overflow-wrap: anywhere; }
+    #verdict { font-size: 36px; font-weight: bold; }
+    button { min-height: 44px; }
+    iframe { width: 1280px; height: 800px; max-width: 100%; border: 1px solid #bbc; }
+    :focus-visible { outline: 3px solid #1268d3; }
+  </style>
+  <script type="module" src="./playground_verify.js"></script>
+</head>
+<body>
+  <h1>P2 playground verification</h1>
+  <p id="status" role="status">Starting worker checks…</p>
+  <p id="verdict">RUNNING</p>
+  <table><thead><tr><th>Check</th><th>Equal / pass</th><th>ms</th><th>Valid / drawn paths</th><th>First difference</th></tr></thead><tbody id="checks"></tbody></table>
+  <p><button id="download" disabled>Download p2_browser_check.json</button></p>
+  <div id="page"></div>
+</body>
+</html>

@@ -3,7 +3,7 @@
 ## Current state
 - **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a `186be1e`, P2b `c391ba9` committed. **P2c done 2026-10-30** (log: "P2c follow-up: typed display + median-of-5 gate"), uncommitted. **Next: P2d** (keyboard, screen reader, reduced motion; browser == oracle harness).
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a `186be1e`, P2b `c391ba9`, P2c `9f76513` committed. **P2d done 2026-10-30**, uncommitted. **Next: P2e**: Jared merges `playground` → `main` first (PLAN P2e Order), then `pages.yml`, deploy, smoke test, his phone run, README.
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Not yet exercised by a scheduled run.
   4. **Geofabrik stalled:** its NorCal state.txt stops at 2026-10-28T21:21Z and `norcal-261029` is still unpublished (checked 2026-10-30 ~19:30 UTC). If a dated snapshot is never published, every later daily run also fails, because OLD is always NEW−1. Design question for Jared: fall back to the newest published older snapshot?
@@ -56,6 +56,38 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-10-30 — P2d: keyboard, screen reader, reduced motion; browser == oracle (**done**)
+- **Agent:** Codex (code); Claude generated the check set, ran the oracle and the browser harness, did the keyboard-only run, and fixed two focus bugs.
+- **Did:**
+  - Focusable map (`role=application`) with a centre crosshair; arrows pan, `+`/`-` zoom, Enter fires the selected weapon at the crosshair, Escape returns to the selected weapon. MapLibre's own keyboard handler is disabled.
+  - Tab order fixed in the DOM. A single `.sr-only` live region. Reduced motion: camera duration 0, ring drawn whole at once, CSS transitions and animations off.
+  - The `?test` hook (`window.__playground`) and the protocol `debug: true` flag, both for the harness.
+  - New `scripts/playground_verify_set.py` and `tests/browser/playground_verify.{html,js}`.
+- **Changed:** `site/playground/{app.js,index.html,style.css}`, `site/playground/core/protocol.js`, `site/playground/core/test/protocol.test.mjs`, `scripts/playground_verify_set.py`, `tests/browser/playground_verify.{html,js}`, `results/playground/{p2_verify_set.json,p2_oracle.json,p2_browser_check.json}`.
+- **Verify (Claude):**
+  - `python scripts/playground_verify_set.py --seed 2027 --data site/playground/data --output results/playground/p2_verify_set.json` → 15 cases. A rerun to a temp path is byte-identical (`cmp`).
+  - `route-impact playground-oracle --data site/playground/data --stress results/playground/p2_verify_set.json --output results/playground/p2_oracle.json` → 136.13 s real. Outputs: bay_bridge_live 10 ways / 171 affected (2 broken, 169 slowed); toll plaza 56 / 170 slowed; sf_financial 230 / 2 broken; sf_union_square 187 / 59 broken; stomp_01 45 slowed; the other 9 Stomps and the University ramp affect 0.
+  - **Harness (browser pane, `tests/browser/playground_verify.html`):** **15/15 cases equal to the oracle, 2/2 presets equal to their live runs, 75/75 drawn paths valid** (origin, destination, connected, active under the edit, Σ ms = distance_ms; broken-trip cases draw none). Per-case worker latency 3.8–93.8 ms (toll plaza the max).
+  - **50 Meteor/Rebuild cycles through the real page:** pass.
+    - Sources 10 / layers 63 after cycle 1 = after cycle 50.
+    - Fire-to-render median: first 10 = 124.95 ms, last 10 = 115.15 ms. Rebuild: 24.85 → 23.15 ms.
+    - P0's reset growth (~48 → ~1,298 ms) does not occur.
+  - Saved to `results/playground/p2_browser_check.json` (read from `window.__p2result`; adds `code_commit` 9f76513 + `code_dirty: true`, since `git_commit` in it is the export's).
+  - **Keyboard-only run (375×812, key presses only):**
+    - Initial Tab order: Stomp, Flip, Meteor, map, grabber, Peek, Half, Full, Recenter, Theme. Collapsed results are skipped and Rebuild is disabled before an edit.
+    - With results showing: map, then the 3 MapLibre attribution links (legitimate links, left in place), grabber, Peek, Half, Full, the road row, its OSM link, Bay Bridge, University Ave ramp, Rebuild, Recenter, Theme.
+    - Space selects Meteor; arrows pan; Enter at the crosshair → "Meteor hit 49 roads: 1 trip broken…". Stomp → "2 trips rerouted, none slowed by 2 min or more". Flip (on a one-way road) → the same. Bay Bridge preset → 2 / 169 / 2,859. University Ave ramp → "6 trips rerouted, none slowed by 2 min or more". Full shows the 171-trip list; Peek collapses; Rebuild clears.
+    - **MutationObserver: exactly one announcement per result.** Rebuild only clears the region.
+  - 18 interactive elements, **none under 44 px** (computed rects). Collapsed (`inert`) content holds no focusable element. The OSM link has `target=_blank rel=noopener` and the label "View Dwight D. Eisenhower Highway on OpenStreetMap".
+  - **Reduced motion:** the pane can't emulate `prefers-reduced-motion`. A runtime frame count with `matchMedia` overridden was inconclusive: MapLibre's own render frames dominate (normal 44, reduced 92, from the instant camera jump's tile loads). Checked in code instead: every camera move uses `reducedMotion() ? 0 : …`; the ring uses `fraction = 1` with no reschedule; CSS `@media (prefers-reduced-motion: reduce)` turns off all transitions and animations.
+  - `make test` → `264 passed in 38.29s`, JS `# pass 105`; `make lint` clean; `node --check` OK.
+  - **Screen reader:** not run. The README must say "announced through an ARIA live region; not yet tested with a screen reader" unless Jared's P2e VoiceOver pass works.
+- **Review (Claude; keyboard-run findings, fixed in `app.js`):**
+  1. **Focus lost after a preset.** `renderResults` replaces the Try these buttons, so the pressed button vanished and focus fell to the page. The focused preset is now remembered by `data-preset` and refocused.
+  2. **Focus lost after Rebuild.** Rebuild disables itself; a focused button that becomes disabled drops focus. Focus now moves to the selected weapon (or Stomp).
+  3. "Several roads together: 0" is hidden when the count is 0.
+  - Product note for Jared: the University Ave ramp preset is a no-impact example (6 rerouted, none slowed) — honest, but weak as a "Try these" showcase.
 
 ### 2026-10-30 — P2c follow-up: typed display + median-of-5 gate (**P2c done**)
 - **Agent:** Codex (code); Claude reran the gate and rechecked the browser. Jared agreed to Claude's recommendation (PLAN decision 17).

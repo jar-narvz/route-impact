@@ -166,3 +166,21 @@ test('grid Meteor display hits match the procedure on 200 seeded queries', () =>
     assert.equal(reply.result.ways.length, reply.result.ways_hit);
   }
 });
+
+test('debug flag returns exact engine after-paths only when explicitly true', () => {
+  const decoded = load(new URL('stomp/', root));
+  const edit = {weapon: 'stomp', way_ids: [102]};
+  const expected = createEngine(decoded.meta, decoded.a, decoded.order, decoded.presets).edit(edit).drawn;
+  assert.ok(expected.length > 0, 'fixture exercises a drawn after-path');
+  const protocol = createProtocol(decoded);
+  for (const debug of [undefined, false, 'true', true]) {
+    const reply = protocol.handle({id: 1, type: 'edit', edit, debug});
+    assert.equal(reply.ok, true, reply.error);
+    if (debug === true) {
+      assert.deepEqual(reply.result.debug, {drawn: expected.map(({trip, edges}) => ({trip, edges: Array.from(edges)}))});
+      assert.ok(reply.result.debug.drawn.every(path => Array.isArray(path.edges)));
+    } else assert.equal(Object.hasOwn(reply.result, 'debug'), false);
+    assert.equal(Object.hasOwn(reply.result, 'drawn'), false);
+    assert.deepEqual(canonical(routing(reply.result)), canonical(routing(protocol.handle({type: 'edit', edit}).result)));
+  }
+});

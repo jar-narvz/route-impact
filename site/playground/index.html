@@ -12,18 +12,13 @@
 </head>
 <body>
   <main aria-label="Fault playground">
-    <div id="map" aria-label="Bay Area road map"></div>
-    <div class="map-buttons" aria-label="Map controls">
-      <button id="rebuild" class="round" type="button" aria-label="Rebuild roads" title="Rebuild roads" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 2 8M4 4v6h6"/></svg>
-      </button>
-      <button id="recenter" class="round" type="button" aria-label="Recenter on the Bay box" title="Recenter on the Bay box" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
-      </button>
-      <button id="theme" class="round" type="button" aria-label="Switch to dark theme" title="Switch to dark theme">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>
-      </button>
+    <div class="weapons" role="group" aria-label="Weapons">
+      <button type="button" disabled data-weapon="stomp" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7v9l5 3v4H5v-5h2ZM3 22h18"/></svg>Stomp</button>
+      <button type="button" disabled data-weapon="flip" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4"/></svg>Flip</button>
+      <button type="button" disabled data-weapon="meteor" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="15" r="5"/><path d="m12 11 8-8m-4 10 6-6M6 8l6-6"/></svg>Meteor</button>
     </div>
+    <div id="map" tabindex="0" role="application" aria-label="Map. Arrow keys pan, plus and minus zoom, Enter fires the selected weapon at the crosshair."></div>
+    <div class="crosshair" aria-hidden="true"></div>
     <section id="sheet" class="sheet" aria-label="Road edits and results">
       <div class="sheet-controls">
         <button id="grabber" type="button" aria-label="Expand sheet to half height" title="Change sheet height"><span></span></button>
@@ -33,18 +28,13 @@
           <button type="button" data-height="full" aria-pressed="false">Full</button>
         </div>
       </div>
-      <div class="weapons" role="group" aria-label="Weapons">
-        <button type="button" disabled data-weapon="stomp" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7v9l5 3v4H5v-5h2ZM3 22h18"/></svg>Stomp</button>
-        <button type="button" disabled data-weapon="flip" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4"/></svg>Flip</button>
-        <button type="button" disabled data-weapon="meteor" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="15" r="5"/><path d="m12 11 8-8m-4 10 6-6M6 8l6-6"/></svg>Meteor</button>
-      </div>
       <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
       <div class="status-area">
         <p id="status">Loading the Bay road network…</p>
         <div id="progress" class="progress" role="progressbar" aria-label="Loading the Bay road network"><span></span></div>
-        <p id="error" role="alert" hidden></p>
+        <p id="error" hidden></p>
         <button id="retry" type="button" hidden>Retry</button>
-        <p id="map-error" role="alert" hidden></p>
+        <p id="map-error" hidden></p>
       </div>
       <div id="half-content" hidden inert>
         <div id="results"></div>
@@ -57,6 +47,17 @@
         <ul id="trips" aria-label="Affected trips"></ul>
       </div>
     </section>
+    <div class="map-buttons" aria-label="Map controls">
+      <button id="rebuild" class="round" type="button" aria-label="Rebuild roads" title="Rebuild roads" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 2 8M4 4v6h6"/></svg>
+      </button>
+      <button id="recenter" class="round" type="button" aria-label="Recenter on the Bay box" title="Recenter on the Bay box" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+      </button>
+      <button id="theme" class="round" type="button" aria-label="Switch to dark theme" title="Switch to dark theme">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>
+      </button>
+    </div>
     <noscript><p class="no-script">This playground needs JavaScript to load the map and route trips in your browser.</p></noscript>
   </main>
 </body>

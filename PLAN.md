@@ -586,7 +586,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - Record the cold-load transfer (own code + data + MapLibre, tiles excluded; N2 target ≤ 10,000,000 B) and the preset and Stomp latencies in PROGRESS.
       - **Phone (critique #6):** Jared opens the deployed page on his own phone and runs the Bay Bridge preset, the toll-plaza Meteor and Rebuild ×10. He reports the model and roughly how long each took. If a Meteor takes over 2 s, the attribution cap returns (decision 16's revisit clause).
       - `make test` and `make lint` green.
-  - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · **P2b done 2026-10-30** (Codex code; Claude browser Verify, 4 fixes) · **P2c done 2026-10-30** (Codex code, three runs; whole-worker gate median 264 MB of 5, decision 17) · P2d–P2e todo.
+  - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · **P2b done 2026-10-30** (Codex code; Claude browser Verify, 4 fixes) · **P2c done 2026-10-30** (Codex code, three runs; whole-worker gate median 264 MB of 5, decision 17) · **P2d done 2026-10-30** (15/15 == oracle, 2/2 presets, 75/75 paths; 50 cycles flat; keyboard-only run; 2 focus fixes) · P2e todo.
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
 - **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
 
