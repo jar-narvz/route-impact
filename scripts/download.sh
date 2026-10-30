@@ -29,6 +29,8 @@ filename="norcal-${date:-latest}.osm.pbf"
 pbf="data/$filename"
 manifest="$pbf.md5"
 base_url="https://download.geofabrik.de/north-america/us/california"
+# curl itself retries brief outages (timeouts, 408/429/5xx) a few times.
+curl_retry=(--retry 3 --retry-delay 30)
 
 matches_checksum() {
     local expected remainder actual
@@ -49,7 +51,7 @@ fi
 manifest_tmp=$(mktemp "$manifest.XXXXXX")
 trap 'rm -f "$manifest_tmp"' EXIT
 http_status=""
-if http_status=$(curl -fsS -w '%{http_code}' -o "$manifest_tmp" "$base_url/$filename.md5"); then
+if http_status=$(curl -fsS "${curl_retry[@]}" -w '%{http_code}' -o "$manifest_tmp" "$base_url/$filename.md5"); then
     if [[ ! -s "$manifest_tmp" ]]; then
         echo "Empty checksum manifest for $filename" >&2
         exit 1
@@ -58,6 +60,8 @@ if http_status=$(curl -fsS -w '%{http_code}' -o "$manifest_tmp" "$base_url/$file
 else
     if [[ "$http_status" == 404 ]]; then
         echo "$filename not published on Geofabrik" >&2
+    elif [[ "$http_status" =~ ^(000|5[0-9][0-9])$ ]]; then
+        echo "Geofabrik temporarily unavailable (HTTP $http_status) for $filename" >&2
     else
         echo "Failed to fetch checksum manifest for $filename" >&2
     fi
@@ -69,8 +73,8 @@ if matches_checksum "$pbf"; then
     exit 0
 fi
 
-if ! curl -fL -C - -o "$pbf.part" "$base_url/$filename"; then
-    echo "Download failed for $filename; partial file kept for resume" >&2
+if ! curl -fL "${curl_retry[@]}" -C - -o "$pbf.part" "$base_url/$filename"; then
+    echo "Download failed for $filename; partial file kept for resume (temporarily unavailable)" >&2
     exit 1
 fi
 if ! matches_checksum "$pbf.part"; then

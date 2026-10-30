@@ -116,14 +116,15 @@ download() {
             download_code=$?
         fi
         cat "$work_dir/download.stderr" >&2
-        if [[ "$scheduled" != 1 ]] || ! grep -q 'not published' "$work_dir/download.stderr"; then
+        # Retry a snapshot that isn't out yet, and Geofabrik outages that outlast curl's own retries.
+        if [[ "$scheduled" != 1 ]] || ! grep -qE 'not published|temporarily unavailable' "$work_dir/download.stderr"; then
             return "$download_code"
         fi
         if (( attempt >= retries )); then
-            echo "Snapshot $snapshot not published after $attempt attempts" >&2
+            echo "Snapshot $snapshot unavailable after $attempt attempts" >&2
             return "$download_code"
         fi
-        echo "Snapshot $snapshot not published; retrying in $retry_seconds seconds"
+        echo "Snapshot $snapshot unavailable; retrying in $retry_seconds seconds"
         sleep "$retry_seconds"
         attempt=$((attempt + 1))
     done
