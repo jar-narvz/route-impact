@@ -1,0 +1,2231 @@
+{
+  "format_version": 1,
+  "step": "P0c-3",
+  "measured_at": "2026-10-30T07:43:27.502Z",
+  "code": {
+    "head": "b8bf17e23e8c3600497b134c9d91de74e557d90a",
+    "note": "Run on the staged working tree, which was committed unchanged as b8bf17e."
+  },
+  "gate": {
+    "latency_all_cases_le_2000_ms": {
+      "pass": true,
+      "max_median_ms": 82.6949999332428,
+      "max_case": "bay_bridge_toll_plaza_500"
+    },
+    "reference_match_every_repeat": {
+      "pass": true,
+      "cases": 36,
+      "repeats_each": 5
+    },
+    "each_file_le_5000000_B": {
+      "pass": true,
+      "max_gzip_bytes": 2850841
+    },
+    "transfer_le_10000000_B": {
+      "pass": true,
+      "bytes": 9727543,
+      "counted": "graph data (worker, cold, no-store) + spike JS from this origin, as served (uncompressed)",
+      "excluded": "basemap tiles/style (third party, per PLAYGROUND N2); harness-only oracle files reference-ms.json + stress_set.json (not shipped)",
+      "not_measured": "MapLibre GL JS/CSS 4.7.1 from unpkg: cross-origin, transferSize reported as 0"
+    },
+    "cold_load_verified": {
+      "pass": true
+    },
+    "page_ready_le_5000_ms": {
+      "pass": true,
+      "ms": 644.0250000953674
+    },
+    "worker_memory_le_300000000_B": {
+      "pass": true,
+      "bytes": 261603328,
+      "source": "Node fallback (cch_bench.mjs RSS, max of after load and after 50 toll-plaza edits)",
+      "browser_api": "SecurityError: Failed to execute 'measureUserAgentSpecificMemory' on 'Performance': performance.measureUserAgentSpecificMemory is not available."
+    }
+  },
+  "gate_pass": true,
+  "browser": {
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.4212.0 Chrome/152.0.7977.167 Safari/537.36",
+      "hardwareConcurrency": 14,
+      "deviceMemory": 32,
+      "crossOriginIsolated": true,
+      "devicePixelRatio": 2,
+      "viewport": {
+        "width": 248,
+        "height": 721
+      },
+      "url": "http://127.0.0.1:8781/site/playground/spike/"
+    },
+    "device": "MacBook Pro M3 Max, 36 GB (Claude desktop app built-in browser pane, visible)",
+    "transfer_groups": {
+      "graph_data_worker": {
+        "count": 24,
+        "transfer_bytes": 9670840
+      },
+      "third_party_main_thread": {
+        "count": 8,
+        "transfer_bytes": 0
+      },
+      "own_code": {
+        "count": 6,
+        "transfer_bytes": 56703
+      },
+      "harness_only": {
+        "count": 2,
+        "transfer_bytes": 687488
+      }
+    },
+    "measured_at": "2026-10-30T07:43:27.502Z",
+    "load": {
+      "snapshot": "261027",
+      "git_commit": "2df82a0a18ae95a3c53a9034fbefcf45760852c0",
+      "counts": {
+        "vertices": 213910,
+        "edges": 551760,
+        "ways": 180633,
+        "trips": 2057,
+        "initially_active_edges": 468024,
+        "excluded_trips": 3603
+      },
+      "page_ready_ms": 644.0250000953674,
+      "worker_load_ms": 539.789999961853,
+      "stats": {
+        "n": 213910,
+        "inputArcs": 551760,
+        "cchArcs": 935530,
+        "triangles": 6230212,
+        "precomputedTriangles": 0,
+        "triangleMode": "on-demand",
+        "buffers": {
+          "order": 855640,
+          "rank": 855640,
+          "first": 855644,
+          "upper": 3742120,
+          "lower": 3742120,
+          "parent": 855640,
+          "inputArc": 2207040,
+          "inputDir": 551760,
+          "inputFirst": 7484244,
+          "inputIds": 2199168,
+          "incomingFirst": 855644,
+          "incoming": 3742120,
+          "triangleCounts": 3742120,
+          "triangleFirst": 3742124,
+          "up": 7484240,
+          "down": 7484240,
+          "upFirst": 3742120,
+          "upSecond": 3742120,
+          "downFirst": 3742120,
+          "downSecond": 3742120,
+          "queued": 935530,
+          "forward": 1711280,
+          "backward": 1711280,
+          "forwardPred": 855640,
+          "backwardPred": 855640,
+          "knownWeights": 2207040,
+          "knownActive": 551760,
+          "savedBase": 0
+        },
+        "totalBufferBytes": 74196154,
+        "constructionTemporaryBufferBytes": 18237590,
+        "constructionNote": "Array storage is engine-managed; RSS samples include it. Explicit temporaries exclude engine-managed objects.",
+        "alternativeTriangleBytes": {
+          "precomputed": 57325940,
+          "onDemand": 7484244
+        }
+      },
+      "shipped_total_bytes": 9663640,
+      "files": [
+        {
+          "file": "cch_order.bin.gz",
+          "raw_bytes": 855640,
+          "gzip_bytes": 525982,
+          "sha256": "2305ae80e0ff38f034d7c8b346f5758762cf064e0495b81766c27d3651ec3693"
+        },
+        {
+          "file": "order_manifest.json.gz",
+          "raw_bytes": 575,
+          "gzip_bytes": 421,
+          "sha256": "a831ba84ee2f840000847bd23b2f349c2939baef2ad7679de85a9e9af1ca72dd"
+        },
+        {
+          "file": "excluded_trips.json.gz",
+          "raw_bytes": 212578,
+          "gzip_bytes": 9886,
+          "sha256": "889545d108d0e6a6bc90ee089fe3f94575c3b5afcac525635536fa3129930623"
+        },
+        {
+          "file": "csr_offsets.bin.gz",
+          "raw_bytes": 855644,
+          "gzip_bytes": 298429,
+          "sha256": "3b146d5d5d9ab44854cb7ab057749f4b5a4b17fc04362de16bb7fd68493c3aeb"
+        },
+        {
+          "file": "edge_target.bin.gz",
+          "raw_bytes": 2207040,
+          "gzip_bytes": 1321852,
+          "sha256": "26a76e03951903ab0cfcb5764936cc1156ddc4543a09d4763085ba27db3877c3"
+        },
+        {
+          "file": "edge_ms.bin.gz",
+          "raw_bytes": 2207040,
+          "gzip_bytes": 1224121,
+          "sha256": "8994ed513af56bb9d8b84cedbda8dd709b98b188232bf02621ee211257c6df54"
+        },
+        {
+          "file": "edge_way.bin.gz",
+          "raw_bytes": 2207040,
+          "gzip_bytes": 1088059,
+          "sha256": "050d46ef0064433c359e12f866a5b1f9b62ad4a67572714dfc56a47e8d296443"
+        },
+        {
+          "file": "edge_initially_active.bin.gz",
+          "raw_bytes": 551760,
+          "gzip_bytes": 47249,
+          "sha256": "11746280173aca81a6419da74bc34620119671b395f83d1d361c9af7e94808c8"
+        },
+        {
+          "file": "edge_twin.bin.gz",
+          "raw_bytes": 2207040,
+          "gzip_bytes": 525077,
+          "sha256": "10454e5376b7e7994bf819250125bcb5ce8d4beb0229d5e82f893042f4cf9888"
+        },
+        {
+          "file": "way_osm_id.bin.gz",
+          "raw_bytes": 1445064,
+          "gzip_bytes": 358082,
+          "sha256": "e62acf98f8eadaf80866454bd7aa869aa91be9df5bb80d958cc1302323e3dc31"
+        },
+        {
+          "file": "way_oneway.bin.gz",
+          "raw_bytes": 180633,
+          "gzip_bytes": 18943,
+          "sha256": "f37c2b92e68cc02d0c8a2d79a1e4fa0c2b9ed572262abec8f2994aa38d481e05"
+        },
+        {
+          "file": "way_highway.bin.gz",
+          "raw_bytes": 180633,
+          "gzip_bytes": 41400,
+          "sha256": "10b11e67cc53d89bc9f4a596a56e2d4ddb2fa0d9f41fe22367afcb091ddaedc1"
+        },
+        {
+          "file": "geometry_offsets.bin.gz",
+          "raw_bytes": 722536,
+          "gzip_bytes": 252335,
+          "sha256": "4721504dee4ae767f6a8a8779291ec2d13bde6a7ebf3591adb1252acdd54b1bf"
+        },
+        {
+          "file": "geometry_coords.bin.gz",
+          "raw_bytes": 4149672,
+          "gzip_bytes": 2850841,
+          "sha256": "c2a18b5eaa48611a270955de635f6c000d71c0c584071c17e0d2de7724a4db2b"
+        },
+        {
+          "file": "trip_origin.bin.gz",
+          "raw_bytes": 8228,
+          "gzip_bytes": 3689,
+          "sha256": "3e3741581189d27e22f635b3af25514e64a55905f94a269f2d26d4d3319fc2ea"
+        },
+        {
+          "file": "trip_destination.bin.gz",
+          "raw_bytes": 8228,
+          "gzip_bytes": 3761,
+          "sha256": "13352b1db280acff457d264d3fdd9be0cc79d3caa2f0d2b39a4f0dda1e4e837a"
+        },
+        {
+          "file": "trip_ms.bin.gz",
+          "raw_bytes": 16456,
+          "gzip_bytes": 7745,
+          "sha256": "4ffd95f37375bd040f7d442a8267fdb99b61d51f5ff7fdaa8a1fff260a461013"
+        },
+        {
+          "file": "trip_weight.bin.gz",
+          "raw_bytes": 16456,
+          "gzip_bytes": 3580,
+          "sha256": "ab7f81f408fb3f5b63af6dc66dec07a67ac76bfd24035998f54a75fc5e1414c2"
+        },
+        {
+          "file": "trip_path_offsets.bin.gz",
+          "raw_bytes": 8232,
+          "gzip_bytes": 5197,
+          "sha256": "c0c38518e2faca9ef053f0a467b8b7386e3ba9f1cf968501525d065a1cc47776"
+        },
+        {
+          "file": "trip_path_edges.bin.gz",
+          "raw_bytes": 1461864,
+          "gzip_bytes": 455654,
+          "sha256": "d8449c5a217d5ebe6cac78a39b4bbb0b5f3081be684de5c86aef2c26d189fd6c"
+        },
+        {
+          "file": "way_names.json.gz",
+          "raw_bytes": 2959815,
+          "gzip_bytes": 594456,
+          "sha256": "db0c467afeb51f2439a44f928ba6148b8f389547601318441b63ee9d03841432"
+        },
+        {
+          "file": "trip_labels.json.gz",
+          "raw_bytes": 81647,
+          "gzip_bytes": 5648,
+          "sha256": "dafacac779580c6bcad7016b82a8e730c4fe7703cec7e600c12f81ac7a152aac"
+        },
+        {
+          "file": "presets.json.gz",
+          "raw_bytes": 109069,
+          "gzip_bytes": 12369,
+          "sha256": "2bf4e371e559bd51707cdc394c8177ca65c1f39f35ca09eb4b88d161e3defb15"
+        },
+        {
+          "file": "meta.json",
+          "raw_bytes": 8864,
+          "gzip_bytes": 8864
+        }
+      ],
+      "transfer_size_total": 10415031,
+      "graph_transfer_size_total": 9670840,
+      "cache": "Graph, oracle and stress fetches use no-store and unique query strings; server also sends no-store.",
+      "cold_graph_verified": true,
+      "transfer_note": "All resource entries retained; third-party zeros mean timing unavailable. Tile transfers included where exposed.",
+      "hashes": {
+        "meta.json": "a54d46a64cea57e2d69b2e8b1b6975e02129cf74d290c1a85c91fd2a7e324747",
+        "order_manifest.json.gz": "a831ba84ee2f840000847bd23b2f349c2939baef2ad7679de85a9e9af1ca72dd",
+        "excluded_trips.json.gz": "889545d108d0e6a6bc90ee089fe3f94575c3b5afcac525635536fa3129930623",
+        "csr_offsets.bin.gz": "3b146d5d5d9ab44854cb7ab057749f4b5a4b17fc04362de16bb7fd68493c3aeb",
+        "cch_order.bin.gz": "2305ae80e0ff38f034d7c8b346f5758762cf064e0495b81766c27d3651ec3693",
+        "edge_initially_active.bin.gz": "11746280173aca81a6419da74bc34620119671b395f83d1d361c9af7e94808c8",
+        "edge_twin.bin.gz": "10454e5376b7e7994bf819250125bcb5ce8d4beb0229d5e82f893042f4cf9888",
+        "way_oneway.bin.gz": "f37c2b92e68cc02d0c8a2d79a1e4fa0c2b9ed572262abec8f2994aa38d481e05",
+        "edge_target.bin.gz": "26a76e03951903ab0cfcb5764936cc1156ddc4543a09d4763085ba27db3877c3",
+        "edge_way.bin.gz": "050d46ef0064433c359e12f866a5b1f9b62ad4a67572714dfc56a47e8d296443",
+        "edge_ms.bin.gz": "8994ed513af56bb9d8b84cedbda8dd709b98b188232bf02621ee211257c6df54",
+        "way_osm_id.bin.gz": "e62acf98f8eadaf80866454bd7aa869aa91be9df5bb80d958cc1302323e3dc31",
+        "way_highway.bin.gz": "10b11e67cc53d89bc9f4a596a56e2d4ddb2fa0d9f41fe22367afcb091ddaedc1",
+        "trip_origin.bin.gz": "3e3741581189d27e22f635b3af25514e64a55905f94a269f2d26d4d3319fc2ea",
+        "trip_destination.bin.gz": "13352b1db280acff457d264d3fdd9be0cc79d3caa2f0d2b39a4f0dda1e4e837a",
+        "geometry_offsets.bin.gz": "4721504dee4ae767f6a8a8779291ec2d13bde6a7ebf3591adb1252acdd54b1bf",
+        "trip_ms.bin.gz": "4ffd95f37375bd040f7d442a8267fdb99b61d51f5ff7fdaa8a1fff260a461013",
+        "trip_path_offsets.bin.gz": "c0c38518e2faca9ef053f0a467b8b7386e3ba9f1cf968501525d065a1cc47776",
+        "trip_weight.bin.gz": "ab7f81f408fb3f5b63af6dc66dec07a67ac76bfd24035998f54a75fc5e1414c2",
+        "trip_labels.json.gz": "dafacac779580c6bcad7016b82a8e730c4fe7703cec7e600c12f81ac7a152aac",
+        "presets.json.gz": "2bf4e371e559bd51707cdc394c8177ca65c1f39f35ca09eb4b88d161e3defb15",
+        "trip_path_edges.bin.gz": "d8449c5a217d5ebe6cac78a39b4bbb0b5f3081be684de5c86aef2c26d189fd6c",
+        "way_names.json.gz": "db0c467afeb51f2439a44f928ba6148b8f389547601318441b63ee9d03841432",
+        "geometry_coords.bin.gz": "c2a18b5eaa48611a270955de635f6c000d71c0c584071c17e0d2de7724a4db2b"
+      },
+      "order_hash": "c06aa07d3a5b39722dfb2699413e6d8b100e3de350b65c363aefaf93034461e8",
+      "resource_count": 44,
+      "memory_after_load": {
+        "bytes": null,
+        "reason": "SecurityError: Failed to execute 'measureUserAgentSpecificMemory' on 'Performance': performance.measureUserAgentSpecificMemory is not available."
+      }
+    },
+    "protocol": "50-edit memory exercise precedes timing repeats. 5 repeats; send edit \u2192 full attribution, unpack \u226425, transfer, GeoJSON source loaded, next animation frame. Rebuild timed separately.",
+    "seed": 2027,
+    "cases": [
+      {
+        "id": "bay_bridge_live",
+        "median_ms": 66.5550000667572,
+        "latency_ms": [
+          66.00500011444092,
+          66.625,
+          66.79999995231628,
+          59.230000019073486,
+          66.5550000667572
+        ],
+        "reset_ms": [
+          7.68999981880188,
+          48.39999985694885,
+          24.605000019073486,
+          16.200000047683716,
+          40.894999980926514
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 10,
+          "candidate_trips": 188,
+          "affected_trips": 171,
+          "broken": 2,
+          "slowed": 169,
+          "added_ms": 171529790,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1206,
+              "changedArcs": 506,
+              "trianglesScanned": 45214
+            },
+            "single": {
+              "jobs": 10,
+              "dirtyArcs": 556,
+              "changedArcs": 77,
+              "trianglesScanned": 18763
+            },
+            "run": {
+              "jobs": 2,
+              "dirtyArcs": 296,
+              "changedArcs": 43,
+              "trianglesScanned": 9360
+            },
+            "unpackedTrips": 25
+          }
+        }
+      },
+      {
+        "id": "bay_bridge_preset",
+        "median_ms": 16.829999923706055,
+        "latency_ms": [
+          16.50499987602234,
+          16.829999923706055,
+          25.419999837875366,
+          17.31500005722046,
+          16.37999987602234
+        ],
+        "reset_ms": [
+          202.69500017166138,
+          24.755000114440918,
+          24.65000009536743,
+          15.25,
+          33.3050000667572
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 10,
+          "candidate_trips": 188,
+          "affected_trips": 171,
+          "broken": 2,
+          "slowed": 169,
+          "added_ms": 171529790,
+          "phases": null
+        }
+      },
+      {
+        "id": "university_ramp_live",
+        "median_ms": 8.634999990463257,
+        "latency_ms": [
+          8.244999885559082,
+          8.400000095367432,
+          8.634999990463257,
+          8.795000076293945,
+          9.65499997138977
+        ],
+        "reset_ms": [
+          380.83000016212463,
+          24.774999856948853,
+          24.78500008583069,
+          24.539999961853027,
+          23.740000009536743
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 6,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1247,
+              "changedArcs": 111,
+              "trianglesScanned": 88298
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "university_ramp_preset",
+        "median_ms": 8.380000114440918,
+        "latency_ms": [
+          8.724999904632568,
+          3.484999895095825,
+          8.47000002861023,
+          8.380000114440918,
+          7.375
+        ],
+        "reset_ms": [
+          405.0750000476837,
+          28.430000066757202,
+          25.90999984741211,
+          24.895000219345093,
+          25.144999980926514
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 6,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": null
+        }
+      },
+      {
+        "id": "stomp_01",
+        "median_ms": 25.144999980926514,
+        "latency_ms": [
+          30.94000005722046,
+          25.390000104904175,
+          24.84500002861023,
+          24.869999885559082,
+          25.144999980926514
+        ],
+        "reset_ms": [
+          392.64999985694885,
+          24.644999980926514,
+          24.774999856948853,
+          33.325000047683716,
+          24.87999987602234
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 83,
+          "affected_trips": 45,
+          "broken": 0,
+          "slowed": 45,
+          "added_ms": 6142680,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 557,
+              "changedArcs": 179,
+              "trianglesScanned": 18559
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 25
+          }
+        }
+      },
+      {
+        "id": "stomp_02",
+        "median_ms": 8.40499997138977,
+        "latency_ms": [
+          9.97000002861023,
+          8.210000038146973,
+          8.40499997138977,
+          8.230000019073486,
+          8.444999933242798
+        ],
+        "reset_ms": [
+          507.15499997138977,
+          33.735000133514404,
+          33.28499984741211,
+          33.16499996185303,
+          33.230000019073486
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 565,
+              "changedArcs": 33,
+              "trianglesScanned": 24706
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_03",
+        "median_ms": 16.58999991416931,
+        "latency_ms": [
+          10.650000095367432,
+          16.58999991416931,
+          17.480000019073486,
+          16.855000019073486,
+          9.700000047683716
+        ],
+        "reset_ms": [
+          498.4300000667572,
+          33.12000012397766,
+          32.55999994277954,
+          33.30999994277954,
+          32.0699999332428
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 10,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 4508,
+              "changedArcs": 545,
+              "trianglesScanned": 326711
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_04",
+        "median_ms": 8.205000162124634,
+        "latency_ms": [
+          7.384999990463257,
+          8.440000057220459,
+          8.315000057220459,
+          8.035000085830688,
+          8.205000162124634
+        ],
+        "reset_ms": [
+          501.2850000858307,
+          33.139999866485596,
+          33.27499985694885,
+          33.58999991416931,
+          33.375
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 246,
+              "changedArcs": 98,
+              "trianglesScanned": 1921
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_05",
+        "median_ms": 9.630000114440918,
+        "latency_ms": [
+          16.884999990463257,
+          17.424999952316284,
+          6.700000047683716,
+          9.630000114440918,
+          8.320000171661377
+        ],
+        "reset_ms": [
+          546.125,
+          41.4300000667572,
+          39.31500005722046,
+          32.18499994277954,
+          33.079999923706055
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 3,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 2391,
+              "changedArcs": 305,
+              "trianglesScanned": 130466
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_06",
+        "median_ms": 8.504999876022339,
+        "latency_ms": [
+          11.890000104904175,
+          8.504999876022339,
+          8.460000038146973,
+          8.540000200271606,
+          8.210000038146973
+        ],
+        "reset_ms": [
+          546.875,
+          33.22000002861023,
+          33.075000047683716,
+          33.19999980926514,
+          33.27999997138977
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 4,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1326,
+              "changedArcs": 211,
+              "trianglesScanned": 57324
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_07",
+        "median_ms": 8.210000038146973,
+        "latency_ms": [
+          8.210000038146973,
+          8.244999885559082,
+          8.690000057220459,
+          7.819999933242798,
+          8.199999809265137
+        ],
+        "reset_ms": [
+          492.3199999332428,
+          33.38499999046326,
+          33.079999923706055,
+          33.25,
+          33.6800000667572
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 917,
+              "changedArcs": 80,
+              "trianglesScanned": 24247
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_08",
+        "median_ms": 16.664999961853027,
+        "latency_ms": [
+          13.265000104904175,
+          9.65499997138977,
+          16.674999952316284,
+          16.889999866485596,
+          16.664999961853027
+        ],
+        "reset_ms": [
+          495.77499985694885,
+          32.03999996185303,
+          33.00500011444092,
+          33.235000133514404,
+          33.05000019073486
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 15,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 5366,
+              "changedArcs": 940,
+              "trianglesScanned": 322850
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_09",
+        "median_ms": 8.129999876022339,
+        "latency_ms": [
+          7.0299999713897705,
+          8.360000133514404,
+          8.240000009536743,
+          7.289999961853027,
+          8.129999876022339
+        ],
+        "reset_ms": [
+          493.39999985694885,
+          33.170000076293945,
+          33.18499994277954,
+          33.640000104904175,
+          34.019999980926514
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 53,
+              "changedArcs": 12,
+              "trianglesScanned": 653
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_10",
+        "median_ms": 7.3399999141693115,
+        "latency_ms": [
+          6.625,
+          7.3399999141693115,
+          8.5,
+          7.235000133514404,
+          8.350000143051147
+        ],
+        "reset_ms": [
+          519.0600001811981,
+          33.485000133514404,
+          34,
+          34.389999866485596,
+          33.30499982833862
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 2,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1142,
+              "changedArcs": 144,
+              "trianglesScanned": 36239
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_11",
+        "median_ms": 13.52999997138977,
+        "latency_ms": [
+          13.52999997138977,
+          12.105000019073486,
+          16.71500015258789,
+          11.329999923706055,
+          18.16000008583069
+        ],
+        "reset_ms": [
+          547.5099999904633,
+          36.18499994277954,
+          36.15999984741211,
+          30.360000133514404,
+          43.5
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 118,
+              "changedArcs": 40,
+              "trianglesScanned": 1214
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_12",
+        "median_ms": 8.40499997138977,
+        "latency_ms": [
+          8.025000095367432,
+          9.004999876022339,
+          8.170000076293945,
+          8.825000047683716,
+          8.40499997138977
+        ],
+        "reset_ms": [
+          543.625,
+          32.730000019073486,
+          33.359999895095825,
+          33.4449999332428,
+          32.55999994277954
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 2312,
+              "changedArcs": 245,
+              "trianglesScanned": 102500
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_13",
+        "median_ms": 8.559999942779541,
+        "latency_ms": [
+          10.839999914169312,
+          8.559999942779541,
+          8.570000171661377,
+          8.200000047683716,
+          8.410000085830688
+        ],
+        "reset_ms": [
+          498.5150001049042,
+          32.84500002861023,
+          32.97000002861023,
+          33.31500005722046,
+          33.264999866485596
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1263,
+              "changedArcs": 98,
+              "trianglesScanned": 40789
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_14",
+        "median_ms": 8.400000095367432,
+        "latency_ms": [
+          8.554999828338623,
+          8.934999942779541,
+          8.384999990463257,
+          7.7149999141693115,
+          8.400000095367432
+        ],
+        "reset_ms": [
+          499.8199999332428,
+          32.65000009536743,
+          33.084999799728394,
+          33.25,
+          33.894999980926514
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 470,
+              "changedArcs": 29,
+              "trianglesScanned": 11192
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_15",
+        "median_ms": 8.445000171661377,
+        "latency_ms": [
+          11.710000038146973,
+          8.440000057220459,
+          9.355000019073486,
+          8.445000171661377,
+          8.400000095367432
+        ],
+        "reset_ms": [
+          496.75,
+          33.019999980926514,
+          32.30999994277954,
+          33.18499994277954,
+          33.174999952316284
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1055,
+              "changedArcs": 59,
+              "trianglesScanned": 45308
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_16",
+        "median_ms": 11.245000123977661,
+        "latency_ms": [
+          10.579999923706055,
+          17.049999952316284,
+          11.245000123977661,
+          11.069999933242798,
+          13.660000085830688
+        ],
+        "reset_ms": [
+          497.7149999141693,
+          36.4300000667572,
+          30.59500002861023,
+          30.66000008583069,
+          30.490000009536743
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 18,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 591,
+              "changedArcs": 111,
+              "trianglesScanned": 15149
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_17",
+        "median_ms": 8.954999923706055,
+        "latency_ms": [
+          14.52999997138977,
+          8.555000066757202,
+          8.734999895095825,
+          8.954999923706055,
+          9.495000123977661
+        ],
+        "reset_ms": [
+          513.1699998378754,
+          33.25,
+          32.99500012397766,
+          32.549999952316284,
+          32.11500000953674
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 59,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1841,
+              "changedArcs": 237,
+              "trianglesScanned": 157235
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_18",
+        "median_ms": 8.71500015258789,
+        "latency_ms": [
+          14.184999942779541,
+          8.71500015258789,
+          8.375,
+          8.40499997138977,
+          9.335000038146973
+        ],
+        "reset_ms": [
+          502.7449998855591,
+          40.72000002861023,
+          33.450000047683716,
+          33.125,
+          32.239999771118164
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 2,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 564,
+              "changedArcs": 73,
+              "trianglesScanned": 14511
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "stomp_19",
+        "median_ms": 8.56000018119812,
+        "latency_ms": [
+          7.319999933242798,
+          8.464999914169312,
+          8.694999933242798,
+          8.56000018119812,
+          8.565000057220459
+        ],
+        "reset_ms": [
+          526.3849999904633,
+          33.144999980926514,
+          33.00999999046326,
+          32.959999799728394,
+          33.15499997138977
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 3,
+          "affected_trips": 1,
+          "broken": 0,
+          "slowed": 1,
+          "added_ms": 223311,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1010,
+              "changedArcs": 177,
+              "trianglesScanned": 41998
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 1
+          }
+        }
+      },
+      {
+        "id": "stomp_20",
+        "median_ms": 8.694999933242798,
+        "latency_ms": [
+          11.390000104904175,
+          8.694999933242798,
+          8.389999866485596,
+          7.3450000286102295,
+          9.450000047683716
+        ],
+        "reset_ms": [
+          511.86500000953674,
+          33.19500017166138,
+          33.02000021934509,
+          33.269999980926514,
+          33.1800000667572
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 1,
+          "candidate_trips": 1,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 1958,
+              "changedArcs": 155,
+              "trianglesScanned": 98449
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "sf_financial_150",
+        "median_ms": 16.704999923706055,
+        "latency_ms": [
+          14.52999997138977,
+          11.515000104904175,
+          16.979999780654907,
+          16.84500002861023,
+          16.704999923706055
+        ],
+        "reset_ms": [
+          534.3049998283386,
+          38.43499994277954,
+          33.390000104904175,
+          32.96499991416931,
+          33.170000076293945
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 22,
+          "candidate_trips": 13,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 2827,
+              "changedArcs": 596,
+              "trianglesScanned": 152183
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "sf_financial_300",
+        "median_ms": 16.664999961853027,
+        "latency_ms": [
+          16.664999961853027,
+          16.865000009536743,
+          16.649999856948853,
+          16.640000104904175,
+          16.81500005722046
+        ],
+        "reset_ms": [
+          534.1850001811981,
+          33.24000000953674,
+          33.09000015258789,
+          33.25999999046326,
+          33.13499999046326
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 92,
+          "candidate_trips": 16,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 4380,
+              "changedArcs": 1573,
+              "trianglesScanned": 243139
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "sf_financial_500",
+        "median_ms": 25.149999856948853,
+        "latency_ms": [
+          27.774999856948853,
+          25.08999991416931,
+          25.02999997138977,
+          25.294999837875366,
+          25.149999856948853
+        ],
+        "reset_ms": [
+          522.5950000286102,
+          32.920000076293945,
+          33.1800000667572,
+          33.12000012397766,
+          33.1800000667572
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 230,
+          "candidate_trips": 40,
+          "affected_trips": 2,
+          "broken": 2,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 6944,
+              "changedArcs": 2867,
+              "trianglesScanned": 361519
+            },
+            "single": {
+              "jobs": 24,
+              "dirtyArcs": 2449,
+              "changedArcs": 140,
+              "trianglesScanned": 197945
+            },
+            "run": {
+              "jobs": 2,
+              "dirtyArcs": 2543,
+              "changedArcs": 160,
+              "trianglesScanned": 199545
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "sf_union_square_150",
+        "median_ms": 33.014999866485596,
+        "latency_ms": [
+          33.25500011444092,
+          25.835000038146973,
+          33.014999866485596,
+          33.704999923706055,
+          25.25
+        ],
+        "reset_ms": [
+          508.27999997138977,
+          32.125,
+          33.40499997138977,
+          33.015000104904175,
+          33.269999980926514
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 29,
+          "candidate_trips": 58,
+          "affected_trips": 58,
+          "broken": 58,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 5149,
+              "changedArcs": 672,
+              "trianglesScanned": 282778
+            },
+            "single": {
+              "jobs": 18,
+              "dirtyArcs": 142,
+              "changedArcs": 26,
+              "trianglesScanned": 6126
+            },
+            "run": {
+              "jobs": 4,
+              "dirtyArcs": 165,
+              "changedArcs": 40,
+              "trianglesScanned": 6776
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "sf_union_square_300",
+        "median_ms": 41.81500005722046,
+        "latency_ms": [
+          34.44999980926514,
+          41.875,
+          41.81500005722046,
+          41.86999988555908,
+          41.66000008583069
+        ],
+        "reset_ms": [
+          536.8200001716614,
+          36.91000008583069,
+          33.00999999046326,
+          32.93499994277954,
+          33.234999895095825
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 90,
+          "candidate_trips": 59,
+          "affected_trips": 58,
+          "broken": 58,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 6678,
+              "changedArcs": 1631,
+              "trianglesScanned": 313671
+            },
+            "single": {
+              "jobs": 26,
+              "dirtyArcs": 3690,
+              "changedArcs": 239,
+              "trianglesScanned": 213437
+            },
+            "run": {
+              "jobs": 5,
+              "dirtyArcs": 7922,
+              "changedArcs": 430,
+              "trianglesScanned": 425113
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "sf_union_square_500",
+        "median_ms": 50.044999837875366,
+        "latency_ms": [
+          60.730000019073486,
+          50.1800000667572,
+          50.044999837875366,
+          45.93499994277954,
+          49.49500012397766
+        ],
+        "reset_ms": [
+          618.7999999523163,
+          36.40499997138977,
+          41.43500018119812,
+          41.5,
+          37.125
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 187,
+          "candidate_trips": 75,
+          "affected_trips": 59,
+          "broken": 59,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 9833,
+              "changedArcs": 3552,
+              "trianglesScanned": 466676
+            },
+            "single": {
+              "jobs": 54,
+              "dirtyArcs": 4177,
+              "changedArcs": 291,
+              "trianglesScanned": 319658
+            },
+            "run": {
+              "jobs": 6,
+              "dirtyArcs": 8723,
+              "changedArcs": 544,
+              "trianglesScanned": 622968
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "bay_bridge_toll_plaza_150",
+        "median_ms": 41.96000003814697,
+        "latency_ms": [
+          45.47500014305115,
+          41.96000003814697,
+          50.15500020980835,
+          41.61999988555908,
+          41.769999980926514
+        ],
+        "reset_ms": [
+          649.579999923706,
+          41.420000076293945,
+          41.17999982833862,
+          41.21000003814697,
+          41.53499984741211
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 21,
+          "candidate_trips": 93,
+          "affected_trips": 84,
+          "broken": 0,
+          "slowed": 84,
+          "added_ms": 86908927,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 297,
+              "changedArcs": 255,
+              "trianglesScanned": 10987
+            },
+            "single": {
+              "jobs": 8,
+              "dirtyArcs": 37,
+              "changedArcs": 13,
+              "trianglesScanned": 186
+            },
+            "run": {
+              "jobs": 2,
+              "dirtyArcs": 455,
+              "changedArcs": 396,
+              "trianglesScanned": 21609
+            },
+            "unpackedTrips": 25
+          }
+        }
+      },
+      {
+        "id": "bay_bridge_toll_plaza_300",
+        "median_ms": 66.70499992370605,
+        "latency_ms": [
+          84.86999988555908,
+          64.96499991416931,
+          63.86500000953674,
+          67.26999998092651,
+          66.70499992370605
+        ],
+        "reset_ms": [
+          775.6850001811981,
+          51.78999996185303,
+          49.234999895095825,
+          52.28999996185303,
+          49.790000200271606
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 42,
+          "candidate_trips": 187,
+          "affected_trips": 170,
+          "broken": 0,
+          "slowed": 170,
+          "added_ms": 173936356,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 716,
+              "changedArcs": 653,
+              "trianglesScanned": 27450
+            },
+            "single": {
+              "jobs": 19,
+              "dirtyArcs": 231,
+              "changedArcs": 201,
+              "trianglesScanned": 8099
+            },
+            "run": {
+              "jobs": 5,
+              "dirtyArcs": 1411,
+              "changedArcs": 1294,
+              "trianglesScanned": 65684
+            },
+            "unpackedTrips": 25
+          }
+        }
+      },
+      {
+        "id": "bay_bridge_toll_plaza_500",
+        "median_ms": 82.6949999332428,
+        "latency_ms": [
+          89.5550000667572,
+          83.2649998664856,
+          82.5550000667572,
+          82.35000014305115,
+          82.6949999332428
+        ],
+        "reset_ms": [
+          996.0099999904633,
+          65.8600001335144,
+          59.170000076293945,
+          58.890000104904175,
+          57.96499991416931
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 56,
+          "candidate_trips": 188,
+          "affected_trips": 170,
+          "broken": 0,
+          "slowed": 170,
+          "added_ms": 173936356,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 6557,
+              "changedArcs": 1002,
+              "trianglesScanned": 358897
+            },
+            "single": {
+              "jobs": 29,
+              "dirtyArcs": 93,
+              "changedArcs": 36,
+              "trianglesScanned": 155
+            },
+            "run": {
+              "jobs": 5,
+              "dirtyArcs": 1444,
+              "changedArcs": 1309,
+              "trianglesScanned": 65723
+            },
+            "unpackedTrips": 25
+          }
+        }
+      },
+      {
+        "id": "outer_sunset_150",
+        "median_ms": 16.105000019073486,
+        "latency_ms": [
+          14.460000038146973,
+          9.974999904632568,
+          16.71500015258789,
+          16.105000019073486,
+          16.890000104904175
+        ],
+        "reset_ms": [
+          1249.8199999332428,
+          89.77500009536743,
+          74.84499979019165,
+          75.16000008583069,
+          75.44999980926514
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 7,
+          "candidate_trips": 0,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 4118,
+              "changedArcs": 1273,
+              "trianglesScanned": 105180
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "outer_sunset_300",
+        "median_ms": 16.610000133514404,
+        "latency_ms": [
+          23.835000038146973,
+          16.325000047683716,
+          16.610000133514404,
+          16.819999933242798,
+          16.56500005722046
+        ],
+        "reset_ms": [
+          1297.539999961853,
+          75.04999995231628,
+          75.00499987602234,
+          74.84500002861023,
+          75.04999995231628
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 24,
+          "candidate_trips": 4,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 6654,
+              "changedArcs": 3011,
+              "trianglesScanned": 181395
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      },
+      {
+        "id": "outer_sunset_500",
+        "median_ms": 16.789999961853027,
+        "latency_ms": [
+          18.46499991416931,
+          16.46500015258789,
+          16.524999856948853,
+          16.865000009536743,
+          16.789999961853027
+        ],
+        "reset_ms": [
+          1203.6600000858307,
+          75.04999995231628,
+          75.11500000953674,
+          74.94000005722046,
+          74.79500007629395
+        ],
+        "reference_match": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "counts": {
+          "ways_hit": 44,
+          "candidate_trips": 4,
+          "affected_trips": 0,
+          "broken": 0,
+          "slowed": 0,
+          "added_ms": 0,
+          "phases": {
+            "initial": {
+              "dirtyArcs": 7402,
+              "changedArcs": 3697,
+              "trianglesScanned": 186276
+            },
+            "single": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "run": {
+              "jobs": 0,
+              "dirtyArcs": 0,
+              "changedArcs": 0,
+              "trianglesScanned": 0
+            },
+            "unpackedTrips": 0
+          }
+        }
+      }
+    ],
+    "memory_after_50_edits": {
+      "bytes": null,
+      "reason": "SecurityError: Failed to execute 'measureUserAgentSpecificMemory' on 'Performance': performance.measureUserAgentSpecificMemory is not available."
+    }
+  },
+  "reset_note": "Browser reset_ms (reset message + empty GeoJSON draw) rose from ~48 to ~1,298 ms over the run; Node engine reset max is 0.29 ms, so the time is on the draw side. Not in the gate; unexplained.",
+  "node_engine": {
+    "environment": {
+      "node": "v22.14.0",
+      "cpu": "Apple M3 Max",
+      "ram_bytes": 38654705664,
+      "platform": "darwin",
+      "arch": "arm64",
+      "release": "24.6.0"
+    },
+    "protocol": "Command: node --expose-gc site/playground/spike/cch_bench.mjs. If available, gc() twice before each memory sample. Fresh process, no oracle imports/results. RSS after load+customize, then exactly 50 repeated toll-plaza edits. Five timing repeats per case follow the memory exercise.",
+    "triangle_mode": "on-demand",
+    "load_customize_ms": 521.2295409999999,
+    "peak_load_rss_bytes": 217104384,
+    "after_load": {
+      "rss": 207306752,
+      "heapUsed": 4789480,
+      "external": 103246333,
+      "arrayBuffers": 101366143,
+      "live_bytes": 106155623
+    },
+    "after_50_edits": {
+      "rss": 261603328,
+      "heapUsed": 5444112,
+      "external": 103246373,
+      "arrayBuffers": 101366143,
+      "live_bytes": 106810255
+    },
+    "rss_growth_bytes": 54296576,
+    "memory_gate_pass": true
+  }
+}

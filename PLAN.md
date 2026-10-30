@@ -292,7 +292,19 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - page ready ≤ 5,000 ms;
       - worker memory ≤ 300 MB, measured with `performance.measureUserAgentSpecificMemory` where available and in Node otherwise, including growth after 50 repeated edits.
     - The P0b `feasibility.json` is preserved as `feasibility_p0b.json`.
-  - *Status:* todo
+  - *Status:* **done 2026-10-30, gate passed** (Claude ran it; `results/playground/feasibility.json`).
+    - Setup: Claude desktop app's built-in browser pane, visible; Chromium 152; MacBook Pro M3 Max.
+    - Results:
+      - 36 cases × 5 repeats, every repeat equal to the integer-ms reference;
+      - slowest median 82.69 ms (toll plaza 500 m);
+      - largest file 2,850,841 B;
+      - transfer 9,727,543 B: graph data plus spike code, cold load verified;
+      - page ready 644 ms;
+      - worker memory 261,603,328 B (Node RSS fallback).
+    - Caveats:
+      - `measureUserAgentSpecificMemory` throws SecurityError in this embedded browser even with cross-origin isolation, so memory comes from the Node fallback.
+      - MapLibre's transfer size isn't measured (cross-origin, reported as 0); the transfer total leaves it out.
+      - Browser reset time rose from ~48 to ~1,298 ms over the run; the Node engine reset maxes at 0.29 ms, so the cost is on the draw side. Reset is outside the gate.
 - **P1 — Exporter + oracle + tests.** `route-impact export-playground`; Python oracle (Stomp/Flip/Meteor + full recompute on the exported graph, fixed endpoints, uncapped "mattered" set); pytest on fixtures; `node --test` JS vs oracle for Stomp, Flip, delete-parallel-winner, flip-into-existing-edge, Meteor with one road mattering, Meteor needing a contiguous run, "several roads together", 120 s boundary. *Status:* todo
 - **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. *Status:* todo
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)

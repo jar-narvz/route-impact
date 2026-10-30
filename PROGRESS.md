@@ -9,14 +9,12 @@
     - peak RSS during load 217,104,384 B;
     - slowest case: toll plaza 500 m, 75.15 ms median.
   - Tests 32/32; `check.mjs` all 34 cases identical, presets == Python; drift unchanged; lint clean.
+- **P0c gate passed (2026-10-30, Claude):** browser acceptance run in the built-in pane. All 36 cases × 5 repeats match the reference; slowest median 82.69 ms; transfer 9,727,543 B; page ready 644 ms; memory 261,603,328 B via Node (the browser memory API is unavailable in the pane). Result file: `results/playground/feasibility.json`.
 - **Next session, start here:**
-  1. Jared commits the memory fix (commands in the 2026-10-30 log entry).
-  2. **Browser acceptance run** (PLAN P0c Verify):
-     - serve with `python scripts/serve_spike.py 8781`; port 8766 is taken by posting-triage;
-     - Jared brings the browser pane on screen;
-     - 5 repeats, reference match on every repeat, cold load, worker memory via `measureUserAgentSpecificMemory`;
-     - write `results/playground/feasibility.json`.
-  3. If the gate passes, mark P0c done → P1 (Nov 6–9), P2 (Nov 10–16), launch ~Nov 17. P0c cutoff is Nov 5.
+  1. Jared commits the gate results (commands in the 2026-10-30 browser-run log entry). Memory fix committed as `b8bf17e`.
+  2. Optional: rerun the acceptance page in real Chrome to get a browser memory number (`measureUserAgentSpecificMemory`) and MapLibre's transfer size.
+  3. P1 — Exporter + oracle + tests (Nov 6–9; can start early). Then P2 (Nov 10–16), launch ~Nov 17.
+  - **Workflow change (Jared, 2026-10-30):** Codex usage is running low, so don't use Codex. Same workflow, different agents: a Claude Code subagent implements and writes tests; a separate, adversarial Claude subagent reviews the diff (and critiques plans) where Codex used to.
   4. Leftovers:
      - Codex notes `site/playground/spike/p0b-verification.txt` and `p0c-verification.txt`, `p0c-memory-verification.txt` are untracked; don't commit them.
      - Old spike files still sit in `data/playground-spike/` (harmless).
@@ -75,6 +73,29 @@ Template — copy above the newest entry:
 - **Gotchas:**
 -->
 
+### 2026-10-30 — P0c Verify: browser acceptance run
+- **Agent:** Claude
+- **Did:**
+  - Served the spike with `scripts/serve_spike.py 8781`; I changed `.claude/launch.json` so the server sends the cross-origin isolation headers.
+  - Cold-reloaded with the pane visible, then ran the full stress set: 50 toll-plaza edits first, then 36 cases × 5 repeats.
+  - Saved `window.__summary` through a one-shot local POST receiver in the scratchpad, then composed `feasibility.json` with a gate evaluation.
+- **Changed:** `results/playground/feasibility.json` (new), `PLAN.md` (P0c-3 status), `PROGRESS.md`.
+- **Verify:** page status `Complete. All repeats match the integer reference.`; `gate_pass: true`.
+  - Every case ≤ 2,000 ms: max median 82.69 ms (`bay_bridge_toll_plaza_500`).
+  - Each file ≤ 5 MB: max gzip 2,850,841 B.
+  - Transfer: 9,727,543 B = graph data 9,670,840 + spike code 56,703. Excluded: tiles, and the harness-only oracle files at 687,488 B. The page total is 10,415,031 B.
+  - Cold load verified: true.
+  - Page ready: 644.03 ms.
+  - Memory: 261,603,328 B (Node fallback).
+- **Gotchas:**
+  - `measureUserAgentSpecificMemory` throws SecurityError in the Claude pane even when `crossOriginIsolated` is true.
+  - MapLibre is cross-origin, so its transferSize reads 0 and it isn't counted.
+  - Browser reset_ms rose from 48 → 1,298 ms over the run; the cause is unexplained and it's outside the gate.
+  - The pane viewport was 248 px wide.
+- **Commit (Jared):**
+  - `git add results/playground/feasibility.json PLAN.md PROGRESS.md`
+  - `git commit -m "Record P0c browser acceptance run: gate passed"`
+
 ### 2026-10-30 — P0c-3: worker memory fix
 - **Agent:** Claude (diagnosis, brief, review, reruns); Codex (code + tests)
 - **Did:**
@@ -105,7 +126,7 @@ Template — copy above the newest entry:
   - Not done: a byte-level comparison of `first`/`upper` between the old and new `buildCCH` on the real data. Covered indirectly: all 34 stress cases are identical against the independent reference, and the fixture tests compare on-demand against precomputed triangles.
 - **Gotchas:** browser worker memory (`measureUserAgentSpecificMemory`) is still unmeasured; that happens in the acceptance run.
 - **Commit (Jared):**
-  - `git add site/playground/spike/cch.js site/playground/spike/engine.js site/playground/spike/procedure.js site/playground/spike/cch_bench.mjs site/playground/spike/test/cch.test.mjs site/playground/spike/test/procedure.test.mjs PROGRESS.md`
+  - `git add site/playground/spike/cch.js site/playground/spike/engine.js site/playground/spike/procedure.js site/playground/spike/cch_bench.mjs site/playground/spike/test/cch.test.mjs site/playground/spike/test/procedure.test.mjs`
   - `git commit -m "Cut CCH worker memory: on-demand triangles, log-based reset (P0c-3)"`
 
 ### 2026-10-29 — Step 12b: keep small fractions in impact.json
