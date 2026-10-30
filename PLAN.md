@@ -309,8 +309,8 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
   - **Owner (from 2026-10-30, Codex budget low):** a Claude Code subagent implements and writes tests; a separate adversarial Claude subagent reviews; Claude reruns Verify and decides done.
   - **Approach:** promote the browser-verified spike (`b8bf17e`) into tested production code without redesigning it.
     - The spike's on-disk format (`meta.json` + gzipped little-endian arrays, `Uint32` integer-ms edges) becomes `format_version` 1.
-    - `scripts/playground_spike.py` and `site/playground/spike/` stay as the measured reference until P2; only the spike's import paths change in P1c.
-    - **Cap deferred to P2:** P1 is uncapped, so every row has `unchecked_candidates == []` and `tested_candidates == candidates`, asserted. The §5.8 budget and its "attribution incomplete" fixture come in P2.
+    - `scripts/playground_spike.py` and `site/playground/spike/` stay as the measured reference until P2; only the spike's import paths change in P1c. P2 deletes them (decision 16).
+    - **Cap deferred to P2:** P1 is uncapped, so every row has `unchecked_candidates == []` and `tested_candidates == candidates`, asserted. The §5.8 budget and its "attribution incomplete" fixture were planned for P2; decision 16 drops them.
     - **Real-data checks are local** (Claude runs them on the Mac, results recorded in PROGRESS), never pytest or CI.
   - **P1a — Production exporter.**
     - **Files:**
@@ -322,7 +322,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - Port `export()` and its helpers from `scripts/playground_spike.py`: box trip filter, box cut, LSCC on the unedited graph, snapping, every parallel edge, inactive reverse twins, `round_ms`, simplified and quantized geometry, integer-ms baselines and paths, exclusions with reasons, `format_version: 1`.
       - The projection and geometry constants are copied into `meta.json` from the toml.
       - Drop the Float64 backups and `--presets-only`.
-      - CLI: `route-impact export-playground --snapshot YYMMDD [--db PATH] [--trips CSV] [--out DIR] [--order routingkit|identity]`. The default `--out` is `data/playground/` (gitignored), and committing data for Pages is a P2 decision.
+      - CLI: `route-impact export-playground --snapshot YYMMDD [--db PATH] [--trips CSV] [--out DIR] [--order routingkit|identity]`. The default `--out` is `data/playground/` (gitignored), and committing data for Pages is a P2 decision (decision 16: commit the 261027 export under `site/playground/data/`).
       - `--order routingkit` calls `scripts/cch_order/order.py`, which needs the binary in `data/`. `identity` is for tests only and is recorded in `meta.json` (any permutation is correct, §5.10).
       - `cch_order_input.bin` is written and listed in `meta.json` as not shipped.
       - Build the baselines' CSR with numpy (lexsort, then min per (u, v)); never let coo→csr sum duplicates.
@@ -418,7 +418,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `node --expose-gc site/playground/spike/cch_bench.mjs` → memory gate still passes.
       - `make test` and `make lint` green; CI green on push (Jared pushes).
   - *Status:* **P1a done 2026-10-30** (Claude subagent code, adversarial Claude review, Claude reran Verify: 197 passed, real export 21/21 hashes == spike) · **P1b done 2026-10-30** (Claude subagent code, adversarial Claude review with a fuzz of ~600 graphs and 0 mismatches; Claude reran: 264 passed, real 34/34 == reference-ms.json, presets equal) · **P1c done 2026-10-30** (Codex code, Claude review + loader fix, Claude reran: JS 47/47 incl. 12 oracle fixtures, check.mjs 34/34 identical, memory gate pass; CI on push pending)
-- **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. *Status:* todo
+- **P2 — Game MVP.** `site/playground/`: Apple Maps-style layout (MapLibre, muted light/dark styles, three-height bottom sheet / desktop card, floating Rebuild/recenter/theme buttons); Stomp, Flip, Meteor; worker reroute with request ids; damage numbers; before/after routes; roads that mattered; Try these presets; honest "nothing happened" messages; loading/error states; keyboard + reduced motion. Verify: browser == oracle on both presets, 10 random Stomps, 3 Meteors; smoke test on the deployed Pages URL at phone and desktop sizes. Decision 16: committed 261027 data, spike deleted, no Meteor budget. *Status:* todo — needs Files / Do / Verify detail.
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
 - **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
 
@@ -465,6 +465,11 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Fallback:** if P0c still misses, progressive results, recorded as a gate change.
 
 15. **CCH metric arithmetic: `Float64` holding integer ms, `Infinity` for no arc** (2026-10-29, Claude). The P0c-2 checkpoint stopped at the Uint32 design's own bound: the finite weights sum to 4,813,448,868 ms > 2³² − 1. That bound was overly conservative but was my spec, and Codex correctly refused to bend it. *Why Float64:* exact for integers below 2⁵³ (≈ 1.9 million× the Bay total), so no sentinel or guarded add; ~7.5 MB more memory. Checkpoint data so far: 935,530 CCH arcs (1.7× the 551,760 input arcs), 6,230,212 triangles, build 486.8 ms, Meteor hit counts identical to P0b.
+
+16. **P2's three open questions** (2026-10-30, Jared; Claude's recommendations accepted).
+    - **Pages data: commit a fixed export.** `route-impact export-playground --snapshot 261027` output goes in `site/playground/data/`, committed (~9.7 MB; each file ≤ 5,000,000 B). *Why:* building it in a workflow needs the 655 MB pbf and RoutingKit's C++ order tool in CI, and RoutingKit is offline-only. The game uses one frozen snapshot, so re-exports are rare and deliberate (~10 MB of history each).
+    - **Spike files: delete in P2.** Remove `site/playground/spike/`, `scripts/playground_spike.py` and `scripts/serve_spike.py`, after moving the memory gate (`cch_bench.mjs`) into `site/playground/core/test/`. *Why:* everything in `site/` is published on Pages, so the prototype page would go live; `oracle.test.mjs` now does `check.mjs`'s job in CI; git history and `results/playground/feasibility.json` keep the measured reference.
+    - **Meteor attribution budget: dropped.** No cap, no "attribution incomplete" state, no extra fixture. The always-empty `unchecked_candidates` field stays in the format so a cap can return without a format change. *Why:* with CCH the worst Meteor (toll plaza, 500 m) runs full attribution in a 75.15 ms median (Node, P0c-3) against the 2 s gate, and the browser acceptance run passed. Revisit only if P2's phone smoke test is slow.
 
 ## Review log
 ### 2026-10-30 — Adversarial Claude critique of the P1 plan (Claude subagent, read-only, 10 points; replaces the Codex critique while Codex budget is low)
