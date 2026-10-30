@@ -3,7 +3,7 @@
 ## Current state
 - **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). **P2a done 2026-10-30** (log: "P2a follow-up: packed names"); uncommitted until Jared commits. **Next: P2b** (page shell).
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a committed (`186be1e`). **P2b done 2026-10-30**, uncommitted. **Next: P2c** (weapons and results).
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Not yet exercised by a scheduled run.
   4. **Geofabrik stalled:** its NorCal state.txt stops at 2026-10-28T21:21Z and `norcal-261029` is still unpublished (checked 2026-10-30 ~19:30 UTC). If a dated snapshot is never published, every later daily run also fails, because OLD is always NEW−1. Design question for Jared: fall back to the newest published older snapshot?
@@ -56,6 +56,33 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-10-30 — P2b: page shell (map, sheet, buttons, themes, load and error states)
+- **Agent:** Codex (`codex exec --sandbox workspace-write`; no network, so it wrote the page blind); Claude reviewed, fixed four browser-found problems, and ran Verify in the browser pane (local `python3 -m http.server 8781` from the repo root; `.claude/launch.json` config `playground`).
+- **Did:** New `site/playground/{index.html,app.js,style.css}`:
+  - MapLibre 4.7.1 with OpenFreeMap `positron` / `dark`, the Bay box outline, and all 2,057 baseline trips as one faint line layer from the worker's `load` reply;
+  - a three-height sheet (grabber plus Peek / Half / Full buttons) that becomes a left card at ≥ 900 px;
+  - round Rebuild / recenter / theme buttons;
+  - theme tokens on `:root` and `[data-theme="dark"]`;
+  - loading, no-WebGL (`?nowebgl` hook), no-Worker, worker/fetch error with Retry, and basemap-failure states;
+  - the box caveat, and the snapshot footer read from `meta.json`.
+  - App state is one object, and a single idempotent `addOverlays(map)` re-adds every app source and layer, including empty `hit` / `before` / `after` placeholders for P2c.
+- **Changed:** `site/playground/{index.html,app.js,style.css}` (new); `.claude/launch.json` (local, untracked: the spike server config was replaced by `playground`).
+- **Verify (Claude, browser pane):**
+  - **Phone 375×812, light:** the map, box and trips render; the sheet's Peek, Half and Full all work. The attribution sits just above the sheet at every height (JS: attribution bottom 72 = sheet top 72 at full). Collapsed content has 0 focusable elements (`inert`).
+  - **Dark:** after the theme toggle, the box and trips are re-added and the attribution matches the theme.
+  - **Desktop 1280×800:** a floating card at the left; the box is fitted clear of it.
+  - **`?nowebgl`:** a plain background with "WebGL is unavailable…", no map and no Retry.
+  - **Data missing** (`site/playground/data` renamed; tested on `127.0.0.1` to bypass `localhost`'s HTTP cache): "The Bay road network could not load: meta.json: HTTP 404" with Retry. Restoring the data and pressing Retry gives a ready page with no console errors; `ship_playground_data.py --check` OK afterwards.
+  - Console: no errors. The only messages are 3 warnings from OpenFreeMap's positron style (`Image "circle-11" could not be loaded`), from the third-party style, not page code.
+  - `node --check site/playground/app.js` OK; `make test` → `264 passed in 39.14s`, JS 78/78; `make lint` clean.
+  - Screenshots (gitignored, local): `data/playground-bench/p2b-screens/{phone-light-peek.jpg,phone-dark-peek.jpg,phone-dark-half.jpg,desktop-light.png}`.
+- **Review (Claude; browser findings, all fixed):**
+  1. **Theme switch dropped every overlay.** `map.setStyle(url)` diffs styles by default; when the diff succeeds, MapLibre removes the app's layers and doesn't fire `style.load`, so `addOverlays` never ran. Now `setStyle(url, {diff: false})`.
+  2. **Dark trips hidden under basemap roads.** Layers went below the style's *first* symbol layer, but the dark style has a symbol layer before its roads. Now they go below the first symbol layer after the last `line` / `fill` layer.
+  3. **Attribution half-styled in dark** (the link kept a light background). It now uses `--sheet-bg` / `--muted`, and links inherit.
+  4. **Retry cut off below peek height on errors.** `fail()` raises the sheet to half, and the worker's `Error: ` prefix is trimmed from the message.
+  - Noted, not changed: at full height on a phone the sheet covers the lower round buttons (Apple Maps does the same). First paint can take several seconds while OpenFreeMap tiles arrive; the sheet shows loading in the meantime.
 
 ### 2026-10-30 — P2a follow-up: packed names → memory gate passes (**P2a done**)
 - **Agent:** Codex (code + tests); Claude reviewed, made one change, and reran Verify. Jared chose "pack the names" over raising the gate.

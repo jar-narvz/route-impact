@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Explore how road edits change sampled trips across the Bay Area, with routing in your browser.">
+  <title>Fault playground — route-impact</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main aria-label="Fault playground">
+    <div id="map" aria-label="Bay Area road map"></div>
+    <div class="map-buttons" aria-label="Map controls">
+      <button id="rebuild" class="round" type="button" aria-label="Rebuild roads" title="Rebuild roads" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 2 8M4 4v6h6"/></svg>
+      </button>
+      <button id="recenter" class="round" type="button" aria-label="Recenter on the Bay box" title="Recenter on the Bay box" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+      </button>
+      <button id="theme" class="round" type="button" aria-label="Switch to dark theme" title="Switch to dark theme">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <section id="sheet" class="sheet" aria-label="Road edits and results">
+      <div class="sheet-controls">
+        <button id="grabber" type="button" aria-label="Expand sheet to half height" title="Change sheet height"><span></span></button>
+        <div class="height-buttons" role="group" aria-label="Sheet height">
+          <button type="button" data-height="peek" aria-pressed="true">Peek</button>
+          <button type="button" data-height="half" aria-pressed="false">Half</button>
+          <button type="button" data-height="full" aria-pressed="false">Full</button>
+        </div>
+      </div>
+      <!-- P2c wires the weapon toolbar and fills the results and trip list. -->
+      <div class="weapons" role="group" aria-label="Weapons (coming in P2c)">
+        <button type="button" disabled aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7v9l5 3v4H5v-5h2ZM3 22h18"/></svg>Stomp</button>
+        <button type="button" disabled aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4"/></svg>Flip</button>
+        <button type="button" disabled aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="15" r="5"/><path d="m12 11 8-8m-4 10 6-6M6 8l6-6"/></svg>Meteor</button>
+      </div>
+      <div class="status-area">
+        <p id="status" role="status" aria-live="polite">Loading the Bay road network…</p>
+        <div id="progress" class="progress" role="progressbar" aria-label="Loading the Bay road network"><span></span></div>
+        <p id="error" role="alert" hidden></p>
+        <button id="retry" type="button" hidden>Retry</button>
+        <p id="map-error" role="alert" hidden></p>
+      </div>
+      <div id="half-content" hidden inert>
+        <div id="results"></div>
+        <p class="caveat">Only roads inside the Bay box exist here, so detours outside it don't.</p>
+        <footer id="snapshot"></footer>
+      </div>
+      <div id="full-content" hidden inert>
+        <ul id="trips" aria-label="Affected trips"></ul>
+      </div>
+    </section>
+    <noscript><p class="no-script">This playground needs JavaScript to load the map and route trips in your browser.</p></noscript>
+  </main>
+</body>
+</html>
