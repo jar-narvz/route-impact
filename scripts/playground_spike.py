@@ -2,8 +2,9 @@
 
 import argparse
 import gzip
+import hashlib
 import json
-import random
+import math
 import subprocess
 import tomllib
 from collections import defaultdict
@@ -12,12 +13,39 @@ from typing import Any
 
 import duckdb
 import numpy as np
+from cch_order.order import canonical_input, compute_order
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components, dijkstra
 
 from route_impact.extract import extract
 from route_impact.graph import build_graph
 from route_impact.impact import Snapper, read_trips
+
+
+def round_ms(seconds: float) -> int:
+    value = math.floor(seconds * 1000 + 0.5)
+    if not isinstance(value, int) or not 0 <= value <= 2**32 - 1:
+        raise ValueError(f"Invalid edge milliseconds: {value}")
+    return value
+
+
+def finalize_sizes(out: Path, meta: dict) -> None:
+    """Include meta itself in the transfer total; stabilize its self-referential size."""
+    meta["files"] = [row for row in meta["files"] if row["file"] != "meta.json"]
+    entry = {"file": "meta.json", "raw_bytes": 0, "gzip_bytes": 0}
+    meta["files"].append(entry)
+    for _ in range(10):
+        meta["total_shipped_bytes"] = sum(row["gzip_bytes"] for row in meta["files"])
+        write_json(out / "meta.json", meta)
+        size = (out / "meta.json").stat().st_size
+        if entry["raw_bytes"] == size:
+            break
+        entry.update(raw_bytes=size, gzip_bytes=size)
+    for row in meta["files"]:
+        print(f"{row['file']}: raw={row['raw_bytes']} gzip={row['gzip_bytes']}")
+    print(
+        f"TOTAL shipped: {meta['total_shipped_bytes']} B; <= 10,000,000: {meta['total_shipped_bytes'] <= 10_000_000}"
+    )
 
 
 def inside(lat: float, lon: float) -> bool:
@@ -53,57 +81,17 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
 
 
-def stress_set(root: Path, presets: dict, path_ways: set[int]) -> None:
-    cases = [
-        {
-            "id": "bay_bridge",
-            "weapon": "stomp",
-            "way_ids": presets["bay_bridge"]["ids"],
-            "purpose": "Compound deletion of both Bay Bridge spans.",
-        },
-        {
-            "id": "university_ramp",
-            "weapon": "flip",
-            "way_id": 6320410,
-            "purpose": "Reverse the University Avenue one-way off-ramp.",
-        },
-    ]
-    pool = sorted(path_ways)
-    if len(pool) < 20:
-        raise ValueError("Need at least 20 baseline-path ways to freeze the stress set")
-    for i, way in enumerate(random.Random(2027).sample(pool, 20), 1):
-        cases.append(
-            {
-                "id": f"stomp_{i:02d}",
-                "weapon": "stomp",
-                "way_ids": [way],
-                "purpose": "Seeded deletion of a way used by a baseline trip.",
-            }
-        )
-    spots = [
-        ("sf_financial", 37.7946, -122.3999, "Dense downtown street network"),
-        ("sf_union_square", 37.787936, -122.407520, "Isolate a sampled trip endpoint"),
-        ("bay_bridge_toll_plaza", 37.8250, -122.3150, "Bridge approach chokepoint"),
-        ("outer_sunset", 37.7530, -122.4930, "Quiet residential street network"),
-    ]
-    for name, lat, lon, purpose in spots:
-        for radius in (150, 300, 500):
-            cases.append(
-                {
-                    "id": f"{name}_{radius}",
-                    "weapon": "meteor",
-                    "lat": lat,
-                    "lon": lon,
-                    "radius_m": radius,
-                    "purpose": f"{purpose}, {radius} m blast.",
-                }
-            )
-    frozen = root / "results/playground/stress_set.json"
-    if not frozen.exists():
-        write_json(frozen, {"seed": 2027, "cases": cases})
-
-
 def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
+    # Preserve the original Float64 baseline paths for the required drift audit.
+    # These local backups are never listed in meta.files or fetched by the page.
+    old_meta = out / "meta.json"
+    if old_meta.exists() and any(
+        item["name"] == "edge_seconds" for item in json.loads(old_meta.read_text())["arrays"]
+    ):
+        for name in ("trip_path_offsets", "trip_path_edges"):
+            backup = out / f"float64-{name}.bin.gz"
+            if not backup.exists():
+                backup.write_bytes((out / f"{name}.bin.gz").read_bytes())
     print("Building pipeline graph", flush=True)
     graph = build_graph(db, threads=2, memory_limit="2GB")
     with duckdb.connect(str(db), config={"threads": 2, "memory_limit": "2GB"}) as conn:
@@ -144,30 +132,28 @@ def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
     records = []
     for e in kept:
         way = e.segments[0].way_id
+        edge_ms = round_ms(e.seconds)
         original = len(records)
         twin = original + 1 if road_info[way][1] else -1
-        records.append((ix[e.u], ix[e.v], e.seconds, wix[way], 1, twin, original))
+        records.append((ix[e.u], ix[e.v], edge_ms, wix[way], 1, twin, original, e.seconds))
         if twin != -1:
-            records.append((ix[e.v], ix[e.u], e.seconds, wix[way], 0, original, twin))
-    records.sort(key=lambda r: (r[0], r[1], r[2], ways[r[3]], r[6]))
+            records.append((ix[e.v], ix[e.u], edge_ms, wix[way], 0, original, twin, e.seconds))
+    # Keep P0 edge ids stable across quantization, including parallel equal-ms edges.
+    records.sort(key=lambda r: (r[0], r[1], r[7], ways[r[3]], r[6]))
     remap = {r[6]: i for i, r in enumerate(records)}
     arrays: dict[str, tuple[str, Any]] = {}
 
     def add(name: str, dtype: str, values: Any) -> None:
         arrays[name] = (dtype, values)
 
-    add("vertex_lat", "<f8", [nodes[n][0] for n in vertices])
-    add("vertex_lon", "<f8", [nodes[n][1] for n in vertices])
-    add("vertex_osm_id", "<f8", vertices)
     add(
         "csr_offsets",
         "<u4",
         np.r_[0, np.cumsum(np.bincount([r[0] for r in records], minlength=len(vertices)))],
     )
     for name, dtype, column in [
-        ("edge_source", "<u4", 0),
         ("edge_target", "<u4", 1),
-        ("edge_seconds", "<f8", 2),
+        ("edge_ms", "<u4", 2),
         ("edge_way", "<u4", 3),
         ("edge_initially_active", "u1", 4),
     ]:
@@ -192,8 +178,8 @@ def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
         if not inside(*raw[:2]) or not inside(*raw[2:]):
             excluded.append({"trip_id": trip["trip_id"], "reason": "raw_endpoint_outside_box"})
             continue
-        origin, od = snapper.nearest(*raw[:2])
-        destination, dd = snapper.nearest(*raw[2:])
+        origin, _od = snapper.nearest(*raw[:2])
+        destination, _dd = snapper.nearest(*raw[2:])
         trips.append(
             {
                 "trip_id": trip["trip_id"],
@@ -201,8 +187,6 @@ def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
                 "weight": float(trip["weight"]),
                 "origin": ix[origin],
                 "destination": ix[destination],
-                "origin_snap_m": od,
-                "destination_snap_m": dd,
             }
         )
     winners = {}
@@ -226,6 +210,8 @@ def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
             trip = trips[i]
             target = trip["destination"]
             trip["seconds"] = float(distances[target])
+            if not math.isfinite(trip["seconds"]) or not trip["seconds"].is_integer():
+                raise ValueError("Integer baseline must be finite and integral")
             path = []
             while target != origin:
                 parent = int(pred[target])
@@ -239,10 +225,8 @@ def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
     for name, dtype, key in [
         ("trip_origin", "<u4", "origin"),
         ("trip_destination", "<u4", "destination"),
-        ("trip_seconds", "<f8", "seconds"),
+        ("trip_ms", "<f8", "seconds"),
         ("trip_weight", "<f8", "weight"),
-        ("trip_origin_snap_m", "<f8", "origin_snap_m"),
-        ("trip_destination_snap_m", "<f8", "destination_snap_m"),
     ]:
         add(name, dtype, [t[key] for t in trips])
     add("trip_path_offsets", "<u4", np.r_[0, np.cumsum([len(t["path"]) for t in trips])])
@@ -277,18 +261,39 @@ def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
         ],
         "presets": presets,
         "highway_classes": classes,
-        "excluded_trips": excluded,
+        "baseline_tie_rule": "Minimum parallel edge by (integer ms, edge id); scipy CSR Dijkstra strict improvement in sorted vertex order (deterministic for the recorded scipy version).",
+        "scipy_version": __import__("scipy").__version__,
         "arrays": [],
         "files": [],
     }
     out.mkdir(parents=True, exist_ok=True)
+    order, manifest = compute_order(
+        canonical_input(
+            np.array([nodes[n][0] for n in vertices]),
+            np.array([nodes[n][1] for n in vertices]),
+            np.array([r[0] for r in records]),
+            np.array([r[1] for r in records]),
+        ),
+        out,
+    )
+    write_json(out / "order_manifest.json", manifest)
 
     def write_gzip(filename: str, raw: bytes) -> None:
         packed = gzip.compress(raw, mtime=0)
         (out / filename).write_bytes(packed)
-        meta["files"].append({"file": filename, "raw_bytes": len(raw), "gzip_bytes": len(packed)})
+        meta["files"].append(
+            {
+                "file": filename,
+                "raw_bytes": len(raw),
+                "gzip_bytes": len(packed),
+                "sha256": hashlib.sha256(packed).hexdigest(),
+            }
+        )
         print(f"{filename}: raw={len(raw)} gzip={len(packed)}", flush=True)
 
+    write_gzip("cch_order.bin.gz", order.astype("<u4").tobytes())
+    write_gzip("order_manifest.json.gz", json.dumps(manifest, separators=(",", ":")).encode())
+    write_gzip("excluded_trips.json.gz", json.dumps(excluded, separators=(",", ":")).encode())
     for name, (dtype, values) in arrays.items():
         array = np.asarray(values, dtype=dtype)
         filename = f"{name}.bin.gz"
@@ -320,7 +325,7 @@ def export(root: Path, db: Path, snapshot: str, out: Path) -> None:
     write_json(out / "meta.json", meta)
     meta_size = (out / "meta.json").stat().st_size
     print(f"meta.json: raw={meta_size} stored={meta_size}", flush=True)
-    stress_set(root, presets, {ways[records[e][3]] for t in trips for e in t["path"]})
+    # The stress set is frozen in results/ and must never be regenerated here.
     print(json.dumps(meta["counts"]), flush=True)
 
 
@@ -333,7 +338,10 @@ def precompute_presets(out: Path) -> None:
     }
     labels = json.loads(gzip.decompress((out / "trip_labels.json.gz").read_bytes()))
     a = arrays
-    source, target, costs = (a[k] for k in ("edge_source", "edge_target", "edge_seconds"))
+    source = np.repeat(
+        np.arange(meta["counts"]["vertices"]), np.diff(a["csr_offsets"].astype(np.int64))
+    )
+    target, costs = a["edge_target"], a["edge_ms"]
     initial = a["edge_initially_active"].astype(bool)
     way_edges: dict[int, list[int]] = defaultdict(list)
     for e, w in enumerate(a["edge_way"]):
@@ -379,7 +387,7 @@ def precompute_presets(out: Path) -> None:
     def classify(t: int, seconds: float) -> str:
         if not np.isfinite(seconds):
             return "broken"
-        return "slowed" if seconds - a["trip_seconds"][t] >= meta["slow_seconds"] else "ok"
+        return "slowed" if seconds - a["trip_ms"][t] >= meta["slow_seconds"] * 1000 else "ok"
 
     outputs = {}
     for preset_id, preset in meta["presets"].items():
@@ -487,7 +495,7 @@ def precompute_presets(out: Path) -> None:
                 "trip_id": labels[t]["trip_id"],
                 "status": classify(t, rerouted[t][0]),
                 "seconds": rerouted[t][0] if np.isfinite(rerouted[t][0]) else None,
-                "baseline_seconds": float(a["trip_seconds"][t]),
+                "baseline_seconds": float(a["trip_ms"][t]),
             }
             for t in candidates
         ]
@@ -508,7 +516,7 @@ def precompute_presets(out: Path) -> None:
             "broken": sum(s == "broken" for s in affected.values()),
             "slowed": sum(s == "slowed" for s in affected.values()),
             "added_seconds": sum(
-                rerouted[t][0] - float(a["trip_seconds"][t])
+                rerouted[t][0] - float(a["trip_ms"][t])
                 for t, s in affected.items()
                 if s == "slowed"
             ),
@@ -517,16 +525,56 @@ def precompute_presets(out: Path) -> None:
             "trip_statuses": trip_rows,
             "trips": drawn,
         }
-    write_json(out / "presets.json", outputs)
+    # Common integer schema shared by Python presets and the JS live procedure.
+    for output in outputs.values():
+        statuses = {row["trip_id"]: row for row in output["trip_statuses"]}
+        rows = []
+        for attribution in output["attribution"]:
+            status = statuses[attribution["trip_id"]]
+            distance = status["seconds"]
+            rows.append(
+                {
+                    "trip": status["trip_index"],
+                    "status": status["status"],
+                    "distance_ms": distance,
+                    "added_ms": None if distance is None else distance - status["baseline_seconds"],
+                    **{k: v for k, v in attribution.items() if k != "trip_id"},
+                }
+            )
+        drawn = [
+            {"trip": row["trip_index"], "edges": row["new_path"]}
+            for row in output["trips"]
+            if row["new_path"] is not None
+        ]
+        output.clear()
+        output.update(
+            ways_hit=len(ways),
+            candidate_trips=len(statuses),
+            affected_trips=len(rows),
+            broken=sum(r["status"] == "broken" for r in rows),
+            slowed=sum(r["status"] == "slowed" for r in rows),
+            added_ms=sum(r["added_ms"] or 0 for r in rows),
+            rows=rows,
+            drawn=drawn,
+        )
+        # Each preset's way count comes from its own configured ids.
+    for preset_id, output in outputs.items():
+        output["ways_hit"] = len(meta["presets"][preset_id]["ids"])
+    write_json(out / "presets.json", outputs)  # Local inspection only; only gzip is shipped.
     raw = json.dumps(outputs, separators=(",", ":"), allow_nan=False).encode()
     packed = gzip.compress(raw, mtime=0)
     (out / "presets.json.gz").write_bytes(packed)
     meta["files"] = [f for f in meta["files"] if f["file"] != "presets.json.gz"]
     meta["files"].append(
-        {"file": "presets.json.gz", "raw_bytes": len(raw), "gzip_bytes": len(packed)}
+        {
+            "file": "presets.json.gz",
+            "raw_bytes": len(raw),
+            "gzip_bytes": len(packed),
+            "sha256": hashlib.sha256(packed).hexdigest(),
+        }
     )
     write_json(out / "meta.json", meta)
-    print(f"presets.json.gz: raw={len(raw)} gzip={len(packed)}", flush=True)
+    finalize_sizes(out, meta)
 
 
 def main() -> None:

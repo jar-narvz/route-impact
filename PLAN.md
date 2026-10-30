@@ -278,6 +278,12 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - Exporter: integer ms and the order; baselines and presets recomputed on integer ms; size trims.
     - `check.mjs`: a new integer-ms Dijkstra reference, with every stress case == CCH (impact + full attribution). Differences against the Float64 P0b reference are listed: classification, baseline paths, candidates, confirmed attribution.
     - Presets == Python. Data hashes and order hash recorded.
+    - *Status (2026-10-30, Codex code, Claude reran):* integration done; acceptance not run yet.
+      - Exporter: integer ms, Python baselines and presets, order and trims. Shipped data is 9,663,640 B (MapLibre not included).
+      - Tests 30/30.
+      - `check.mjs`: all 34 stress cases identical to the independent integer-ms Dijkstra; presets == Python. Float64→ms drift: only `added_ms` in 6 cases; 0 changes to affected sets, classification, baseline paths, candidates or confirmed attribution.
+      - Bench: toll plaza 500 m 69.65 ms.
+      - **Blocker found:** engine-alone Node RSS is 389,562,368 B after load and 551,026,688 B after 50 edits (+161,464,320 B; looks like a leak). Over the 300 MB limit.
   - **Verify (gate):**
     - **Clean browser run:** pane visible, fixed device and browser recorded, 5 repeats, each repeat asserting full oracle-equal attribution. The timer covers all required work: edit, counterfactuals, undo, unpacking, transfer and draw, ending when the GeoJSON source reports loaded and the next frame has rendered. Reset is timed separately. Live and preset cases are labelled.
     - **Limits:**

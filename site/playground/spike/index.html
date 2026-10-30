@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Route impact P0b exact ALT + worker pool spike</title>
+  <title>Route impact P0c exact CCH spike</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <style>
     body { margin: 0; font: 15px system-ui, sans-serif; }
@@ -20,25 +20,16 @@
 <body>
   <div id="map" aria-label="Bay Area affected routes"></div>
   <main>
-    <h1>P0b exact ALT + worker pool spike — snapshot 261027</h1>
+    <h1>P0c exact CCH spike — snapshot 261027</h1>
     <p>Fixed sampled endpoints, bounded Bay graph: detours outside the box do not exist.
-      Routes show contracted graph vertices. Grey is before; blue is after. At most 25 affected trips are drawn.</p>
+      Routes show simplified whole-way polylines; a way may extend beyond the routed segment. Grey is before; blue is after. At most 25 affected trips are drawn.</p>
     <p id="status" role="status" aria-live="polite">Loading map and graph…</p>
     <p id="error" role="alert"></p>
-    <label>Meteor attribution search budgets
-      <select id="budget">
-        <option value="all">All: unlimited, 100, 40, 15</option>
-        <option value="unlimited">Unlimited</option>
-        <option value="100">100</option>
-        <option value="40">40</option>
-        <option value="15">15</option>
-      </select>
-    </label>
     <button id="run" disabled>Run stress set</button>
     <button id="download" disabled>Download measurements JSON</button>
     <button id="retry" hidden>Retry load</button>
-    <p>Serve the repository root with <code>python -m http.server</code>, then open
-      <code>/site/playground/spike/</code>. For cold-load data, disable cache in developer tools before reloading.
+    <p>Serve the repository root with <code>python scripts/serve_spike.py 8000</code>, then open
+      <code>/site/playground/spike/</code>. Graph fetches bypass cache. The server enables cross-origin isolation for Chrome memory measurement.
       Resource sizes can be zero when the browser withholds cross-origin timing data; zeros are retained.</p>
     <pre id="result">No browser measurements yet.</pre>
   </main>

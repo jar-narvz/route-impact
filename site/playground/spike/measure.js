@@ -1,188 +1,152 @@
-/* Real browser measurements only. Never writes feasibility.json in the repository. */
-'use strict';
-import {RoutingPool} from './pool.mjs';
-const statusLine = document.getElementById('status');
-const errorLine = document.getElementById('error');
-const runButton = document.getElementById('run');
-const downloadButton = document.getElementById('download');
-const retryButton = document.getElementById('retry');
-let running = false;
-const P = Math.min(Math.max((navigator.hardwareConcurrency || 2) - 1, 1), 8);
-let pool, map, loadData, measurements, nextId = 0;
-const heapSamples = [];
-const heap = () => performance.memory ? {
-  usedJSHeapSize: performance.memory.usedJSHeapSize,
-  totalJSHeapSize: performance.memory.totalJSHeapSize,
-  jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
-} : null;
-function sampleHeap() {
-  const value = heap();
-  if (value) heapSamples.push(value.usedJSHeapSize);
-  return value;
-}
-function fail(error) {
-  errorLine.textContent = error.message || String(error);
-  statusLine.textContent = 'Failed. See the error above.';
-  retryButton.hidden = false;
-}
-function createClient() {
-  const worker = new Worker('worker.js'), pending = new Map();
-  worker.onmessage = ({data}) => {
-    const item = pending.get(data.requestId);
-    if (!item) return;
-    pending.delete(data.requestId);
-    if (data.type === 'error') item.reject(new Error(data.error));
-    else item.resolve(data);
-  };
-  worker.onerror = event => {
-    const error = new Error(event.message || 'Worker failed');
-    for (const item of pending.values()) item.reject(error);
-    pending.clear(); fail(error);
-  };
-  return payload => new Promise((resolve, reject) => {
-    const requestId = ++nextId;
-    pending.set(requestId, {resolve, reject});
+/** Browser acceptance harness. Every edit is checked against the integer oracle. */
+import {canonical} from './procedure.js';
+const status = document.getElementById('status'), error = document.getElementById('error');
+const run = document.getElementById('run'), download = document.getElementById('download');
+let sequence = 0, map, loadData, measurements, reference, stress;
+const worker = new Worker('worker.js', {type: 'module'}), pending = new Map();
+worker.onmessage = ({data}) => {
+  const entry = pending.get(data.requestId); if (!entry) return;
+  pending.delete(data.requestId);
+  if (data.error) entry.reject(new Error(data.error)); else entry.resolve(data.result);
+};
+worker.onerror = event => {
+  for (const entry of pending.values()) entry.reject(new Error(event.message));
+  pending.clear(); fail(new Error(event.message));
+};
+function request(payload) {
+  return new Promise((resolve, reject) => {
+    const requestId = ++sequence; pending.set(requestId, {resolve, reject});
     worker.postMessage({...payload, requestId});
   });
 }
-const request = payload => pool.edit(payload);
-function resourceRows() {
-  return performance.getEntriesByType('resource').filter(e =>
-    e.name.includes('/data/playground-spike/') || /maplibre-gl@4\.7\.1\/dist\/maplibre-gl\.(js|css)/.test(e.name)
-  ).map(e => ({name: e.name, transferSize: e.transferSize, encodedBodySize: e.encodedBodySize,
-    decodedBodySize: e.decodedBodySize}));
+function fail(e) { error.textContent = e.stack || String(e); status.textContent = 'Failed'; }
+async function coldJSON(path) {
+  const response = await fetch(`${path}?cold=${crypto.randomUUID()}`, {cache: 'no-store'});
+  if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+  return response.json();
+}
+async function memory() {
+  if (!crossOriginIsolated) return {value: null, reason: 'crossOriginIsolated is false'};
+  if (!performance.measureUserAgentSpecificMemory) return {value: null, reason: 'measureUserAgentSpecificMemory unavailable'};
+  try { return {value: await performance.measureUserAgentSpecificMemory(), reason: null,
+    scope: 'Whole isolated page including its dedicated worker and map workers; browser does not expose an engine-only total.'}; }
+  catch (e) { return {value: null, reason: String(e)}; }
+}
+function draw(geojson) {
+  return new Promise((resolve, reject) => {
+    // Listener precedes setData; wait for a source event marking this update loaded.
+    let timeout;
+    const loaded = event => {
+      if (event.sourceId !== 'affected-routes' || !map.isSourceLoaded('affected-routes')) return;
+      map.off('sourcedata', loaded); clearTimeout(timeout);
+      requestAnimationFrame(resolve);
+    };
+    map.on('sourcedata', loaded);
+    timeout = setTimeout(() => { map.off('sourcedata', loaded); reject(new Error('Routes source load timed out')); }, 30000);
+    map.getSource('affected-routes').setData(geojson);
+  });
+}
+const resources = () => performance.getEntriesByType('resource').map(r => ({name: r.name,
+  transferSize: r.transferSize, encodedBodySize: r.encodedBodySize, decodedBodySize: r.decodedBodySize}));
+const median = values => [...values].sort((a,b) => a-b)[2];
+function publish() {
+  document.getElementById('result').textContent = JSON.stringify(measurements, null, 2);
+  const compactMemory = sample => sample ? {bytes: sample.value?.bytes ?? null, reason: sample.reason, scope: sample.scope} : null;
+  const {resources: resourceDetails, memory_after_load: loadMemory, ...compactLoad} = measurements.load;
+  window.__summary = {...measurements, load: {...compactLoad,
+      resource_count: resourceDetails.length, memory_after_load: compactMemory(loadMemory)},
+    memory_after_50_edits: compactMemory(measurements.memory_after_50_edits),
+    cases: measurements.cases.map(({runs, ...summary}) => summary)};
+  if (new TextEncoder().encode(JSON.stringify(window.__summary)).length > 100000) throw new Error('__summary exceeds 100 KB');
 }
 async function initialize() {
   try {
-    performance.setResourceTimingBufferSize(2000);
-    if (!window.Worker) throw new Error('Web Workers unavailable. Use a current Chrome, Firefox, Edge or Safari.');
-    if (!window.maplibregl) throw new Error('MapLibre failed to load from the pinned CDN. Check the network and retry.');
-    const probe = document.createElement('canvas');
-    if (!probe.getContext('webgl2') && !probe.getContext('webgl')) throw new Error('WebGL is unavailable. Enable WebGL or use a browser/device supporting MapLibre.');
+    performance.setResourceTimingBufferSize(5000);
     map = new maplibregl.Map({container: 'map', style: 'https://tiles.openfreemap.org/styles/positron',
       center: [-122.25, 37.72], zoom: 9});
     map.addControl(new maplibregl.NavigationControl());
-    // Include explicit credits in addition to source attribution from the provider.
     map.addControl(new maplibregl.AttributionControl({compact: false,
-      customAttribution: '<a href="https://openfreemap.org/">OpenFreeMap</a> | <a href="https://openmaptiles.org/">OpenMapTiles</a> | © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'}));
-    const mapReady = new Promise((resolve, reject) => {
-      map.once('load', resolve);
-      map.on('error', event => {
-        const error = event.error || new Error('Map resource failed');
-        fail(error); reject(error);
-      });
-    });
-    const clients = Array.from({length: P}, createClient);
-    pool = new RoutingPool(clients);
-    const beforeHeap = sampleHeap(), start = performance.now();
-    const [workers] = await Promise.all([Promise.all(clients.map(client => client({type: 'load'}))), mapReady]);
-    const loaded = workers[0];
+      customAttribution: 'OpenFreeMap | OpenMapTiles | © OpenStreetMap contributors'}));
+    const mapReady = new Promise((resolve, reject) => { map.once('load', resolve); map.once('error', e => reject(e.error)); });
+    const [loaded, frozen, tests] = await Promise.all([request({type: 'load'}),
+      coldJSON('../../../data/playground-spike/reference-ms.json'),
+      coldJSON('../../../results/playground/stress_set.json'), mapReady]);
+    for (const [file, hash] of Object.entries(frozen.data_hashes || {}))
+      if (loaded.hashes[file] !== hash) throw new Error(`Stale integer reference: ${file}`);
+    if (!frozen.data_hashes) throw new Error('Integer reference has no data hashes; rerun check.mjs');
+    reference = frozen.outputs; stress = tests;
     map.addSource('affected-routes', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
-    map.addLayer({id: 'before-routes', type: 'line', source: 'affected-routes',
-      filter: ['==', ['get', 'phase'], 'before'], paint: {'line-color': '#777', 'line-width': 3, 'line-opacity': 0.65}});
-    map.addLayer({id: 'after-routes', type: 'line', source: 'affected-routes',
-      filter: ['==', ['get', 'phase'], 'after'], paint: {'line-color': '#007aff', 'line-width': 3}});
-    loadData = {P, workers, page_ready_ms: performance.now() - start, worker_timings: loaded.timings,
-      files: loaded.meta.files, meta: {snapshot: loaded.meta.snapshot, git_commit: loaded.meta.git_commit,
-        counts: loaded.meta.counts, simplification_tolerance_m: loaded.meta.simplification_tolerance_m,
-        presets: loaded.meta.presets},
-      resources: [...resourceRows(), ...loaded.resources], heap_before: beforeHeap, heap_after: sampleHeap(),
-      resource_size_note: 'Browser Resource Timing values; zero may mean cache or missing Timing-Allow-Origin. Excludes tiles.',
-      cold_load_verified: false,
-      cold_load_note: 'Harness cannot verify a cold cache. Disable cache and reload before measuring.'};
-    statusLine.textContent = `Ready: ${loaded.meta.counts.vertices} vertices, ${loaded.meta.counts.trips} trips. Run the stress set to measure.`;
-    runButton.disabled = false;
-  } catch (error) { fail(error); }
+    for (const [phase, color] of [['before', '#777'], ['after', '#007aff']])
+      map.addLayer({id: `${phase}-routes`, type: 'line', source: 'affected-routes', filter: ['==', ['get', 'phase'], phase],
+        paint: {'line-color': color, 'line-width': 3}});
+    const pageReady = performance.now(); // Navigation start is performance time zero.
+    const rows = [...resources(), ...loaded.resources];
+    loadData = {snapshot: loaded.meta.snapshot, git_commit: loaded.meta.git_commit, counts: loaded.meta.counts,
+      page_ready_ms: pageReady, worker_load_ms: loaded.load_ms, stats: loaded.stats,
+      shipped_total_bytes: loaded.meta.total_shipped_bytes, files: loaded.meta.files,
+      resources: rows, transfer_size_total: rows.reduce((sum,r) => sum+r.transferSize, 0),
+      graph_transfer_size_total: loaded.resources.reduce((sum,r) => sum+r.transferSize, 0),
+      cache: 'Graph, oracle and stress fetches use no-store and unique query strings; server also sends no-store.',
+      cold_graph_verified: loaded.resources.length === loaded.meta.files.length && loaded.resources.every(r => r.transferSize > 0),
+      transfer_note: 'All resource entries retained; third-party zeros mean timing unavailable. Tile transfers included where exposed.',
+      hashes: loaded.hashes, order_hash: loaded.order_hash};
+    loadData.memory_after_load = await memory();
+    status.textContent = 'Ready. Run all stress cases with full attribution.'; run.disabled = false;
+  } catch (e) { fail(e); }
 }
-
-async function runStressSet() {
-  if (running) return;
-  running = true;
-  document.getElementById('budget').disabled = true;
-  runButton.disabled = true; downloadButton.disabled = true; errorLine.textContent = '';
-  const sampler = setInterval(sampleHeap, 100);
+run.onclick = async () => {
+  run.disabled = true; download.disabled = true;
   try {
-    const budgetSelection = document.getElementById('budget').value;
-    const meteorBudgets = budgetSelection === 'all' ? [undefined, 100, 40, 15] :
-      [budgetSelection === 'unlimited' ? undefined : Number(budgetSelection)];
-    const response = await fetch('../../../results/playground/stress_set.json');
-    if (!response.ok) throw new Error(`Stress set: HTTP ${response.status}`);
-    const stress = await response.json();
-    const cases = stress.cases.flatMap(test => {
-      if (test.id === 'bay_bridge' || test.id === 'university_ramp') return [
-        {caseId: `${test.id}_live`, edit: {...test, preset: undefined}},
-        {caseId: `${test.id}_preset`, edit: {...test, preset: test.id}}
-      ];
-      if (test.weapon === 'meteor') return meteorBudgets.map(budget => ({
-        caseId: `${test.id}_b${budget === undefined ? 'unlimited' : budget}`, edit: {...test, budget}
-      }));
-      return [{caseId: test.id, edit: test}];
-    });
-    measurements = {format_version: 0, measured_at: new Date().toISOString(),
-      environment: {userAgent: navigator.userAgent, hardwareConcurrency: navigator.hardwareConcurrency || null,
-        deviceMemory: navigator.deviceMemory || null, devicePixelRatio: window.devicePixelRatio,
+    measurements = {measured_at: new Date().toISOString(), load: loadData,
+      environment: {userAgent: navigator.userAgent, hardwareConcurrency: navigator.hardwareConcurrency,
+        deviceMemory: navigator.deviceMemory ?? null, crossOriginIsolated, devicePixelRatio,
         viewport: {width: innerWidth, height: innerHeight}, url: location.href},
-      protocol: 'Five sequential repeats, reset before each edit; performance.now send to setData plus next requestAnimationFrame. No warm-up edits.',
-      draw_note: 'Ends after setData and next animation frame as specified; does not wait for GPU completion or source idle.',
-      meteor_budgets: meteorBudgets.map(b => b === undefined ? null : b), seed: stress.seed, load: loadData,
-      licenses: {
-        source: 'https://github.com/hyperknot/openfreemap/blob/main/LICENSE.md',
-        tiles: {provider: 'OpenFreeMap', data: 'OpenStreetMap ODbL', schema_code: 'OpenMapTiles BSD-3-Clause',
-          schema_design: 'CC BY 4.0', data_license: 'https://www.openstreetmap.org/copyright'},
-        style: {url: 'https://tiles.openfreemap.org/styles/positron', code: 'BSD-3-Clause', design: 'CC BY 4.0',
-          derived_from: 'CartoDB Basemaps by Stamen and Paul Norman, CC BY 3.0'},
-        icons: {ui: 'No application icon set', basemap: 'Maki CC0 1.0'},
-        attribution: 'OpenFreeMap © OpenMapTiles Data from OpenStreetMap',
-        raster_fallback: {enabled: false, policy: 'https://operations.osmfoundation.org/policies/tiles/',
-          requirements: 'Visible attribution, honour cache headers, valid Referer, no bulk download or offline prefetch; heavy usage may be blocked.'}
-      },
-      cases: [], heap_after: null, sampled_peak_usedJSHeapSize: null};
-    for (const {caseId, edit: test} of cases) {
+      protocol: '50-edit memory exercise precedes timing repeats. 5 repeats; send edit → full attribution, unpack ≤25, transfer, GeoJSON source loaded, next animation frame. Rebuild timed separately.',
+      seed: stress.seed, cases: []};
+    status.textContent = 'Measuring memory after 50 repeated toll-plaza edits…';
+    for (let i = 0; i < 50; i++) await request(stress.cases.find(test => test.id === 'bay_bridge_toll_plaza_500'));
+    measurements.memory_after_50_edits = await memory();
+    const cases = stress.cases.flatMap(test => ['bay_bridge', 'university_ramp'].includes(test.id)
+      ? [{id: `${test.id}_live`, test}, {id: `${test.id}_preset`, test: {...test, preset: test.id}}]
+      : [{id: test.id, test}]);
+    for (const {id, test} of cases) {
       const runs = [];
       for (let repeat = 0; repeat < 5; repeat++) {
-        statusLine.textContent = `Running ${caseId}, repeat ${repeat + 1}/5 (${measurements.cases.length + 1}/${cases.length})…`;
-        await request({type: 'edit', weapon: 'reset'});
-        const start = performance.now();
-        const result = await request({type: 'edit', ...test});
-        map.getSource('affected-routes').setData(result.geojson);
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        const latency_ms = performance.now() - start;
-        sampleHeap();
-        const {geojson, requestId, type, ...details} = result;
-        runs.push({latency_ms, worker_only_ms: result.timings.total_ms, ...details});
+        status.textContent = `${id}: ${repeat+1}/5`;
+        let start = performance.now();
+        await request({weapon: 'reset'});
+        await draw({type: 'FeatureCollection', features: []});
+        const reset_ms = performance.now()-start;
+        start = performance.now(); // Timer starts immediately before sending the edit.
+        const result = await request(test);
+        await draw(result.geojson);
+        const latency_ms = performance.now()-start;
+        const actual = canonical(result), expected = reference[test.id];
+        const reference_match = JSON.stringify(actual) === JSON.stringify(expected);
+        const {geojson, ...details} = result;
+        runs.push({latency_ms, reset_ms, reference_match, ...details});
+        // Keep failed results reviewable before stopping the acceptance run.
+        if (!reference_match) {
+          measurements.cases.push({id, runs, failed: true}); publish();
+          throw new Error(`Integer reference mismatch: ${id} repeat ${repeat+1}`);
+        }
       }
-      const times = runs.map(r => r.latency_ms), sorted = [...times].sort((x, y) => x - y);
       const first = runs[0];
-      measurements.cases.push({id: caseId, preset: test.preset || null, budget: test.budget ?? null, weapon: test.weapon, ways_hit: first.ways_hit,
-        affected_trips: first.affected_trips, affected_origins: first.affected_origins,
-        candidate_trips: first.candidate_trips, rerouted_origins: first.rerouted_origins,
-        broken: first.broken, slowed: first.slowed, added_seconds: first.added_seconds,
-        settled_vertices: first.settled_vertices, settled_total: first.settled_total,
-        search_compute_ms: runs.map(r => r.timings.search_compute_ms),
-        searches: first.searches, bound_searches: first.bound_searches, reroute_searches: first.reroute_searches,
-        attribution_searches: first.attribution_searches, single_searches: first.single_searches, run_searches: first.run_searches,
-        attribution_complete: runs.every(r => r.attribution_complete),
-        worker_only_ms: runs.map(r => r.worker_only_ms),
-        median_worker_only_ms: runs.map(r => r.worker_only_ms).sort((a, b) => a - b)[2],
-        latency_ms: times, median_latency_ms: sorted[2], runs});
-      document.getElementById('result').textContent = JSON.stringify(measurements, null, 2);
+      measurements.cases.push({id, median_ms: median(runs.map(r => r.latency_ms)),
+        latency_ms: runs.map(r => r.latency_ms), reset_ms: runs.map(r => r.reset_ms),
+        reference_match: runs.map(r => r.reference_match),
+        counts: {ways_hit: first.ways_hit, candidate_trips: first.candidate_trips, affected_trips: first.affected_trips,
+          broken: first.broken, slowed: first.slowed, added_ms: first.added_ms, phases: first.counts ?? null}, runs});
+      publish();
     }
-    measurements.heap_after = sampleHeap();
-    measurements.sampled_peak_usedJSHeapSize = heapSamples.length ? Math.max(...heapSamples) : null;
-    measurements.heap_note = 'Main-page performance.memory only, sampled every 100 ms and at phase boundaries; not an instrumented worker/process peak. Null when unavailable.';
-    document.getElementById('result').textContent = JSON.stringify(measurements, null, 2);
-    console.log(measurements);
-    statusLine.textContent = `Complete: ${measurements.cases.length} cases × 5 repeats. Measurements are ready to download.`;
-    downloadButton.disabled = false;
-  } catch (error) { fail(error); }
-  finally { clearInterval(sampler); running = false; runButton.disabled = false; document.getElementById('budget').disabled = false; }
-}
-runButton.addEventListener('click', runStressSet);
-retryButton.addEventListener('click', () => location.reload());
-downloadButton.addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(measurements, null, 2) + '\n'], {type: 'application/json'});
-  const url = URL.createObjectURL(blob), link = document.createElement('a');
-  link.href = url; link.download = 'playground-browser-measurements.json'; link.click();
+    publish(); status.textContent = 'Complete. All repeats match the integer reference.'; download.disabled = false;
+  } catch (e) { fail(e); }
+  finally { run.disabled = false; }
+};
+download.onclick = () => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(measurements, null, 2)], {type: 'application/json'}));
+  const link = document.createElement('a'); link.href = url; link.download = 'playground-browser-measurements.json'; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-});
+};
+document.getElementById('retry').onclick = () => location.reload();
 initialize();

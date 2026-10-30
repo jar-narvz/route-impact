@@ -1,13 +1,29 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 P0c, branch `playground`.
-  - **P0c-2 done 2026-10-29; checkpoint passed (go).** Codex code, Claude reran; uncommitted: `site/playground/spike/{cch.js,cch_bench.mjs,test/cch.test.mjs}`, `results/playground/cch_checkpoint_node.json`, and the decision 15 spec fix in PLAN/PLAYGROUND.
-  - Tests 27/27; bench identical to integer-ms Dijkstra on 25/25 comparisons.
-  - Medians, 1 thread: toll plaza 500 m 81.5 ms, 150 m 38.8 ms; Bay Bridge live 47.8 ms; Union Square 500 m 48.9 ms; stomp_17 6.5 ms. CCH build 486 ms.
-  - **Next:** P0c-3 (exporter integer ms + order + size trims, worker on CCH, check.mjs vs Float64 reference, browser acceptance run).
+- **Working on:** Phase 2 P0c-3, branch `playground`. Integration done and verified by Claude on 2026-10-30, uncommitted:
+  - Files: `scripts/playground_spike.py`, `scripts/serve_spike.py`, `site/playground/spike/{engine.js,procedure.js,dijkstra.mjs,node-data.mjs,worker.js,check.mjs,measure.js,index.html,cch_bench.mjs,test/procedure.test.mjs}`, `pool.mjs` and `node-worker.cjs` deleted.
+  - Results:
+    - tests 30/30; `check.mjs` all 34 cases identical to the integer-ms Dijkstra, presets == Python;
+    - Float64→ms drift only in `added_ms` (6 cases);
+    - shipped data 9,663,640 B;
+    - bench toll plaza 500 m 69.65 ms;
+    - lint clean; pytest 181 passed.
+- **Next session, start here:**
+  1. **Fix worker memory first.** Engine-alone Node RSS is 389.6 MB after load and 551.0 MB after 50 edits (+161.5 MB growth, likely undo logs or unpack/query buffers kept alive), against a 300 MB limit. Find the growth (heap snapshot or a per-structure byte count), fix it, and look at the load footprint (6,230,212 precomputed triangles = 2 × 24.9 MB `Uint32`; the topology build also holds temporaries). Then rerun `cch_bench.mjs` and `check.mjs`.
+  2. **Browser acceptance run** (PLAN P0c Verify):
+     - serve with `python scripts/serve_spike.py 8781`; port 8766 is taken by posting-triage;
+     - Jared brings the browser pane on screen;
+     - 5 repeats, reference match on every repeat, cold load, worker memory via `measureUserAgentSpecificMemory`;
+     - write `results/playground/feasibility.json`.
+  3. If the gate passes, mark P0c done → P1 (Nov 6–9), P2 (Nov 10–16), launch ~Nov 17. P0c cutoff is Nov 5.
+  4. Leftovers:
+     - Codex notes `site/playground/spike/p0b-verification.txt` and `p0c-verification.txt` are untracked; don't commit them.
+     - Old spike files still sit in `data/playground-spike/` (harmless).
+     - Check the first scheduled daily run (`results/2026-10-29/` on `main`).
+     - Resume bullets await Jared's wording approval.
 - **Done:** design, plan critique, Steps 0–13 + 12b. Fault suite `0c73497`. Step 12 code `31098b6`, CI test fix `b052a34`, bench `533b05b`; impact results 23→27, README draft and Step 12 Verify committed 2026-10-29.
-- **Next session, in order:**
+- **Earlier checklist (MVP wrap-up, 2026-10-29; superseded by "start here" above):**
   1. ~~Jared commits Step 12 results + README~~ — done 2026-10-29.
   2. ~~Step 13 approval~~ — Jared approved 2026-10-29; PLAN Step 13 marked done. Fresh-clone check done 2026-10-29: `git clone` of `e6a18ab` → new venv → `pip install -e ".[dev]"` → `make setup` → `make test` `181 passed in 37.09s`, `make lint` clean (same Mac, so `~/.duckdb` spatial and `osmium-tool` were already present); CI run 40961646981 on a clean runner: `181 passed in 55.06s`, lint clean.
   3. ~~Step 12b — json_safe rounding fix~~ — done 2026-10-29, uncommitted (see log).
