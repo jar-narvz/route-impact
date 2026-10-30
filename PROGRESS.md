@@ -3,7 +3,7 @@
 ## Current state
 - **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). **Next: Codex implements P2a**; Claude runs the real export and the shipping script itself (Codex has no `data/` or RoutingKit access).
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). **P2a done 2026-10-30** (log: "P2a follow-up: packed names"); uncommitted until Jared commits. **Next: P2b** (page shell).
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Not yet exercised by a scheduled run.
   4. **Geofabrik stalled:** its NorCal state.txt stops at 2026-10-28T21:21Z and `norcal-261029` is still unpublished (checked 2026-10-30 ~19:30 UTC). If a dated snapshot is never published, every later daily run also fails, because OLD is always NEW−1. Design question for Jared: fall back to the newest published older snapshot?
@@ -56,6 +56,42 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-10-30 — P2a follow-up: packed names → memory gate passes (**P2a done**)
+- **Agent:** Codex (code + tests); Claude reviewed, made one change, and reran Verify. Jared chose "pack the names" over raising the gate.
+- **Did:** New `core/packed.js`: `packJsonArray(bytes)` indexes each element's byte range in one scan, without creating strings; `get(i)` runs `JSON.parse` on just that slice. `load.mjs`, `worker.js` and `protocol.js` use it (`a.way_names.get(w)`, `a.trip_labels.get(t)`; an empty or null name shows as `null`). `trip_labels` elements turned out to be objects, so the scanner also accepts objects. Claude made that `{allowObjects: true}` for every `json_arrays` entry (all from our exporter) instead of a `'trip_labels'` name check repeated in two files.
+- **Changed:** `site/playground/core/{packed.js,load.mjs,protocol.js}`, `site/playground/core/test/{packed.test.mjs,protocol.test.mjs}`, `site/playground/worker.js`, `PLAN.md` (P2a file list, by Claude).
+- **Verify (Claude reran):**
+  - `make bench-js` ×3 → `memory_gate_pass: true` each time; RSS after 50 edits 273,367,040 / 268,419,072 / 279,822,336 B (limit 300,000,000); heapUsed after GC 5.50 MB (was 11.7 MB with parsed names).
+  - `make test` → `264 passed in 39.53s`, JS `# tests 78` `# pass 78`; `make lint` clean.
+  - `ship_playground_data.py --check` OK.
+  - Transfer: data 9,664,256 + own code gzip -9 14,559 (now with `packed.js`) + MapLibre 220,135 = **9,898,950 B** (headroom 101,050).
+- **Gotcha (found before the P2a commit):** `.gitignore` line 1 `data/` matched every directory named `data`, so `site/playground/data/` was ignored and `git add` would refuse it. Changed to `/data/` (repo root only). `git check-ignore` confirms the root `data/` is still ignored and `site/playground/data/` no longer is; no other `data` directory exists in the tree.
+- **Review (Claude):** the scanner is spec-correct for the cases that matter. A backslash always consumes the next byte, and `\u` checks 4 hex digits, so a quote inside a string can't end it early. The 500-array fuzz round-trips with `JSON.stringify`. Out-of-range `get` throws `RangeError`. No findings beyond the `allowObjects` unification.
+
+### 2026-10-30 — P2a: shipped data, worker, spike removal (**not done: memory gate fails**)
+- **Agent:** Codex (`codex exec --sandbox workspace-write`, code + tests); Claude ran the real export and the shipping script, reviewed the diff with two small fixes and a rename, and reran Verify.
+- **Did:**
+  - Exported 261027 to `data/playground-261027/` (`export-playground --order routingkit`: 134.34 s real, peak 4,889,163,072 B; `--write-presets`: 103.62 s, `presets.json.gz` gzip 12,357 B), then `scripts/ship_playground_data.py` copied the 24 shipped files into `site/playground/data/`. `cch_order_input.bin` and `cch_order_output.bin` stayed behind.
+  - New: `core/protocol.js` (load / pick stub / edit / reset; display fields `ways`, `hit_geojson`, per-row `trip_label`, `trip_ms`), `core/latest.js`, `worker.js` (feature checks, fetch, sha256, lengths, order rule, in-order queue), `core/test/protocol.test.mjs`. `cch_bench.mjs` moved to `core/test/` with an export-dir argument; `make bench-js`. Spike files and the two spike scripts deleted; the untracked spike notes moved to `data/playground-spike/notes/`.
+- **Changed:** `scripts/ship_playground_data.py`, `site/playground/{worker.js,data/}`, `site/playground/core/{protocol.js,latest.js}`, `site/playground/core/test/{protocol.test.mjs,cch_bench.mjs}`, `Makefile`; deleted `site/playground/spike/*` (tracked), `scripts/playground_spike.py`, `scripts/serve_spike.py`.
+- **Verify (Claude reran):**
+  - `python scripts/ship_playground_data.py --check site/playground/data` → OK; 24 files = `meta.json` + its 23 listed files.
+  - Largest file `geometry_coords.bin.gz` 2,850,841 B; all ≤ 5,000,000 B.
+  - Transfer rule: data 9,664,256 B (directory sum = `meta.total_shipped_bytes`) + own code gzip -9 13,349 B (`worker.js`, `core/{cch,engine,latest,procedure,protocol}.js`; no page yet) + MapLibre 220,135 B = **9,897,740 B ≤ 10,000,000** (headroom 102,260 B).
+  - Privacy: no `/Users/`, `/home/`, `jarednarvaez` or `jarjar` in any decompressed shipped file.
+  - `make test` → `264 passed in 38.78s`, JS `# tests 61` `# pass 61`; `make lint` clean.
+  - **`make bench-js` → `memory_gate_pass: false`.** After 50 toll-plaza edits RSS was 353,845,248 / 320,176,128 / 335,872,000 B (three runs; limit 300,000,000).
+    - The old P1c bench (from git, `node-data.mjs`) on the spike data today: 274,841,600 / 269,942,784 B, pass.
+    - The new loader on the spike data: 326,483,968 B, fail. The new loader on the shipped data with `json_arrays` removed from `meta.json`: 266,108,928 / 273,154,048 B, pass.
+    - **Cause:** `load.mjs` (and the worker) parse `way_names` (180,633 strings) and `trip_labels`; the old bench loader never did. heapUsed after GC 11.7 MB vs 5.5 MB, and RSS retention over 50 edits rises from ~55 MB to ~100 MB. Live bytes stay flat (113.28 → 113.06 MB), so it isn't a leak. The browser page needs the names, so the shipped page's footprint is the higher one; P0c's browser acceptance didn't load names either.
+- **Review (Claude, diff + PLAN P2a):**
+  1. *Fixed:* `protocol.js` overwrote the engine's attribution `label` with the trip label (renaming the former to `attribution_label`). That invites P2c bugs and changes what `canonical()` sees. Now `label` is untouched and the trip label is `trip_label`; the test was updated.
+  2. *Fixed:* `worker.js` fetched `meta.json` twice (it is listed in `meta.files`).
+  3. *Fixed:* `cch_bench.mjs` had an `import` below a `const`.
+  4. Not fixed (minor): `protocol.js` builds a second `createProcedure` (~5 MB) beside the engine's, for `path` and `hitWays`; `engine.js` doesn't expose its own. That's outside P2a's files.
+  5. The worker's in-order queue is untested in Node (it needs `fetch`); P2d's harness drives the real worker.
+- **Gotchas:** `meta.json` has `git_dirty: true` because untracked `.claude/` and `.codex/` count in `git status --porcelain`. Codex's sandbox can't write `.git/index`, so the moves and deletions are unstaged.
 
 ### 2026-10-30 — Portable fixture gzip (fix outside PLAN, Jared approved)
 - **Agent:** Claude (small fix, no Codex). Not independently reviewed.

@@ -438,6 +438,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `site/playground/core/protocol.js` (new): a pure request handler over an already-decoded export (`load.mjs`'s output in Node, the worker's in the browser), so the whole protocol is tested in Node;
       - `site/playground/core/test/protocol.test.mjs` (new);
       - `site/playground/worker.js` (new): only fetch, verify, decode, then `protocol.js`;
+      - **Packed JSON arrays (added 2026-10-30 after the first P2a Verify; Jared chose this):** `site/playground/core/packed.js` (new) + `core/test/packed.test.mjs` (new), and `site/playground/core/load.mjs` (changed). Every `json_arrays` entry (`way_names`, `trip_labels`) is kept as its decompressed UTF-8 bytes plus a `Uint32Array` of element byte ranges, found in one scan without creating strings. `get(i)` runs `JSON.parse` on one element's bytes, so escapes behave exactly as in a full parse. *Why:* parsing 180,633 names into separate strings pushed RSS after 50 edits to 320–354 MB (gate 300 MB); without names it was 266–273 MB (PROGRESS, P2a entry). `load.mjs` and `worker.js` both use it, so the bench measures what the page holds.
       - `site/playground/core/test/cch_bench.mjs` (moved from `spike/`, reads an export dir via `load.mjs`, default `site/playground/data/`);
       - `Makefile`: `bench-js` (`node --expose-gc site/playground/core/test/cch_bench.mjs`; local only, not in `make test` or CI);
       - deleted: `site/playground/spike/` (tracked files), `scripts/playground_spike.py`, `scripts/serve_spike.py`. The three untracked `spike/*-verification.txt` notes move to `data/playground-spike/notes/` (gitignored), not deleted.
@@ -583,7 +584,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - Record the cold-load transfer (own code + data + MapLibre, tiles excluded; N2 target ≤ 10,000,000 B) and the preset and Stomp latencies in PROGRESS.
       - **Phone (critique #6):** Jared opens the deployed page on his own phone and runs the Bay Bridge preset, the toll-plaza Meteor and Rebuild ×10. He reports the model and roughly how long each took. If a Meteor takes over 2 s, the attribution cap returns (decision 16's revisit clause).
       - `make test` and `make lint` green.
-  - *Status:* todo — detail written 2026-10-30 and revised after the Codex critique (Review log); ready for Codex to start P2a.
+  - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · P2b–P2e todo.
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
 - **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
 

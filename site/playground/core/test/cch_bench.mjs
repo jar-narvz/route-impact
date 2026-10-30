@@ -1,9 +1,12 @@
 /** Worker engine ALONE: intentionally imports no Dijkstra oracle. */
-import {writeFileSync} from 'node:fs';
+import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {cpus, totalmem, platform, arch, release} from 'node:os';
-import {load, root, data, json} from './node-data.mjs';
-import {createEngine} from '../core/engine.js';
-const {meta, a, order, presets, manifest} = load();
+import {load} from '../load.mjs';
+import {createEngine} from '../engine.js';
+const root = new URL('../../../../', import.meta.url);
+const data = new URL('data/playground-bench/', root);
+const json = url => JSON.parse(readFileSync(url));
+const {meta, a, order, presets, manifest} = load(process.argv[2] || new URL('site/playground/data/', root));
 const start = performance.now();
 const engine = createEngine(meta, a, order, presets);
 const loadCustomizeMs = performance.now() - start;
@@ -23,7 +26,7 @@ report.after_50_edits = memorySample();
 report.rss_growth_bytes = report.after_50_edits.rss - afterLoad.rss;
 report.memory_limit_bytes = 300000000;
 report.memory_gate_pass = Math.max(afterLoad.rss, report.after_50_edits.rss) <= report.memory_limit_bytes;
-report.protocol = 'Command: node --expose-gc site/playground/spike/cch_bench.mjs. If available, gc() twice before each memory sample. Fresh process, no oracle imports/results. RSS after load+customize, then exactly 50 repeated toll-plaza edits. Five timing repeats per case follow the memory exercise.';
+report.protocol = 'Command: node --expose-gc site/playground/core/test/cch_bench.mjs [export_dir]. If available, gc() twice before each memory sample. Fresh process, no oracle imports/results. RSS after load+customize, then exactly 50 repeated toll-plaza edits. Five timing repeats per case follow the memory exercise.';
 for (const test of cases) {
   const repeats = [], reset = [];
   for (let i = 0; i < 5; i++) {
@@ -34,5 +37,6 @@ for (const test of cases) {
   report.cases.push({id: test.id, latency_ms: repeats, median_ms: median, reset_ms: reset});
   console.log(`${test.id}: ${median.toFixed(2)} ms`);
 }
+mkdirSync(data, {recursive: true});
 writeFileSync(new URL('cch_engine_node.json', data), JSON.stringify(report, null, 2)+'\n');
 console.log(JSON.stringify({after_load_rss: afterLoad.rss, after_50_rss: report.after_50_edits.rss, growth: report.rss_growth_bytes}));

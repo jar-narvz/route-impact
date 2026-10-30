@@ -1,7 +1,7 @@
 PYTHON ?= python
 
 .DEFAULT_GOAL := help
-.PHONY: help setup download extract trips impact report map what-if faults demos bench test test-js lint
+.PHONY: help setup download extract trips impact report map what-if faults demos bench bench-js test test-js lint
 
 help:
 	@echo "help      List available targets"
@@ -62,6 +62,9 @@ demos:
 bench: SNAPSHOT ?= 261027
 bench:
 	PYTHON="$(PYTHON)" bash scripts/bench.sh $(SNAPSHOT) $(OLD)
+
+bench-js:
+	node --expose-gc site/playground/core/test/cch_bench.mjs
 
 test:
 	$(PYTHON) -m pytest

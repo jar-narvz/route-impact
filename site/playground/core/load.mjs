@@ -4,6 +4,7 @@ import {resolve, sep} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
+import {packJsonArray} from './packed.js';
 
 export function load(dirUrlOrPath) {
   const dir = dirUrlOrPath instanceof URL ? new URL(dirUrlOrPath) : pathToFileURL(resolve(dirUrlOrPath) + sep);
@@ -25,7 +26,7 @@ export function load(dirUrlOrPath) {
     a[spec.name] = new Type(raw.buffer.slice(raw.byteOffset + offset, raw.byteOffset + raw.byteLength));
   }
   for (const spec of meta.json_arrays || []) {
-    a[spec.name] = JSON.parse(read(spec.file));
+    a[spec.name] = packJsonArray(read(spec.file), {allowObjects: true});
     if (a[spec.name].length !== spec.length) throw new Error(`Length mismatch ${spec.name}`);
   }
   const raw = read('cch_order.bin.gz'), manifest = JSON.parse(read('order_manifest.json.gz'));
