@@ -588,7 +588,11 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `make test` and `make lint` green.
   - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · **P2b done 2026-10-30** (Codex code; Claude browser Verify, 4 fixes) · **P2c done 2026-10-30** (Codex code, three runs; whole-worker gate median 264 MB of 5, decision 17) · **P2d done 2026-10-30** (15/15 == oracle, 2/2 presets, 75/75 paths; 50 cycles flat; keyboard-only run; 2 focus fixes) · P2e todo.
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
-- **P4 — Polish** (URL hash to share an edit, animation and phone pass). *Status:* todo (after Nov 4)
+- **P4 — Polish** (URL hash to share an edit, animation and phone pass; decision 18). *Status:* todo (after Nov 4). Outline; it gets Files / Do / Verify detail and a Codex critique before Codex starts.
+  - **Starts after Jared's P2e phone run:** those timings set whether the large Meteor ships and how much wait the animation has to hide.
+  - **Two Meteor sizes:** small 500 m (today) and large ≈ 1.5 km. Large ships only if, on the phone, its worst stress case finishes within the unchanged 2 s gate measured **without** the animation. Before shipping: rerun P2d's browser check with the large radius added to the frozen set, and commit the results (`results/playground/`), so README numbers trace to a real file.
+  - **Impact animations for all three weapons** (Meteor landing, Stomp crack, Flip arrows): run **concurrently** with routing, reveal the numbers at impact, no artificial delay beyond the animation's own length, ≤ 600 ms. Drawn with MapLibre layers / CSS / canvas, no downloaded assets (≈ 92 kB of transfer headroom under 10 MB). Skipped entirely under `prefers-reduced-motion` (results appear immediately, as now). The 50-cycle check reruns with animations on.
+  - Earlier P2 follow-ups that fit here: the crosshair at the visible map centre (not behind the sheet); no-impact results naming the road; a damaging second preset instead of the University Ave ramp.
 
 ## Risks / open questions
 - **Scope vs time:** 14 steps in ~5 days. **Cut order (whole features, not trimming):** (1) batch-of-10 fault runs (single faults only); (2) random suite → demos + 50 random faults (n stated); (3) map click-for-details popups (still draw routes and culprits). **Never cut:** the mandatory vertical slice, CI, demo faults, the results map.
@@ -644,6 +648,13 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Trim first:** each edit's display geometry (before / after / hit lines) is sent as transferred typed arrays instead of GeoJSON built in the worker. `engine.js` stops building GeoJSON, and the page builds it on the main thread, as for the baseline.
     - **Stop rule:** if the median is still over 300 MB after the trim, stop and bring Jared options (e.g. a lighter result view). Don't tune further or move the limit.
     - *Why not raise the limit:* that lowers the bar right after missing it (decision 13). *Why trim at all:* the retained memory is real on a phone even though it's garbage, so cutting churn helps users, not just the number.
+
+18. **Bigger Meteor and impact animations go in P4, gated on the phone** (2026-10-30, Jared's idea; Claude's recommendation, Jared agreed). Jared asked whether an animation could hide a Meteor delay and allow a bigger radius. Measured (scratch Node run on the shipped export, M3 Max, median of 3; not a committed result): the toll plaza takes 87 / 105 / 123 / 150 / 318 ms at 0.5 / 1 / 1.5 / 2 / 3 km; SF Financial 24–265 ms; Union Square 48–308 ms (up to 4,205 ways hit at 3 km). So on a laptop, time doesn't limit the radius.
+    - **The real limits:**
+      - Unmeasured phones (5–10× slower would put 3 km at ~1.5–3 s).
+      - Gameplay: past ~1.5 km the SF results saturate at ~200–209 affected trips, and "roads that mattered" collapses into a few huge road groups. 500 m–1 km gives the clearest contrast (toll plaza 170 slowed vs downtown SF 2 broken).
+    - **Decision:** two sizes (500 m and ≈ 1.5 km), plus concurrent ≤ 600 ms impact animations for every weapon, skipped under reduced motion.
+    - *Why the gate stays compute-only:* an animation changes how a wait feels, not how long it is. A phone that needs 3 s still needs 3 s.
 
 ## Review log
 ### 2026-10-30 — Codex critique of the P2 plan (`codex exec --sandbox read-only`, 10 points)

@@ -3,7 +3,7 @@
 ## Current state
 - **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **P2e in progress on `main`:** `pages.yml`, README and PLAYGROUND.md written; waiting on Jared to commit + push `main`, then Claude smoke-tests the deployed page; then Jared's phone run (+ optional VoiceOver).
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). **P2e left for Jared:** (1) two Daily dispatches to check `pages.yml`'s `workflow_run` paths; (2) his phone run (+ optional VoiceOver). Then Claude closes P2. Follow-ups noted in the P2e log entry. **Next after P2: P4 per decision 18** (two Meteor sizes + impact animations), gated on the phone timings.
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Not yet exercised by a scheduled run.
   4. **Geofabrik stalled:** its NorCal state.txt stops at 2026-10-28T21:21Z and `norcal-261029` is still unpublished (checked 2026-10-30 ~19:30 UTC). If a dated snapshot is never published, every later daily run also fails, because OLD is always NEW−1. Design question for Jared: fall back to the newest published older snapshot?
@@ -65,7 +65,22 @@
   - README gets a "Fault playground" section plus the link under the intro and two layout rows. Its numbers come from `site/playground/data/meta.json`, `results/playground/p2_browser_check.json` and `p2_oracle.json`; the memory-gate numbers are left out because they live in gitignored `data/`.
   - `docs/PLAYGROUND.md`: F4, §5.5 (radius 500 m) and §5.8 (no cap; equality with the oracle) updated for decision 16.
 - **Changed:** `.github/workflows/pages.yml` (new), `.github/workflows/daily.yml`, `README.md`, `docs/PLAYGROUND.md`, `PROGRESS.md`.
-- **Verify so far:** Codex parsed both workflows with Ruby YAML (PyYAML missing) and ran `make lint` (clean). The deploy, the Daily-failure skip and the dispatch are **not yet run**; they're next, after Jared pushes.
+- **Verify (Claude, after Jared pushed `e9ee428`):**
+  - The push started CI run 41143931444 and **Pages run 41143931349 → `deploy: success`**. The live `…/site/playground/`, `…/site/playground/data/meta.json` and the results map `…/site/` all return 200.
+  - **Deployed data = committed data:** all 24 files in `meta.json` fetched from Pages are byte-identical to `site/playground/data/` (9,664,256 B). `cch_order_input.bin` and `cch_order_output.bin` return 404 there.
+  - **Live smoke test (browser pane):**
+    - Phone 375×812, light: loads; Bay Bridge preset → "Bay Bridge hit 10 roads: 2 trips broken, 169 slowed by 2 min or more, 2,859 added minutes of 2,057 sampled trips."; University Ave ramp → "6 trips rerouted, none slowed by 2 min or more"; a live Stomp via keyboard at the crosshair → "No sampled trip used these roads", with the destroyed road drawn in red.
+    - Desktop 1280×800, dark: the left card with the Bay Bridge result, red spans, before/after routes and the box all render.
+    - No console errors at either size. The results map `…/site/?date=2026-10-28` loads without console errors.
+  - **Live transfer (`curl -H 'Accept-Encoding: gzip'`, size_download):** own code 29,649 B (12 files) + MapLibre 4.7.1 JS 211,495 + CSS 9,113 B + data 9,657,473 B = **9,907,730 B ≤ 10,000,000** (tiles excluded).
+  - Screenshots (gitignored): `data/playground-bench/p2e-screens/`.
+  - **Not yet run:** a failed Daily dispatch triggering `pages.yml` with the job skipped, and a successful Daily deploying through `workflow_run` (Jared dispatches). Jared's phone run.
+- **Follow-ups (polish, not blocking):**
+  1. The keyboard crosshair sits at the map's centre, which is at the sheet's top edge at half height and hidden at full. It should use the centre of the visible map area.
+  2. The University Ave ramp preset is a no-impact example; consider a damaging preset.
+  3. No-impact Stomp/Flip results don't name the road.
+  4. The trips list shows ids only (no place names shipped).
+  5. `daily.sh` still writes an unused `publish=` output.
 - **Review (Claude):** the workflow matches PLAN P2e and critique #3. No findings.
 
 ### 2026-10-30 — P2d: keyboard, screen reader, reduced motion; browser == oracle (**done**)
