@@ -1,0 +1,55 @@
+{
+  "export_git_commit": "56dcd7c016016d314a725c2f3ce91cf6a05b74a0",
+  "page_url": "https://jar-narvz.github.io/route-impact/site/playground/?timing",
+  "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/156.0.8078.54 Mobile/15E148 Safari/604.1",
+  "timestamp_utc": "2026-11-02T07:36:52.049Z",
+  "radius_m": 1500,
+  "runs": [
+    {
+      "case": "bay_bridge_toll_plaza",
+      "ms": 394.9999999999709
+    },
+    {
+      "case": "bay_bridge_toll_plaza",
+      "ms": 397
+    },
+    {
+      "case": "bay_bridge_toll_plaza",
+      "ms": 340.9999999999709
+    },
+    {
+      "case": "sf_financial",
+      "ms": 471
+    },
+    {
+      "case": "sf_financial",
+      "ms": 499
+    },
+    {
+      "case": "sf_financial",
+      "ms": 482
+    },
+    {
+      "case": "sf_union_square",
+      "ms": 523.0000000000291
+    },
+    {
+      "case": "sf_union_square",
+      "ms": 575
+    },
+    {
+      "case": "sf_union_square",
+      "ms": 537
+    }
+  ],
+  "medians": {
+    "bay_bridge_toll_plaza": 394.9999999999709,
+    "sf_financial": 482,
+    "sf_union_square": 537
+  },
+  "gate_ms": 2000,
+  "verdict": "pass",
+  "device": "iPhone 14 (reported by Jared), Chrome on iOS (WebKit)",
+  "code_commit": "fa95081",
+  "pages_run": 41406592676
+}
