@@ -170,6 +170,21 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Verify:** three dispatches, each checked separately — (a) date 2026-10-28 → green, bot commit adds `results/2026-10-28/`, Pages map loads; date 2026-10-27 (committed in Step 6) → "already done", no commit. (b) `test_high=true` → green, a `[test]` issue opens, no commit. (c) date 2099-01-01 → run fails with "not published", no commit, no issue.
 - **Status:** done 2026-10-29 (runs 40838962434, 40840231384, 40840922338, 40840270536; see PROGRESS Step 11 Verify)
 
+### Step 11b — Daily: chained window + snapshot cache (decision 19)
+- **Owner:** Codex (Claude reviews)
+- **Files:** `src/route_impact/daily.py` (new), `tests/test_daily.py` (new), `scripts/daily.sh`, `.github/workflows/daily.yml`, `src/route_impact/report.py`, `tests/test_report.py`
+- **Do:**
+  - `daily.py`: a pure function `plan_window(today_utc: date, results_dir: Path, explicit: date | None, max_gap: int) -> Window`, where `Window` holds `date` (ISO NEW), `new`, `old` (YYMMDD), `gap_days`, `skip: bool` and `note: str | None`. It implements decision 19. Only directories named `YYYY-MM-DD` count, so `faults/` and `playground/` are ignored. With no dated directories at all it falls back to NEW−1. A `python -m route_impact.daily` entry point prints the fields for bash. The date logic is the same rule `daily.sh` used to compute inline.
+  - `daily.sh`: replace the inline date Python with that entry point. Read `DAILY_MAX_GAP_DAYS` (default 3, validated like `DAILY_RETRIES`). Echo `note` and append it to `$GITHUB_STEP_SUMMARY` and the commit body. Write `new=<YYMMDD>` to `$GITHUB_OUTPUT` alongside `publish`.
+  - `daily.yml`: an `actions/cache/restore@v5` step before `daily.sh` (path `data/norcal-*.osm.pbf*`, key `norcal-pbf-${{ github.run_id }}`, restore-keys `norcal-pbf-`). An `actions/cache/save@v5` step after it, `if: steps.daily.outputs.publish == 'true'`, with the **same** path glob (actions/cache derives the cache version from the path string, so a different path on save would always miss on restore) and key `norcal-pbf-<new>`. After a publishing run, `daily.sh` deletes OLD's `.osm.pbf` and `.md5`, so the glob saves only NEW (one 624 MB file, not two). Skipped for `test_high`.
+  - `report.py`: when NEW − OLD > 1 day, the title gets " (N-day window)".
+- **Verify:**
+  - `make test` green and `make lint` clean. `tests/test_daily.py` covers: gap 1; gap 3 (window); gap 4 (fresh start with note); gap 0 and negative (skip); no dated directories; non-date directories ignored; an explicit date ignores results; `max_gap` from the argument.
+  - `tests/test_report.py`: a 3-day payload gets "(3-day window)" and a 1-day payload is unchanged.
+  - `DAILY_DRY_RUN=1` with a temp `results/2026-10-28/` prints `--old 261028 --new 261031` for a scheduled run on 2026-11-01 (the real 10-29 stall replayed). Codex adds a seam for "today" and states it in PROGRESS.
+  - Live, two runs after merge: the first publishing scheduled run logs a cache save for `norcal-pbf-<new>`. The next one logs "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", and its download time drops by about one file. Run IDs and step timings go in PROGRESS.
+- **Status:** proposed 2026-11-01. Waiting on Jared's approval of decision 19, then a Codex critique.
+
 ### Step 12 — Benchmark + real fault suite
 - **Owner:** Codex writes; **Jared runs on the full files**
 - **Files:** `src/route_impact/metrics.py`, `scripts/bench.sh`, `scripts/check_outputs.py`, `Makefile`, `tests/test_metrics.py`, `tests/test_check_outputs.py`
@@ -600,7 +615,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
 - **Routing memory/time on the free runner** is checked in Step 4, not at the end. If it misses the 12 GB budget: smaller batches, then fewer local trips (stated in README). A distance `limit` is **not** an option (it fakes broken trips).
 - **Quiet real days:** expected (4 days of exploration showed almost no major-road change). The story rests on fault-suite numbers + "stays quiet on normal days".
 - **Provisional thresholds:** no history to calibrate on; revisit after ~2 weeks of daily runs.
-- **Geofabrik publish timing:** schedule the job late enough in the UTC day; retry once before failing.
+- **Geofabrik publish timing:** schedule the job late enough in the UTC day; retry once before failing. A snapshot that is never published used to break every later run; decision 19 / Step 11b chains OLD to the last result instead.
 - **Bot commits** fill history; accepted (DESIGN §5.11).
 - **CI extension install:** `make setup` downloads `spatial`; cache `~/.duckdb/extensions`.
 
@@ -655,6 +670,21 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - Gameplay: past ~1.5 km the SF results saturate at ~200–209 affected trips, and "roads that mattered" collapses into a few huge road groups. 500 m–1 km gives the clearest contrast (toll plaza 170 slowed vs downtown SF 2 broken).
     - **Decision:** two sizes (500 m and ≈ 1.5 km), plus concurrent ≤ 600 ms impact animations for every weapon, skipped under reduced motion.
     - *Why the gate stays compute-only:* an animation changes how a wait feels, not how long it is. A phone that needs 3 s still needs 3 s.
+
+19. **Daily: chain OLD to the last result, up to a 3-day window; cache the snapshot** (2026-11-01, Claude's proposal; **awaiting Jared**). *Problem:* OLD is always NEW−1, so one dated snapshot that Geofabrik never publishes fails every later run, since each one needs it as OLD or NEW. This happened 10-29 → 10-31: Daily 41051491538 and 41196974293 failed (the second spent about 45 min retrying a 404), and `results/2026-10-29/` and `results/2026-10-30/` don't exist. Separately, Daily 41306368351 spent 32 of its 39 min downloading two 624 MB files at about 700 KB/s, and routing took about 7 min.
+    - **Chain rule (scheduled runs only):** OLD = the NEW date of the newest `results/YYYY-MM-DD/` directory, not NEW−1. Let `gap = NEW − OLD` in days:
+      - `gap ≤ 0` → "already done", skip (today's rule, generalized).
+      - `1 ≤ gap ≤ DAILY_MAX_GAP_DAYS` (default 3) → compare OLD → NEW as one window.
+      - `gap > 3` → OLD = NEW−1 (a fresh start). The run log, the job summary and the bot commit body say "edits from OLD_last to NEW−1 not compared".
+    - **Unchanged:** a dispatch with an explicit `date` still uses NEW−1 (no chaining). Risk thresholds aren't scaled. Retries still apply, but in practice only to NEW, because the chained OLD was downloaded successfully the day it was NEW.
+    - **Label:** `report.md`'s title already shows `old → new`. When the window is over one day it adds "(N-day window)". `impact.json` already records `old` and `new`, so nothing changes there.
+    - **Cache:** after a publishing run, save NEW's `.osm.pbf` + `.md5` with `actions/cache` (key `norcal-pbf-<NEW>`; Step 11b has the path details). Before `daily.sh`, restore with a per-run key and `restore-keys: norcal-pbf-`, which restores the newest saved snapshot. Under the chain rule that is OLD. `download.sh` already skips a dated file whose checksum matches its manifest, so a hit costs nothing and a miss (or the wrong file) just downloads, exactly as today.
+    - *Why chain to the last result rather than "the newest published older snapshot":* every edit gets compared exactly once, with no gaps or overlaps between consecutive results. It also recovers from runs that failed for any reason (runner crash, OOM), not just Geofabrik stalls. And OLD is a file we already fetched, so it never 404s and the 45-minute OLD retry loop goes away.
+    - *Why the thresholds stay unscaled:* every rule counts trips (broken, slowed ≥ 2 min, weighted share affected), not edits. A broken trip means the same thing whether one day or three days of edits broke it. A longer window just makes a rule more likely to fire, which is the correct answer for more change.
+    - *Why a cap, and why 3:* longer windows mean more candidate edits, so root cause is slower and more often `joint`, and a culprit is harder to place in time. 3 is a judgment call that covers the one stall seen so far (Geofabrik's NorCal `state.txt` stopped at 2026-10-28T21:21Z and resumed by 10-31). It's an env var, like `DAILY_RETRIES`, so it can change without a code change.
+    - *Why a fresh start rather than failing when the gap is over 3:* failing would repeat the exact bug, because the gap only grows and every later run would fail too. The fresh start self-heals and says out loud which days it skipped.
+    - *Why the cache is safe:* the checksum check happens either way, so a cache can only make a run faster, never different. 624 MB is far under the 10 GB per-repo limit, and GitHub evicts old entries itself.
+    - **Non-goals:** backfilling `results/2026-10-29/` and `results/2026-10-30/` (a manual dispatch can do it if wanted), scaling thresholds by window, changes to the results map, caching DuckDB files.
 
 ## Review log
 ### 2026-10-30 — Codex critique of the P2 plan (`codex exec --sandbox read-only`, 10 points)
