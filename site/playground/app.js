@@ -5,7 +5,12 @@ import {summarize} from './core/summary.js';
 const METEOR_SIZES = [
   {name: 'Small', radius_m: 500},
   {name: 'Large', radius_m: 1500},
-].map(size => ({...size, duration_ms: Math.round(600 * Math.sqrt(size.radius_m / 500))}));
+// scale = √(r / 500 m) sets the fall's duration, marker size and drop height together (decision 18 amendment),
+// so every Meteor falls at the same speed and a bigger one starts higher and lands later.
+].map(size => {
+  const scale = Math.sqrt(size.radius_m / 500);
+  return {...size, scale, duration_ms: Math.round(600 * scale)};
+});
 const timing = new URLSearchParams(location.search).has('timing');
 // Frozen P2 stress centers; runEdit canonicalizes these before any drawing or request.
 const PHONE_CASES = [
@@ -157,6 +162,7 @@ function render() {
   renderButtons();
   renderStatus();
   renderResults();
+  positionCrosshair();
 }
 
 function fail(message, retryable = false) {
@@ -172,7 +178,33 @@ function fail(message, retryable = false) {
 function setHeight(height) {
   state.sheetHeight = height;
   renderSheet();
+  positionCrosshair();
 }
+
+// Geometry is in map-container pixels; the fixed overlay uses viewport pixels.
+function positionCrosshair() {
+  const bounds = $('map').getBoundingClientRect();
+  const sheet = $('sheet').getBoundingClientRect();
+  const left = desktop.matches ? Math.min(bounds.width, Math.max(0, sheet.right + 16 - bounds.left)) : 0;
+  const bottom = desktop.matches ? bounds.height : Math.min(bounds.height, Math.max(0, sheet.top - bounds.top));
+  const point = {x: (left + bounds.width) / 2, y: bottom / 2};
+  const crosshair = document.querySelector('.crosshair');
+  crosshair.style.left = `${bounds.left + point.x}px`;
+  crosshair.style.top = `${bounds.top + point.y}px`;
+  return point;
+}
+
+function crosshairPoint() {
+  const point = positionCrosshair();
+  const {lng, lat} = map.unproject([point.x, point.y]);
+  return {...point, lng, lat};
+}
+
+$('sheet').addEventListener('transitionend', event => {
+  if (event.target === $('sheet')) positionCrosshair();
+});
+window.addEventListener('resize', positionCrosshair);
+desktop.addEventListener('change', positionCrosshair);
 
 const emptyCollection = () => ({type: 'FeatureCollection', features: []});
 
@@ -622,7 +654,11 @@ function paintEffect(effect, fraction) {
   }
   if (effect.edit.weapon === 'meteor') {
     const fall = Math.min(1, fraction / 0.65);
-    ctx.beginPath(); ctx.arc(point.x, point.y - EFFECT.fall_px*(1-fall), EFFECT.meteor_px, 0, Math.PI*2); ctx.fill();
+    const scale = METEOR_SIZES.find(size => size.radius_m === effect.edit.radius_m).scale;
+    const marker = EFFECT.meteor_px * scale;
+    // Cap the drop so a Large Meteor never starts above the visible map on a short screen.
+    const drop = Math.max(0, Math.min(EFFECT.fall_px * scale, point.y - marker - 8));
+    ctx.beginPath(); ctx.arc(point.x, point.y - drop*(1-fall), marker, 0, Math.PI*2); ctx.fill();
   } else if (effect.line?.length > 1) {
     const points = effect.line.map(p => map.project(p));
     if (effect.edit.weapon === 'stomp') {
@@ -736,6 +772,7 @@ document.querySelectorAll('[data-weapon]').forEach(button => {
   button.addEventListener('click', () => {
     state.weapon = button.dataset.weapon;
     renderButtons();
+    positionCrosshair();
   });
 });
 function rebuild() {
@@ -843,8 +880,8 @@ $('map').addEventListener('keydown', event => {
   else if (event.key === '+' || event.key === '=') map.zoomIn({duration});
   else if (event.key === '-') map.zoomOut({duration});
   else if (event.key === 'Enter') {
-    const center = map.getCenter();
-    fireAt({lat: center.lat, lon: center.lng});
+    const point = crosshairPoint();
+    fireAt({lat: point.lat, lon: point.lng});
   } else return;
   event.preventDefault();
 });
@@ -856,6 +893,7 @@ motionPreference.addEventListener('change', () => {
 if (new URLSearchParams(location.search).has('test')) {
   window.__playground = {
     ready,
+    crosshairPoint,
     setReducedMotion(value) { motionOverride = value; if (reducedMotion()) finishAnimation(); },
     animationsRunning: () => Boolean(animation),
     animationFramesScheduled: () => animationFramesScheduled,

@@ -160,3 +160,38 @@ test('singular sample count', () => {
   meta.counts.trips = 1;
   assert.equal(summarize(result, {meta, edit}).numbers.sample, 'of 1 sampled trip');
 });
+
+for (const weapon of ['stomp', 'flip']) {
+  for (const [label, name] of [['named', 'University Avenue'], ['null', null], ['empty', '']]) {
+    test(`${weapon} ${label} single-road no-impact messages name the road`, () => {
+      const result = {ways_hit: 1, ways: [{way_id: 123, name}], candidate_trips: 0, affected_trips: 0, rows: []};
+      const context = {meta: {}, edit: {weapon}};
+      const road = name || 'this unnamed road';
+      for (const [count, message] of [[0, `No sampled trip used ${road}`],
+        [1, `1 trip rerouted around ${road}, none slowed by 2 min or more`],
+        [2057, `2,057 trips rerouted around ${road}, none slowed by 2 min or more`]]) {
+        result.candidate_trips = count;
+        assert.deepEqual(summarize(result, context), {message, announcement: message,
+          note: 'Only the sampled trips were tested.', trips: []});
+      }
+    });
+  }
+}
+
+for (const [label, edit, ways_hit] of [
+  ['multi-road Stomp', {weapon: 'stomp'}, 2], ['multi-road Flip', {weapon: 'flip'}, 2],
+  ['Meteor', {weapon: 'meteor'}, 1], ['preset', {preset: 'bridge'}, 1],
+  ['Stomp preset', {weapon: 'stomp', preset: 'bridge'}, 1],
+  ['Flip preset', {weapon: 'flip', preset: 'bridge'}, 1],
+]) {
+  test(`${label} retains exact no-impact messages`, () => {
+    const result = {ways_hit, ways: [{way_id: 123, name: 'University Avenue'}], candidate_trips: 0, affected_trips: 0, rows: []};
+    for (const [count, message] of [[0, 'No sampled trip used these roads'],
+      [1, '1 trip rerouted, none slowed by 2 min or more'],
+      [2, '2 trips rerouted, none slowed by 2 min or more']]) {
+      result.candidate_trips = count;
+      assert.deepEqual(summarize(result, {meta: {}, edit}), {message, announcement: message,
+        note: 'Only the sampled trips were tested.', trips: []});
+    }
+  });
+}

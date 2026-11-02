@@ -11,7 +11,7 @@ async function page(search = '?test&timing', latency = 100, manual = false) {
   const nodes = new Map(), sent = [], frames = new Map(), timers = new Map(), replies = new Map(), workers = [], drawing = [], media = new Map();
   let handle = 0, cancelledFrames = 0;
   class Element {
-    constructor() { this.children = []; this.dataset = {}; this.writes = []; this.textContent = ''; this.listeners = {}; }
+    constructor() { this.children = []; this.dataset = {}; this.writes = []; this.textContent = ''; this.listeners = {}; this.style = {}; this.rect = {left: 0, top: 0, width: 375, height: 812, right: 375, bottom: 812}; }
     set textContent(value) { this.text = value; this.writes.push(value); }
     get textContent() { return this.text; }
     append(...children) { this.children.push(...children); for (const child of children) if (child instanceof Element) child.parent = this; }
@@ -25,7 +25,7 @@ async function page(search = '?test&timing', latency = 100, manual = false) {
       return Object.fromEntries(['beginPath', 'arc', 'stroke', 'fill', 'lineTo', 'moveTo']
         .map(name => [name, (...args) => drawing.push([name, ...args])]));
     }
-    getBoundingClientRect() { return {width: 380}; }
+    getBoundingClientRect() { return this.rect; }
   }
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, new Element());
@@ -54,11 +54,12 @@ async function page(search = '?test&timing', latency = 100, manual = false) {
   const context = vm.createContext({
     createLatest, summarize: () => ({headline: 'Result', announcement: 'Result', trips: []}),
     document: {getElementById: get, createElement: () => new Element(), createTextNode: text => text,
+      querySelector: selector => get(selector),
       querySelectorAll: selector => selector === '[name="meteor-size"]'
         ? get('meteor-sizes').children.filter(x => x instanceof Element).map(label => label.children[0]) : [],
       documentElement: {dataset: {}}, activeElement: null},
     location: {search, href: `https://example.test/playground/${search}`},
-    navigator: {userAgent: 'test-agent'}, window: {}, URLSearchParams, Worker,
+    navigator: {userAgent: 'test-agent'}, window: {listeners: {}, addEventListener(name, fn) { this.listeners[name] = fn; }}, URLSearchParams, Worker,
     matchMedia: query => {
       if (!media.has(query)) media.set(query, {matches: false, addEventListener(name, fn) { this.change = fn; }});
       return media.get(query);
@@ -72,7 +73,7 @@ async function page(search = '?test&timing', latency = 100, manual = false) {
     },
     cancelAnimationFrame(id) { if (frames.delete(id)) cancelledFrames++; },
   });
-  vm.runInContext(source + '\nglobalThis.pageTest = {state, runEdit, fireAt, runPhoneGate, METEOR_SIZES};', context);
+  vm.runInContext(source + '\nglobalThis.pageTest = {state, runEdit, fireAt, runPhoneGate, METEOR_SIZES, setHeight};', context);
   await context.window.__playground.ready;
   // These tests cover page/worker wiring; the browser harness covers MapLibre drawing.
   vm.runInContext('syncMap = () => {}; styleReady = true;', context);
@@ -302,11 +303,23 @@ test('worker errors cancel frames, timers and staged results, including stale re
 test('canvas draws an immediate pulse, falling Meteor, steady road highlight and reverse sweep', async () => {
   const meteor = await page('?test', 0, true);
   meteor.installMap();
-  const result = meteor.hook.fireMeteor(0, 0);
+  // The double projects lat 5 to y = 500 px, leaving room for the full Small drop.
+  const result = meteor.hook.fireMeteor(5, 0);
   assert.deepEqual(meteor.drawing.filter(row => row[0] === 'arc'),
-    [['arc', 0, 0, 8, 0, Math.PI*2], ['arc', 0, -200, 12, 0, Math.PI*2]]);
+    [['arc', 0, 500, 8, 0, Math.PI*2], ['arc', 0, 300, 12, 0, Math.PI*2]]);
   await meteor.reply(); await meteor.advance(600); await result;
   assert.equal(meteor.get('map').children.length, 0);
+  // Large: marker and drop scale by √3, so it starts higher and is bigger; near the top the drop is capped.
+  for (const [lat, drop] of [[5, 200*Math.sqrt(3)], [1, 100 - 12*Math.sqrt(3) - 8]]) {
+    const large = await page('?test', 0, true);
+    large.installMap();
+    const fired = large.hook.fireMeteor(lat, 0, 1500);
+    const [, x, y, r] = large.drawing.filter(row => row[0] === 'arc')[1];
+    assert.equal(x, 0);
+    assert.ok(Math.abs(y - (lat*100 - drop)) < 1e-9, `drop at lat ${lat}`);
+    assert.ok(Math.abs(r - 12*Math.sqrt(3)) < 1e-9);
+    await large.reply(); await large.advance(1040); await fired;
+  }
   for (const weapon of ['stomp', 'flip']) {
     const p = await page('?test', 0, true);
     p.installMap(); p.api.state.weapon = weapon;
@@ -340,4 +353,74 @@ test('a native reduced-motion change cancels the active animation and draws its 
   assert.equal(p.timers.size, 0);
   assert.equal(p.hook.staticOutline(), true);
   assert.equal(p.api.state.phase, 'showing');
+});
+
+test('crosshair follows live sheet bounds at phone heights and desktop breakpoint', async () => {
+  const p = await page();
+  vm.runInContext('map = {unproject: ([x, y]) => ({lng: x / 100, lat: y / 100})};', p.context);
+  const sheet = p.get('sheet'), bounds = p.get('map').rect;
+  const overlay = p.get('.crosshair');
+  const check = (x, y) => {
+    assert.equal(overlay.style.left, `${bounds.left + x}px`);
+    assert.equal(overlay.style.top, `${bounds.top + y}px`);
+    assert.deepEqual(p.plain(p.hook.crosshairPoint()), {x, y, lng: x / 100, lat: y / 100});
+  };
+  for (const [height, top] of [['peek', 644], ['half', 406], ['full', 72]]) {
+    // setHeight must read the animated rectangle, then transitionend reads its final edge.
+    sheet.rect.top = 500;
+    p.api.setHeight(height);
+    check(187.5, 250);
+    sheet.rect.top = top;
+    sheet.listeners.transitionend({target: sheet, propertyName: 'height'});
+    check(187.5, top / 2);
+  }
+  const desktop = p.media.get('(min-width: 900px)');
+  sheet.rect.right = 396;
+  for (const [width, isDesktop, x, y] of [[1280, true, 846, 400], [899, false, 449.5, 36],
+    [900, true, 656, 400]]) {
+    Object.assign(bounds, {width, height: 800});
+    desktop.matches = isDesktop;
+    desktop.change({matches: isDesktop});
+    check(x, y);
+    bounds.width += 20;
+    p.context.window.listeners.resize();
+    check(x + 10, y);
+  }
+  // Map pixels exclude the container's viewport offset; the fixed overlay includes it.
+  Object.assign(bounds, {left: 20, top: 30, width: 900, height: 800});
+  desktop.change({matches: true});
+  check(646, 400);
+});
+
+test('Enter fires every selected weapon at the crosshair unprojection; pan and zoom stay unchanged', async () => {
+  for (const weapon of ['stomp', 'flip', 'meteor']) {
+    const p = await page();
+    vm.runInContext(`globalThis.moves = []; map = {
+      unproject: ([x, y]) => ({lng: -122 + x / 10000, lat: 37 + y / 10000}),
+      getZoom: () => 10, easeTo() {}, getSource: () => ({setData() {}}),
+      panBy: (delta, options) => moves.push(['pan', delta, options]),
+      zoomIn: options => moves.push(['in', options]), zoomOut: options => moves.push(['out', options])
+    };`, p.context);
+    p.get('sheet').rect.top = 406;
+    p.api.setHeight('half');
+    p.api.state.weapon = weapon;
+    const point = p.hook.crosshairPoint();
+    let prevented = 0;
+    const key = value => p.get('map').listeners.keydown({target: p.get('map'), key: value,
+      preventDefault() { prevented++; }});
+    key('Enter');
+    const request = p.sent.at(-1);
+    assert.equal(request.type, weapon === 'meteor' ? 'edit' : 'pick');
+    assert.deepEqual(p.plain(request.tap), {lat: point.lat, lon: point.lng});
+    for (const value of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '=', '-']) key(value);
+    assert.deepEqual(p.plain(p.context.moves), [
+      ...[[-100, 0], [100, 0], [0, -100], [0, 100]].map(delta => ['pan', delta, {duration: 200}]),
+      ['in', {duration: 200}], ['in', {duration: 200}], ['out', {duration: 200}]]);
+    p.hook.setReducedMotion(true);
+    key('ArrowLeft'); key('+'); key('-');
+    assert.deepEqual(p.plain(p.context.moves.slice(-3)), [
+      ['pan', [-100, 0], {duration: 0}], ['in', {duration: 0}], ['out', {duration: 0}]]);
+    assert.equal(prevented, 11);
+    await new Promise(resolve => setImmediate(resolve));
+  }
 });

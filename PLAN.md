@@ -628,7 +628,7 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `make test` and `make lint` green.
   - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · **P2b done 2026-10-30** (Codex code; Claude browser Verify, 4 fixes) · **P2c done 2026-10-30** (Codex code, three runs; whole-worker gate median 264 MB of 5, decision 17) · **P2d done 2026-10-30** (15/15 == oracle, 2/2 presets, 75/75 paths; 50 cycles flat; keyboard-only run; 2 focus fixes) · **P2e done 2026-11-01** (live deploy + smoke test 2026-10-30; Daily → Pages paths via scheduled runs 2026-10-31/11-01; Jared's phone run on an iPhone 14, Chrome: cold load ≤ ~1 s, preset / toll-plaza Meteor / Rebuild ×10 barely noticeable, so no Meteor over 2 s and decision 16's cap stays off; VoiceOver not run, README caveat stays).
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
-- **P4 — Polish** (two Meteor sizes, impact animations, share link, P2 follow-ups; decision 18). *Status:* detail written 2026-11-01; Codex critique 8 accepted + 2 in part (Review log). **P4a done 2026-11-02** (18/18 == oracle; phone gate pass, `results/playground/p4_phone_gate.json`: iPhone 14 medians 395 / 482 / 537 ms at 1,500 m, max run 575 ms; Large ships). **P4b done 2026-11-02** (animations; harness PASS with animations on, `results/playground/p4b_browser_check.json`; Jared's phone check good; effects enlarged after it). P4c next. P4a → P4b → P4c in order: all three edit `site/playground/app.js`, so they are not independent.
+- **P4 — Polish** (two Meteor sizes, impact animations, share link, P2 follow-ups; decision 18). *Status:* detail written 2026-11-01; Codex critique 8 accepted + 2 in part (Review log). **P4a done 2026-11-02** (18/18 == oracle; phone gate pass, `results/playground/p4_phone_gate.json`: iPhone 14 medians 395 / 482 / 537 ms at 1,500 m, max run 575 ms; Large ships). **P4b done 2026-11-02** (animations; harness PASS with animations on, `results/playground/p4b_browser_check.json`; Jared's phone check good; effects enlarged after it). **P4c-1 done 2026-11-02** (crosshair at the visible map centre; named no-impact Stomp/Flip results); P4c next. P4a → P4b → P4c in order: all three edit `site/playground/app.js`, so they are not independent.
   - **Gate input (P2e, 2026-11-01):** Jared's iPhone 14 (Chrome/WebKit) ran the 500 m toll-plaza Meteor "barely noticeable", timed by feel. That clears 500 m only; the large size needs its own measured phone number (P4a).
   - **Non-goals for P4:** a new damaging preset (presets come from `config/demo_faults.toml` through the export, so it means re-exporting and recommitting all 24 data files; it waits for a step that re-exports anyway); place names in the trips list (same reason); downloaded animation assets; any change to the engine, the worker protocol's semantics or the exported data.
   - **P4a — Two Meteor sizes + a measured phone gate.**
@@ -659,7 +659,17 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - 50 Meteor/Rebuild cycles **with animations on**: source and layer counts after cycle 50 equal those after cycle 1; last-10 median within 1.5× of first-10 median.
       - Reduced motion: through the `?test` hook's `matchMedia` override, no animation frame of ours is scheduled and the static outline is present. Jared also turns on iOS Reduce Motion once and confirms no animation.
       - `make test`, `make lint` green.
-  - **P4c — Share link + P2 follow-ups.**
+  - **P4c-1 — Crosshair + named no-impact results** (split out of P4c 2026-11-02, Jared: do these first; they don't depend on the share link).
+    - **Files:** `site/playground/{app.js,style.css}`, `site/playground/core/summary.js`, `site/playground/core/test/{summary.test.mjs,app.test.mjs}`.
+    - **Do:**
+      - **Keyboard crosshair (critique #10):** compute the unobscured map rectangle: above the sheet at peek/half/full on phones; to the right of the left card on desktop (≥ 900 px). Place the crosshair at that rectangle's centre and have Enter fire at the same pixel via `map.unproject()`. Recompute on sheet-height change, resize and the desktop breakpoint.
+      - **Named no-impact results:** for a single-road Stomp or Flip, "No sampled trip used University Avenue" and "2 trips rerouted around University Avenue, none slowed by 2 min or more"; an unnamed road reads "this unnamed road". Meteor and presets keep today's wording.
+    - **Verify:**
+      - `summary.test.mjs`: named, unnamed and multi-road cases for both messages.
+      - Browser pane (shown): Enter picks the way under the drawn crosshair (picked way id equal to `map.queryRenderedFeatures` at the crosshair pixel) at peek, half and full on 375×812, and at 1280×800, plus 899 and 900 px wide after a resize.
+      - A no-impact Stomp on a named road shows its name in the sheet and in the announcement.
+      - `make test`, `make lint` green.
+  - **P4c — Share link + wrap-up** (the crosshair and naming bullets below moved to P4c-1).
     - **Files:** `site/playground/core/share.js` (new, pure parser/serializer), `site/playground/core/test/share.test.mjs` (new), `site/playground/{app.js,style.css,index.html}`, `README.md` (playground section), `docs/PLAYGROUND.md` (Claude).
     - **Do:**
       - **Share one edit in the URL hash (critiques #2, #7).** Grammar, matched against the raw hash with no percent-decoding (anything else is invalid):

@@ -8,10 +8,12 @@ export function summarize(result, {meta, edit}) {
     title: `Trip ${row.trip_label.trip_id} · ${row.trip_label.kind}`,
     status: row.status, before_min: (row.trip_ms / 60000).toFixed(1),
     after_min: row.distance_ms === null ? null : (row.distance_ms / 60000).toFixed(1)}));
+  const singleRoad = !edit.preset && ['stomp', 'flip'].includes(edit.weapon) && result.ways_hit === 1;
+  const name = singleRoad ? (result.ways?.[0]?.name || 'this unnamed road') : null;
   let message;
   if (edit.weapon === 'meteor' && result.ways_hit === 0) message = 'Missed — no roads here';
-  else if (result.candidate_trips === 0) message = 'No sampled trip used these roads';
-  else if (result.affected_trips === 0) message = `${n(result.candidate_trips)} ${result.candidate_trips === 1 ? 'trip' : 'trips'} rerouted, none slowed by 2 min or more`;
+  else if (result.candidate_trips === 0) message = `No sampled trip used ${singleRoad ? name : 'these roads'}`;
+  else if (result.affected_trips === 0) message = `${n(result.candidate_trips)} ${result.candidate_trips === 1 ? 'trip' : 'trips'} rerouted${singleRoad ? ` around ${name}` : ''}, none slowed by 2 min or more`;
   if (message) return {message, ...(result.ways_hit > 0 ? {note: 'Only the sampled trips were tested.'} : {}),
     announcement: message, trips, ...(result.precomputed ? {precomputed: true} : {})};
   const label = edit.preset ? (edit.label ?? meta.presets?.[edit.preset]?.label ?? edit.preset)
