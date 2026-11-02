@@ -304,14 +304,14 @@ test('canvas draws an immediate pulse, falling Meteor, steady road highlight and
   meteor.installMap();
   const result = meteor.hook.fireMeteor(0, 0);
   assert.deepEqual(meteor.drawing.filter(row => row[0] === 'arc'),
-    [['arc', 0, 0, 5, 0, Math.PI*2], ['arc', 0, -110, 7, 0, Math.PI*2]]);
+    [['arc', 0, 0, 8, 0, Math.PI*2], ['arc', 0, -200, 12, 0, Math.PI*2]]);
   await meteor.reply(); await meteor.advance(600); await result;
   assert.equal(meteor.get('map').children.length, 0);
   for (const weapon of ['stomp', 'flip']) {
     const p = await page('?test', 0, true);
     p.installMap(); p.api.state.weapon = weapon;
     p.api.fireAt({lat: 0, lon: 0});
-    assert.deepEqual(p.drawing, [['beginPath'], ['arc', 0, 0, 5, 0, Math.PI*2], ['stroke']]);
+    assert.deepEqual(p.drawing, [['beginPath'], ['arc', 0, 0, 8, 0, Math.PI*2], ['stroke']]);
     await p.advance(100);
     p.drawing.length = 0;
     await p.reply();
@@ -321,7 +321,7 @@ test('canvas draws an immediate pulse, falling Meteor, steady road highlight and
       assert.ok(p.drawing.some(row => JSON.stringify(row) === JSON.stringify(['lineTo', 100, 0])));
       p.drawing.length = 0;
       await p.advance(250);
-      assert.ok(p.drawing.some(row => JSON.stringify(row) === JSON.stringify(['lineTo', 86, 0])));
+      assert.ok(p.drawing.some(row => JSON.stringify(row) === JSON.stringify(['lineTo', 80, 0])));
     }
     await p.reply(); await p.advance(500);
     assert.equal(p.get('map').children.length, 0);

@@ -599,6 +599,9 @@ function revealResult() {
   finishRequest(data.id);
 }
 
+// Effect sizes in CSS pixels; enlarged 2026-11-02 after Jared's phone check found them too subtle.
+const EFFECT = {line_px: 6, pulse_start_px: 8, pulse_grow_px: 30, meteor_px: 12, fall_px: 200, arrow_px: 12, arrow_gap_px: 40};
+
 function paintEffect(effect, fraction) {
   if (!map?.project) return;
   if (!effectCanvas) {
@@ -611,15 +614,15 @@ function paintEffect(effect, fraction) {
   effectCanvas.height = rect.height;
   const ctx = effectCanvas.getContext('2d');
   if (!ctx) return;
-  ctx.strokeStyle = '#e9a23b'; ctx.fillStyle = '#e9a23b'; ctx.lineWidth = 3;
+  ctx.strokeStyle = '#e9a23b'; ctx.fillStyle = '#e9a23b'; ctx.lineWidth = EFFECT.line_px; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const point = effect.tap && map.project([effect.tap.lon, effect.tap.lat]);
   const pulse = Math.min(1, (performance.now() - effect.tapStarted) / 220);
   if (point && pulse < 1) {
-    ctx.beginPath(); ctx.arc(point.x, point.y, 5 + 17*pulse, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(point.x, point.y, EFFECT.pulse_start_px + EFFECT.pulse_grow_px*pulse, 0, Math.PI*2); ctx.stroke();
   }
   if (effect.edit.weapon === 'meteor') {
     const fall = Math.min(1, fraction / 0.65);
-    ctx.beginPath(); ctx.arc(point.x, point.y - 110*(1-fall), 7, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(point.x, point.y - EFFECT.fall_px*(1-fall), EFFECT.meteor_px, 0, Math.PI*2); ctx.fill();
   } else if (effect.line?.length > 1) {
     const points = effect.line.map(p => map.project(p));
     if (effect.edit.weapon === 'stomp') {
@@ -632,13 +635,13 @@ function paintEffect(effect, fraction) {
       // The boolean one-way export cannot distinguish original oneway=-1 roads.
       for (let i = 1; i < points.length; i++) {
         const a = points[i], b = points[i-1], length = Math.hypot(b.x-a.x, b.y-a.y);
-        for (let d = fraction*28; d < length; d += 28) {
+        for (let d = fraction*EFFECT.arrow_gap_px; d < length; d += EFFECT.arrow_gap_px) {
           const x = a.x + (b.x-a.x)*d/length, y = a.y + (b.y-a.y)*d/length;
           const angle = Math.atan2(b.y-a.y, b.x-a.x);
           ctx.beginPath();
-          ctx.moveTo(x-7*Math.cos(angle-0.6), y-7*Math.sin(angle-0.6));
+          ctx.moveTo(x-EFFECT.arrow_px*Math.cos(angle-0.6), y-EFFECT.arrow_px*Math.sin(angle-0.6));
           ctx.lineTo(x, y);
-          ctx.lineTo(x-7*Math.cos(angle+0.6), y-7*Math.sin(angle+0.6));
+          ctx.lineTo(x-EFFECT.arrow_px*Math.cos(angle+0.6), y-EFFECT.arrow_px*Math.sin(angle+0.6));
           ctx.stroke();
         }
       }
