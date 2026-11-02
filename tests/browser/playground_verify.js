@@ -9,6 +9,8 @@ const params = new URLSearchParams(location.search);
 const setPath = params.get('set') ?? '../../results/playground/p2_verify_set.json';
 const oraclePath = params.get('oracle') ?? '../../results/playground/p2_oracle.json';
 const expectedCases = Number(params.get('expected') ?? 15);
+// Defaults retain the P2/P4a compute-only cycles; opt in with ?animations=1.
+const animationsOn = params.get('animations') === '1';
 const outputFilename = params.get('output') ?? 'p2_browser_check.json';
 $('download').textContent = `Download ${outputFilename}`;
 async function fetchBytes(url) {
@@ -162,7 +164,7 @@ async function withTimeout(promise, label, ms = 120000) {
     })]);
   } finally { clearTimeout(timer); }
 }
-async function cycles(largeCase, oracle, a, meta) {
+async function cycles(largeCase, oracle, a, meta, cases) {
   const frame = document.createElement('iframe');
   frame.title = 'Real playground cycle check';
   const loaded = new Promise(resolve => { frame.onload = resolve; });
@@ -172,7 +174,8 @@ async function cycles(largeCase, oracle, a, meta) {
   const hook = frame.contentWindow.__playground;
   if (!hook) throw new Error('Playground test hook unavailable');
   await withTimeout(hook.ready, 'Playground ready');
-  const result = {fire_ms: [], rebuild_ms: [], counts_after_1: null, counts_after_50: null, pass: false};
+  hook.setReducedMotion(!animationsOn);
+  const result = {animations_on: animationsOn, fire_ms: [], rebuild_ms: [], counts_after_1: null, counts_after_50: null, pass: false};
   for (let cycle = 1; cycle <= 50; cycle++) {
     $('status').textContent = `Real page: cycle ${cycle}/50`;
     const fire = await withTimeout(hook.fireMeteor(37.825, -122.315), 'Meteor draw');
@@ -202,7 +205,92 @@ async function cycles(largeCase, oracle, a, meta) {
     addRow('Real page Large Meteor', result.large_meteor.equal, '', '', difference ?? hitDifference ?? '');
     await withTimeout(hook.rebuild(), 'Large Meteor Rebuild');
   }
+  result.animation_checks = await animationChecks(frame, hook, cases, oracle);
+  result.pass &&= result.animation_checks.pass;
   return result;
+}
+
+async function animationChecks(frame, hook, cases, oracle) {
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const doc = frame.contentDocument;
+  const announcement = doc.getElementById('announcement');
+  const weapons = [];
+  for (const weapon of ['stomp', 'flip']) {
+    const edit = cases.find(edit => edit.weapon === weapon && edit.way_id !== undefined);
+    if (!edit) throw new Error(`Missing ${weapon} oracle case`);
+    hook.setReducedMotion(true);
+    await hook.fireRoad(weapon, edit.way_id);
+    const result = routing(hook.result()), hit = hook.hitWayIds();
+    const text = doc.getElementById('results').textContent;
+    await hook.rebuild();
+    hook.setReducedMotion(false);
+    const pending = hook.fireRoad(weapon, edit.way_id);
+    const running = hook.animationsRunning();
+    await pending;
+    const pass = running && !firstDifference(routing(hook.result()), oracle.outputs[edit.id])
+      && !firstDifference(routing(hook.result()), result)
+      && !firstDifference(hook.hitWayIds(), hit) && doc.getElementById('results').textContent === text;
+    weapons.push({weapon, pass});
+    addRow(`${weapon} animation result`, pass);
+    await hook.rebuild();
+  }
+  hook.setReducedMotion(true);
+  await hook.fireMeteor(37.7946, -122.3999);
+  const expected = routing(hook.result()), expectedHits = hook.hitWayIds();
+  await hook.rebuild();
+  const announcements = [];
+  const observer = new MutationObserver(records => {
+    for (const record of records) {
+      const text = record.target.textContent;
+      if (text) announcements.push(text);
+    }
+  });
+  observer.observe(announcement, {childList: true, characterData: true, subtree: true});
+  try {
+    hook.setReducedMotion(false);
+    const first = hook.fireMeteor(37.825, -122.315).then(() => false, () => true);
+    await sleep(100);
+    const firstRunning = hook.animationsRunning();
+    const second = await hook.fireMeteor(37.7946, -122.3999);
+    await sleep(0); // Flush MutationObserver delivery.
+    const rapid = firstRunning && await first && second.phase === 'showing'
+      && !firstDifference(routing(hook.result()), expected)
+      && !firstDifference(hook.hitWayIds(), expectedHits) && announcements.length === 1
+      && !hook.animationsRunning();
+    await hook.rebuild();
+    announcements.length = 0;
+    const interrupted = hook.fireMeteor(37.825, -122.315).then(() => false, () => true);
+    await sleep(100);
+    const rebuildRunning = hook.animationsRunning();
+    await hook.rebuild();
+    await sleep(1100); // Past both size deadlines: no stale completion may restore anything.
+    const rebuilt = rebuildRunning && await interrupted && hook.result() === null
+      && hook.hitWayIds().length === 0 && !hook.staticOutline()
+      && !hook.animationsRunning() && announcements.length === 0 && announcement.textContent === '';
+    hook.setReducedMotion(true);
+    const framesBefore = hook.animationFramesScheduled();
+    const reduced = await hook.fireMeteor(37.7946, -122.3999);
+    await sleep(0);
+    const reducedPass = reduced.phase === 'showing' && !hook.animationsRunning()
+      && hook.animationFramesScheduled() === framesBefore && hook.staticOutline()
+      && !firstDifference(routing(hook.result()), expected)
+      && !firstDifference(hook.hitWayIds(), expectedHits) && announcements.length === 1;
+    await hook.rebuild();
+    announcements.length = 0;
+    hook.setReducedMotion(false);
+    const changing = hook.fireMeteor(37.7946, -122.3999);
+    await sleep(100);
+    hook.setReducedMotion(true);
+    await changing;
+    await sleep(0);
+    const changed = !hook.animationsRunning() && hook.staticOutline()
+      && !firstDifference(routing(hook.result()), expected) && announcements.length === 1;
+    await hook.rebuild();
+    const checks = {weapon_results: weapons.every(check => check.pass), rapid_edit: rapid, rebuild: rebuilt, reduced_motion: reducedPass,
+      preference_change: changed, pass: weapons.every(check => check.pass) && rapid && rebuilt && reducedPass && changed};
+    for (const [name, pass] of Object.entries(checks)) if (name !== 'pass') addRow(name, pass);
+    return checks;
+  } finally { observer.disconnect(); }
 }
 async function main() {
   const [set, oracle, metaBytes] = await Promise.all([
@@ -244,7 +332,7 @@ async function main() {
   } finally { worker.terminate(); }
   const largeCase = set.cases.find(edit => edit.weapon === 'meteor' && edit.radius_m === 1500);
   if (expectedCases > 15 && !largeCase) throw new Error('Missing Large Meteor oracle case');
-  report.cycles = await cycles(largeCase, oracle, a, meta);
+  report.cycles = await cycles(largeCase, oracle, a, meta, set.cases);
   addRow('50 page cycles', report.cycles.pass);
   report.totals = {cases_equal: report.cases.filter(row => row.equal).length, cases: report.cases.length,
     presets_equal: report.presets.filter(row => row.equal).length,

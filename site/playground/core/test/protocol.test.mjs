@@ -8,6 +8,12 @@ import {createProtocol} from '../protocol.js';
 import {createLatest} from '../latest.js';
 import {packJsonArray} from '../packed.js';
 
+// The pick reply's polyline, built independently: [lon, lat] per stored point, in OSM order.
+const wayLine = (meta, a, w) => Array.from({length: a.geometry_offsets[w+1] - a.geometry_offsets[w]}, (_, i) => {
+  const q = a.geometry_offsets[w] + i;
+  return [a.geometry_coords[2*q+1] / meta.geometry_scale, a.geometry_coords[2*q] / meta.geometry_scale];
+});
+
 const root = new URL('../../../../tests/fixtures/playground/', import.meta.url);
 const json = url => JSON.parse(readFileSync(url));
 test('empty and null way names display as unnamed roads', () => {
@@ -96,7 +102,8 @@ for (const entry of readdirSync(root, {withFileTypes: true}).filter(e => e.isDir
     const p = a.geometry_offsets[0];
     assert.deepEqual(protocol.handle({id: 3, type: 'pick',
       lat: a.geometry_coords[2*p]/meta.geometry_scale, lon: a.geometry_coords[2*p+1]/meta.geometry_scale, max_m: 0}),
-    {id: 3, ok: true, result: {way_id: a.way_osm_id[0], name: a.way_names.get(0) || null, oneway: Boolean(a.way_oneway[0])}});
+    {id: 3, ok: true, result: {way_id: a.way_osm_id[0], name: a.way_names.get(0) || null, oneway: Boolean(a.way_oneway[0]),
+      line: wayLine(meta, a, 0)}});
     assert.deepEqual(protocol.handle({id: 30, type: 'pick', lat: 0, lon: 0, max_m: 20}),
       {id: 30, ok: true, result: null});
     assert.deepEqual(protocol.handle({id: 4, type: 'reset'}), {id: 4, ok: true, result: {reset: true}});
@@ -146,7 +153,7 @@ test('pick decodes packed empty names and u1 one-way flags', () => {
     const p = decoded.a.geometry_offsets[0], {meta, a} = decoded;
     assert.deepEqual(createProtocol(decoded).handle({id: 1, type: 'pick',
       lat: a.geometry_coords[2*p]/meta.geometry_scale, lon: a.geometry_coords[2*p+1]/meta.geometry_scale, max_m: 0}),
-    {id: 1, ok: true, result: {way_id: 901, name: null, oneway: flag === 1}});
+    {id: 1, ok: true, result: {way_id: 901, name: null, oneway: flag === 1, line: wayLine(meta, a, 0)}});
   }
 });
 

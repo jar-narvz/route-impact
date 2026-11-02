@@ -1,0 +1,285 @@
+{
+  "measured_at": "2026-11-02T07:54:53.504Z",
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.4212.0 Chrome/152.0.7977.167 Safari/537.36",
+  "git_commit": "56dcd7c016016d314a725c2f3ce91cf6a05b74a0",
+  "meta_sha256": "658b284898e10d785276613b515f944b5326cbfe21a32874fd1d865a66ac97e6",
+  "cases": [
+    {
+      "id": "bay_bridge_live",
+      "equal": true,
+      "ms": 68,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "university_ramp_live",
+      "equal": true,
+      "ms": 6.4,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_01",
+      "equal": true,
+      "ms": 12.4,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "stomp_02",
+      "equal": true,
+      "ms": 7.9,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_03",
+      "equal": true,
+      "ms": 12.5,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_04",
+      "equal": true,
+      "ms": 3.8,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_05",
+      "equal": true,
+      "ms": 7.2,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_06",
+      "equal": true,
+      "ms": 7.3,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_07",
+      "equal": true,
+      "ms": 4.3,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_08",
+      "equal": true,
+      "ms": 9.8,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_09",
+      "equal": true,
+      "ms": 3.5,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_10",
+      "equal": true,
+      "ms": 6.6,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "bay_bridge_toll_plaza_500",
+      "equal": true,
+      "ms": 94.9,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "sf_financial_500",
+      "equal": true,
+      "ms": 26.8,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "sf_union_square_500",
+      "equal": true,
+      "ms": 47.4,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "bay_bridge_toll_plaza_1500",
+      "equal": true,
+      "ms": 141.9,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "sf_financial_1500",
+      "equal": true,
+      "ms": 194.8,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "sf_union_square_1500",
+      "equal": true,
+      "ms": 207.2,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "bay_bridge",
+      "equal": true
+    },
+    {
+      "name": "university_ramp",
+      "equal": true
+    }
+  ],
+  "cycles": {
+    "animations_on": true,
+    "fire_ms": [
+      633.8,
+      634.4,
+      633.4,
+      633.8,
+      633.5,
+      631.7,
+      637.5,
+      633.3,
+      636.2,
+      632.5,
+      631.7,
+      634.1,
+      633.9,
+      632.8,
+      634.4,
+      633.3,
+      633.8,
+      631.8,
+      633,
+      631.7,
+      633.9,
+      632.5,
+      631.7,
+      633,
+      634.1,
+      632.1,
+      630.1,
+      630,
+      630.4,
+      634.7,
+      635.4,
+      633.1,
+      632.3,
+      632.5,
+      631.5,
+      634.7,
+      631.1,
+      630.6,
+      633.2,
+      633.3,
+      633.3,
+      632.9,
+      635.1,
+      631.7,
+      634.5,
+      632.1,
+      633.4,
+      633,
+      632.7,
+      633.9
+    ],
+    "rebuild_ms": [
+      26.1,
+      26.1,
+      26.3,
+      26.1,
+      25.8,
+      23,
+      33.7,
+      26,
+      25.1,
+      25.5,
+      25.7,
+      24.8,
+      25.3,
+      26.1,
+      25.2,
+      25.8,
+      25,
+      24.9,
+      26.1,
+      24.7,
+      26.2,
+      25.7,
+      25.3,
+      26.1,
+      24.7,
+      22.3,
+      24.4,
+      23,
+      25.4,
+      27.1,
+      26,
+      25.3,
+      26.2,
+      25.2,
+      26.1,
+      24.9,
+      24.9,
+      23.7,
+      25.3,
+      26.5,
+      26.2,
+      26.8,
+      25.6,
+      25.9,
+      25.4,
+      24.7,
+      25.5,
+      25.5,
+      24.8,
+      27.1
+    ],
+    "counts_after_1": {
+      "sources": 10,
+      "layers": 55,
+      "features": 2
+    },
+    "counts_after_50": {
+      "sources": 10,
+      "layers": 55,
+      "features": 2
+    },
+    "pass": true,
+    "large_meteor": {
+      "id": "bay_bridge_toll_plaza_1500",
+      "equal": true,
+      "first_difference": null
+    },
+    "animation_checks": {
+      "weapon_results": true,
+      "rapid_edit": true,
+      "rebuild": true,
+      "reduced_motion": true,
+      "preference_change": true,
+      "pass": true
+    }
+  },
+  "totals": {
+    "cases_equal": 18,
+    "cases": 18,
+    "presets_equal": 2,
+    "drawn_valid": 100,
+    "drawn_total": 100
+  },
+  "code_commit": "43d67e2",
+  "code_dirty": true,
+  "timing_note": "Pane visible; ms rounded to 0.1. With animations on, cycle fire_ms includes the 600 ms Small Meteor fall (reveal at max(result, animation end)). git_commit is the export's. MacBook Pro M3 Max."
+}

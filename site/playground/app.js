@@ -5,7 +5,7 @@ import {summarize} from './core/summary.js';
 const METEOR_SIZES = [
   {name: 'Small', radius_m: 500},
   {name: 'Large', radius_m: 1500},
-];
+].map(size => ({...size, duration_ms: Math.round(600 * Math.sqrt(size.radius_m / 500))}));
 const timing = new URLSearchParams(location.search).has('timing');
 // Frozen P2 stress centers; runEdit canonicalizes these before any drawing or request.
 const PHONE_CASES = [
@@ -16,7 +16,9 @@ const PHONE_CASES = [
 
 const $ = id => document.getElementById(id);
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+let motionOverride;
+const reducedMotion = () => motionOverride ?? motionPreference.matches;
 const desktop = matchMedia('(min-width: 900px)');
 const heights = ['peek', 'half', 'full'];
 const styles = {
@@ -53,16 +55,24 @@ let styleReady = false;
 let firstMapLoad = false;
 let fitted = false;
 let pendingRequest;
-let ringFrame;
+let editToken = 0;
+let animation;
+let pendingReveal;
+let effectCanvas;
+let animationFramesScheduled = 0;
 let resolveReady;
 const ready = new Promise(resolve => { resolveReady = resolve; });
 const drawWaiters = new Map();
-const afterDraw = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+const afterDraw = () => !map?.once ? Promise.resolve() : new Promise(resolve => {
+  map.once('render', resolve);
+  map.triggerRepaint();
+});
 
 function finishRequest(id, error) {
   const waiter = drawWaiters.get(id);
   if (!waiter) return;
-  drawWaiters.delete(id);
+  const token = editToken;
+  if (error) drawWaiters.delete(id);
   if (error) waiter.reject(new Error(error));
   else {
     const style = styleReady ? Promise.resolve() : new Promise((resolve, reject) => {
@@ -70,7 +80,11 @@ function finishRequest(id, error) {
       else map.once('style.load', resolve);
     });
     style.then(afterDraw)
-      .then(() => waiter.resolve({ms: performance.now() - waiter.start, fire_ms: state.fireMs, phase: state.phase}), waiter.reject);
+      .then(() => {
+        drawWaiters.delete(id);
+        if (token !== editToken) waiter.reject(new Error('Edit cancelled'));
+        else waiter.resolve({ms: performance.now() - waiter.start, fire_ms: state.fireMs, phase: state.phase});
+      }, error => { drawWaiters.delete(id); waiter.reject(error); });
   }
 }
 
@@ -146,6 +160,8 @@ function render() {
 }
 
 function fail(message, retryable = false) {
+  cancelEdit();
+  latest.next();
   state.phase = 'error';
   state.error = {message, retryable};
   // Peek is too short for the message and Retry.
@@ -344,6 +360,7 @@ function sendRequest(type, payload = {}) {
 }
 
 function loadNetwork() {
+  cancelEdit();
   worker?.terminate();
   // Invalidate even replies already queued by the terminated worker.
   latest.next();
@@ -376,31 +393,21 @@ function loadNetwork() {
       } else if (request.type === 'pick') {
         const picked = data.result;
         if (!picked || request.weapon === 'flip' && !picked.oneway) {
+          cancelAnimation();
           state.phase = state.result ? 'showing' : 'ready';
           state.hint = picked ? 'This road is two-way' : 'No road here — zoom in';
         } else {
-          runEdit({weapon: request.weapon, way_id: picked.way_id}, request.tap, request.started);
+          runEdit({weapon: request.weapon, way_id: picked.way_id}, request.tap, request.started, request.token, picked.line);
           return;
         }
       } else if (request.type === 'edit') {
-        const {display, ...result} = data.result;
-        state.result = result;
-        state.drawn = {before: linesToFeatures(display.before, 'trip'),
-          after: linesToFeatures(display.after, 'trip'), hit: linesToFeatures(display.hit, 'way_id')};
-        state.summary = summarize(data.result, {meta: state.meta, edit: request.edit});
-        $('announcement').textContent = state.summary.announcement;
-        state.phase = 'showing';
-        state.hint = null;
-        setHeight('half');
-        if (request.tap) panToTap(request.tap);
+        if (request.token !== editToken) return;
+        pendingReveal = {request, data};
+        revealResult();
+        return;
       }
       syncMap();
       render();
-      if (request.type === 'edit' && timing) {
-        state.fireMs = performance.now() - request.started;
-        $('fire-timing').textContent = `fire → result: ${Math.round(state.fireMs)} ms`;
-        $('fire-timing').hidden = false;
-      }
       finishRequest(data.id);
     };
     worker.onerror = event => {
@@ -510,7 +517,6 @@ function renderResults() {
 }
 
 function clearDrawing() {
-  cancelAnimationFrame(ringFrame);
   Object.assign(state, {result: null, drawn: null, summary: null, selection: null, ring: null, meteorCenter: null, fireMs: null});
   syncMap();
 }
@@ -526,40 +532,157 @@ function panToTap(tap) {
   duration: reducedMotion() ? 0 : 600});
 }
 
-function drawRing(tap, radius_m) {
+function drawRing(tap, radius) {
+  const k = state.meta.earth_radius_m * Math.PI / 180, kx = k * Math.cos(tap.lat * Math.PI / 180);
+  const coordinates = Array.from({length: 64}, (_, i) => {
+    const angle = i * 2 * Math.PI / 64;
+    return [tap.lon + Math.cos(angle)*radius/kx, tap.lat + Math.sin(angle)*radius/k];
+  });
+  coordinates.push(coordinates[0]);
   state.meteorCenter = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates: [tap.lon, tap.lat]}};
-  syncMap();
-  const start = performance.now(), k = state.meta.earth_radius_m * Math.PI / 180;
-  const kx = k * Math.cos(tap.lat * Math.PI / 180);
-  function frame(now) {
-    const fraction = timing || reducedMotion() ? 1 : Math.min(1, (now - start) / 600);
-    const radius = radius_m * fraction;
-    const coordinates = Array.from({length: 64}, (_, i) => {
-      const angle = i * 2 * Math.PI / 64;
-      return [tap.lon + Math.cos(angle) * radius / kx, tap.lat + Math.sin(angle) * radius / k];
-    });
-    coordinates.push(coordinates[0]);
-    state.ring = {type: 'Feature', properties: {}, geometry: {type: 'Polygon', coordinates: [coordinates]}};
-    if (map && styleReady) {
-      if (map.getSource('meteor-ring')) map.getSource('meteor-ring').setData(state.ring);
-      else syncMap();
-    }
-    if (fraction < 1) ringFrame = requestAnimationFrame(frame);
+  state.ring = {type: 'Feature', properties: {}, geometry: {type: 'Polygon', coordinates: [coordinates]}};
+  if (map && styleReady) {
+    map.getSource('meteor-ring')?.setData(state.ring);
+    map.getSource('meteor-center')?.setData(state.meteorCenter);
   }
-  frame(start);
 }
 
-function runEdit(edit, tap, started = performance.now()) {
+function cancelAnimation() {
+  if (animation) {
+    cancelAnimationFrame(animation.frame);
+    clearTimeout(animation.timer);
+    animation = undefined;
+  }
+  effectCanvas?.remove();
+  effectCanvas = undefined;
+}
+
+function cancelEdit() {
+  editToken++;
+  pendingReveal = undefined;
+  cancelAnimation();
+  for (const id of drawWaiters.keys()) finishRequest(id, 'Edit cancelled');
+  return editToken;
+}
+
+function finishAnimation() {
+  const current = animation;
+  if (!current || current.token !== editToken) return;
+  cancelAnimation();
+  if (current.edit.weapon === 'meteor') drawRing(current.tap, current.edit.radius_m);
+  revealResult();
+}
+
+function revealResult() {
+  if (!pendingReveal || animation) return;
+  const {request, data} = pendingReveal;
+  pendingReveal = undefined;
+  if (request.token !== editToken) return;
+  const {display, ...result} = data.result;
+  state.result = result;
+  state.drawn = {before: linesToFeatures(display.before, 'trip'),
+    after: linesToFeatures(display.after, 'trip'), hit: linesToFeatures(display.hit, 'way_id')};
+  state.summary = summarize(data.result, {meta: state.meta, edit: request.edit});
+  state.phase = 'showing';
+  state.hint = null;
+  setHeight('half');
+  if (request.tap) panToTap(request.tap);
+  syncMap();
+  render();
+  if (timing) {
+    state.fireMs = performance.now() - request.started;
+    renderStatus();
+  }
+  // Future hash writes must use this same guard.
+  if (request.token !== editToken) return;
+  $('announcement').textContent = state.summary.announcement;
+  finishRequest(data.id);
+}
+
+function paintEffect(effect, fraction) {
+  if (!map?.project) return;
+  if (!effectCanvas) {
+    effectCanvas = element('canvas', undefined, 'impact-effect');
+    effectCanvas.setAttribute('aria-hidden', 'true');
+    $('map').append(effectCanvas);
+  }
+  const rect = $('map').getBoundingClientRect();
+  effectCanvas.width = rect.width;
+  effectCanvas.height = rect.height;
+  const ctx = effectCanvas.getContext('2d');
+  if (!ctx) return;
+  ctx.strokeStyle = '#e9a23b'; ctx.fillStyle = '#e9a23b'; ctx.lineWidth = 3;
+  const point = effect.tap && map.project([effect.tap.lon, effect.tap.lat]);
+  const pulse = Math.min(1, (performance.now() - effect.tapStarted) / 220);
+  if (point && pulse < 1) {
+    ctx.beginPath(); ctx.arc(point.x, point.y, 5 + 17*pulse, 0, Math.PI*2); ctx.stroke();
+  }
+  if (effect.edit.weapon === 'meteor') {
+    const fall = Math.min(1, fraction / 0.65);
+    ctx.beginPath(); ctx.arc(point.x, point.y - 110*(1-fall), 7, 0, Math.PI*2); ctx.fill();
+  } else if (effect.line?.length > 1) {
+    const points = effect.line.map(p => map.project(p));
+    if (effect.edit.weapon === 'stomp') {
+      // Steady highlight: no flashing or opacity cycling.
+      ctx.beginPath();
+      points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.stroke();
+    } else if (effect.edit.weapon === 'flip') {
+      // Export polylines retain OSM order. Reverse them for the flipped direction.
+      // The boolean one-way export cannot distinguish original oneway=-1 roads.
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i], b = points[i-1], length = Math.hypot(b.x-a.x, b.y-a.y);
+        for (let d = fraction*28; d < length; d += 28) {
+          const x = a.x + (b.x-a.x)*d/length, y = a.y + (b.y-a.y)*d/length;
+          const angle = Math.atan2(b.y-a.y, b.x-a.x);
+          ctx.beginPath();
+          ctx.moveTo(x-7*Math.cos(angle-0.6), y-7*Math.sin(angle-0.6));
+          ctx.lineTo(x, y);
+          ctx.lineTo(x-7*Math.cos(angle+0.6), y-7*Math.sin(angle+0.6));
+          ctx.stroke();
+        }
+      }
+    }
+  }
+}
+
+function startAnimation(edit, tap, token, tapStarted = performance.now(), line = null) {
+  cancelAnimation();
+  const duration = edit.weapon === 'meteor'
+    ? METEOR_SIZES.find(size => size.radius_m === edit.radius_m).duration_ms : 500;
+  if (!edit.weapon || timing || reducedMotion()) {
+    if (edit.weapon === 'meteor') drawRing(tap, edit.radius_m);
+    return;
+  }
+  const effect = {edit, tap, token, tapStarted, start: performance.now(),
+    line};
+  animation = effect;
+  const frame = now => {
+    if (token !== editToken || animation !== effect) return;
+    if (reducedMotion()) { finishAnimation(); return; }
+    const fraction = Math.min(1, (now - effect.start) / duration);
+    if (edit.weapon === 'meteor') drawRing(tap, edit.radius_m*fraction);
+    paintEffect(effect, fraction);
+    if (fraction >= 1) { finishAnimation(); return; }
+    animationFramesScheduled++;
+    effect.frame = requestAnimationFrame(frame);
+  };
+  effect.timer = setTimeout(() => { if (animation === effect) finishAnimation(); }, duration);
+  frame(effect.start);
+}
+
+function runEdit(edit, tap, started = performance.now(), token, line) {
   if (edit.weapon === 'meteor') {
     if (!METEOR_SIZES.some(size => size.radius_m === edit.radius_m)) throw new Error('Unsupported Meteor radius');
     edit = {...edit, lat: Number(edit.lat.toFixed(5)), lon: Number(edit.lon.toFixed(5))};
     tap = {lat: edit.lat, lon: edit.lon};
   }
-  clearDrawing();
+  if (token === undefined) { token = cancelEdit(); clearDrawing(); }
+  if (token !== editToken) return;
   state.phase = 'pending';
   state.hint = null;
-  if (edit.weapon === 'meteor') drawRing(tap, edit.radius_m);
-  const id = sendRequest('edit', {edit, tap, started});
+  startAnimation(edit, tap, token, started, line);
+  const id = sendRequest('edit', {edit, tap, started, token});
   render();
   return id;
 }
@@ -580,7 +703,10 @@ function fireAt(tap) {
   if (state.weapon === 'meteor') runEdit({weapon: 'meteor', ...tap, radius_m: state.meteorRadius}, tap, started);
   else {
     const metresPerPixel = 40075016.686 * Math.cos(tap.lat * Math.PI / 180) / (512 * 2 ** map.getZoom());
-    sendRequest('pick', {...tap, max_m: 20 * metresPerPixel, weapon: state.weapon, tap, started});
+    const token = cancelEdit();
+    clearDrawing();
+    startAnimation({weapon: 'pick'}, tap, token, started);
+    sendRequest('pick', {...tap, max_m: 20 * metresPerPixel, weapon: state.weapon, tap, started, token});
     state.phase = 'pending';
     state.hint = null;
     render();
@@ -610,6 +736,7 @@ document.querySelectorAll('[data-weapon]').forEach(button => {
   });
 });
 function rebuild() {
+  cancelEdit();
   // Rebuild disables itself, which would drop keyboard focus to the page; hand it to the weapons.
   const hadFocus = document.activeElement === $('rebuild');
   const id = sendRequest('reset');
@@ -719,9 +846,19 @@ $('map').addEventListener('keydown', event => {
   event.preventDefault();
 });
 
+motionPreference.addEventListener('change', () => {
+  if (reducedMotion()) finishAnimation();
+});
+
 if (new URLSearchParams(location.search).has('test')) {
   window.__playground = {
     ready,
+    setReducedMotion(value) { motionOverride = value; if (reducedMotion()) finishAnimation(); },
+    animationsRunning: () => Boolean(animation),
+    animationFramesScheduled: () => animationFramesScheduled,
+    staticOutline: () => Boolean(state.ring),
+    fireAt,
+    fireRoad: (weapon, way_id) => measured(() => runEdit({weapon, way_id})),
     fireMeteor: (lat, lon, radius_m = state.meteorRadius) => measured(() => runEdit({weapon: 'meteor', lat, lon, radius_m})),
     result: () => structuredClone(state.result),
     hitWayIds: () => [...new Set(state.drawn?.hit.features.map(feature => feature.properties.way_id) ?? [])].sort((a, b) => a - b),

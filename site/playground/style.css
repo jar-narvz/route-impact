@@ -175,3 +175,6 @@ body:has([data-weapon="meteor"][aria-pressed="true"]) .weapons { bottom: calc(va
   #meteor-sizes { top: 120px; bottom: auto; left: 32px; right: auto; width: 348px; }
   body:has([data-weapon="meteor"][aria-pressed="true"]) .weapons { bottom: auto; }
 }
+
+/* One transient drawing surface; removed on completion, replacement, or Rebuild. */
+.impact-effect { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }

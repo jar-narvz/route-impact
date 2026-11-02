@@ -105,8 +105,13 @@ export function createProtocol({meta, a, order, presets, loadMs}) {
           load_ms: loadMs, baseline: baseline()}; break;
         case 'pick': {
           const picked = picker.nearestWay(message.lat, message.lon, message.max_m);
+          // line: [lon, lat] points in OSM order, so the page can draw the Stomp/Flip effect without geometry.
           result = picked ? {way_id: a.way_osm_id[picked.way], name: a.way_names.get(picked.way) || null,
-            oneway: Boolean(a.way_oneway[picked.way])} : null;
+            oneway: Boolean(a.way_oneway[picked.way]), line: Array.from(
+              {length: a.geometry_offsets[picked.way+1] - a.geometry_offsets[picked.way]}, (_, i) => {
+                const q = a.geometry_offsets[picked.way] + i;
+                return [a.geometry_coords[2*q+1] / meta.geometry_scale, a.geometry_coords[2*q] / meta.geometry_scale];
+              })} : null;
           break;
         }
         case 'edit': result = edit(message.edit, message.debug); break;
