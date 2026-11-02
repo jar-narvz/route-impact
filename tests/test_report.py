@@ -376,3 +376,18 @@ def test_serialisable_preserves_payload(payload):
             },
             "changed_segment_count": len(original["changed_segments"]),
         }
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "title"),
+    [
+        ("261028", "261031", "2026-10-28 → 2026-10-31 (3-day window)"),
+        ("261030", "261031", "2026-10-30 → 2026-10-31"),
+        ("town_v1", "town_v2", "town_v1 → town_v2"),
+        ("261028", "town_v2", "2026-10-28 → town_v2"),
+        ("260230", "261031", "260230 → 2026-10-31"),
+    ],
+)
+def test_report_window_title(payload: dict, old: str, new: str, title: str) -> None:
+    payload.update(old=old, new=new)
+    assert render_markdown(payload).splitlines()[0] == f"# route-impact · {title} — RISK: HIGH"

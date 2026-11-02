@@ -208,7 +208,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
   - A shell test with fake `download.sh` and `route-impact` on `PATH` and temp dirs, no network (critique #7). It asserts the exact `--old`/`--new` arguments for (a) a chained run, (b) chained OLD returning 404 → fresh start with OLD = NEW−1 once, and (c) `pbf-cache/` holding exactly NEW's two files after a publish.
   - `tests/test_report.py`: exact titles for a 3-day window, a 1-day window, and non-date labels (unchanged).
   - Live, after merge: the first publishing scheduled run shows a cache save `norcal-pbf-<new>` and a `df` line. The next one shows "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", and its download time drops by about one file. Run IDs and step timings go in PROGRESS.
-- **Status:** decision 19 approved 2026-11-01. Codex critique 9.5/10 accepted (Review log). Ready for Codex.
+- **Status:** decision 19 approved 2026-11-01. Codex critique 9.5/10 accepted (Review log). Code + offline Verify done 2026-11-01 (Codex; Claude review). Live Verify pending two scheduled runs.
 
 ### Step 12 — Benchmark + real fault suite
 - **Owner:** Codex writes; **Jared runs on the full files**

@@ -20,25 +20,6 @@ scheduled=0
 if [[ -z "${DATE:-}" ]]; then
     scheduled=1
 fi
-dates=$(python3 -c '
-import datetime as dt
-import re
-import sys
-
-value = sys.argv[1]
-try:
-    if value:
-        if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
-            raise ValueError
-        date = dt.date.fromisoformat(value)
-    else:
-        date = dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)
-    old = date - dt.timedelta(days=1)
-except ValueError:
-    sys.exit(f"Invalid DATE: {value!r}; expected a real date in YYYY-MM-DD format")
-print(date.isoformat(), date.strftime("%y%m%d"), old.strftime("%y%m%d"))
-' "${DATE:-}")
-read -r date new old <<< "$dates"
 
 test_high=${TEST_HIGH:-false}
 if [[ "$test_high" != true && "$test_high" != false ]]; then
@@ -93,10 +74,50 @@ if [[ "$test_high" == true ]]; then
     exit 0
 fi
 
-if [[ -d "results/$date" ]]; then
+max_gap=${DAILY_MAX_GAP_DAYS:-3}
+if [[ ! "$max_gap" =~ ^[1-9][0-9]*$ ]]; then
+    echo "DAILY_MAX_GAP_DAYS must be a positive integer" >&2
+    exit 1
+fi
+plan_args=(plan --max-gap "$max_gap")
+if [[ -n "${DATE:-}" ]]; then
+    plan_args+=(--date "$DATE")
+fi
+plan=$(python3 -m route_impact.daily "${plan_args[@]}")
+while IFS='=' read -r key value; do
+    case "$key" in
+        date) date=$value ;;
+        new) new=$value ;;
+        old) old=$value ;;
+        skip) skip=$value ;;
+        note) note=$value ;;
+    esac
+done <<< "$plan"
+log_note() {
+    if [[ -n "$note" ]]; then
+        echo "$note"
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            printf '%s\n' "$note" >> "$GITHUB_STEP_SUMMARY"
+        fi
+    fi
+}
+log_note
+if [[ "$skip" == true ]]; then
     echo "results/$date already done; skipping"
     exit 0
 fi
+previous_day=$(python3 -c '
+from datetime import date, timedelta
+import sys
+print((date.fromisoformat(sys.argv[1]) - timedelta(days=1)).strftime("%y%m%d"))
+' "$date")
+mkdir -p data
+for suffix in "" .md5; do
+    cached="data/pbf-cache/norcal-$old.osm.pbf$suffix"
+    if [[ -f "$cached" ]]; then
+        ln -f "$cached" "data/norcal-$old.osm.pbf$suffix"
+    fi
+done
 
 retries=${DAILY_RETRIES:-3}
 retry_seconds=${DAILY_RETRY_SECONDS:-1200}
@@ -116,6 +137,10 @@ download() {
             download_code=$?
         fi
         cat "$work_dir/download.stderr" >&2
+        if [[ "$scheduled" == 1 && "$snapshot" == "$old" && "$old" != "$previous_day" ]] &&
+            grep -qE 'not published|404' "$work_dir/download.stderr"; then
+            return "$download_code"
+        fi
         # Retry a snapshot that isn't out yet, and Geofabrik outages that outlast curl's own retries.
         if [[ "$scheduled" != 1 ]] || ! grep -qE 'not published|temporarily unavailable' "$work_dir/download.stderr"; then
             return "$download_code"
@@ -130,8 +155,28 @@ download() {
     done
 }
 
-download "$old"
+if download "$old"; then
+    :
+else
+    download_code=$?
+    if [[ "$scheduled" != 1 || "$old" == "$previous_day" ]] ||
+        ! grep -qE 'not published|404' "$work_dir/download.stderr"; then
+        exit "$download_code"
+    fi
+    fallback_note=$(python3 -c '
+from datetime import datetime, timedelta
+import sys
+start = datetime.strptime("20" + sys.argv[1], "%Y%m%d").date() + timedelta(days=1)
+end = datetime.strptime("20" + sys.argv[2], "%Y%m%d").date()
+print(f"Fresh start: chained OLD {sys.argv[1]} not published; uncovered dates {start} through {end}.")
+' "$old" "$previous_day")
+    note="${note:+$note }$fallback_note"
+    log_note
+    old=$previous_day
+    download "$old"
+fi
 download "$new"
+df -h .
 set +e
 route-impact impact --old "$old" --new "$new"
 impact_code=$?
@@ -144,11 +189,20 @@ fi
 run_command git config user.name 'github-actions[bot]'
 run_command git config user.email '41898699+github-actions[bot]@users.noreply.github.com'
 run_command git add "results/$date/"
-run_command git commit -m "Add impact results for $date"
+commit_args=(-m "Add impact results for $date")
+if [[ -n "$note" ]]; then
+    commit_args+=(-m "$note")
+fi
+run_command git commit "${commit_args[@]}"
 run_command git pull --rebase
 run_command git push
 if [[ "${DAILY_DRY_RUN:-}" != 1 ]]; then
     publish=true
+    mkdir -p data/pbf-cache
+    find data/pbf-cache -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+    ln "data/norcal-$new.osm.pbf" "data/pbf-cache/norcal-$new.osm.pbf"
+    ln "data/norcal-$new.osm.pbf.md5" "data/pbf-cache/norcal-$new.osm.pbf.md5"
+    df -h .
 fi
 
 if [[ "$impact_code" == 1 ]]; then

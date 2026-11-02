@@ -6,7 +6,7 @@
   1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). ~~(1) Daily → `pages.yml` paths~~ — exercised by scheduled runs, no dispatch needed: failed Daily 41196974293 (2026-10-31, snapshot 404) → Pages 41200117069 `skipped`; publishing Daily 41306368351 (2026-11-01) → Pages 41309441377 `success` on the bot's result commit `5e97b7b`, and `results/2026-10-31/impact.json` returns 200 on the live site. **P2e left for Jared:** his phone run (+ optional VoiceOver). Then Claude closes P2. Follow-ups noted in the P2e log entry. **Next after P2: P4 per decision 18** (two Meteor sizes + impact animations), gated on the phone timings.
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Exercised 2026-10-31 (run 41196974293: three 404 attempts over ~45 min, then a clean failure).
-  4. ~~Geofabrik stalled~~ — resumed; Daily 2026-11-01 published `results/2026-10-31/` (download 32 of 39 min, impact ~7 min, no OOM on the runner). **Fallback + cache now proposed as PLAN decision 19 / Step 11b (2026-11-01):** chain OLD to the newest result, up to a 3-day window, then a fresh start with a note; cache NEW's pbf for tomorrow's OLD. Jared approved 2026-11-01; Codex critique 10 points, 9 accepted + #3 in part (PLAN Review log). **Next: Codex implements Step 11b**, Claude reviews, then Claude updates DESIGN §5.11.
+  4. ~~Geofabrik stalled~~ — resumed; Daily 2026-11-01 published `results/2026-10-31/` (download 32 of 39 min, impact ~7 min, no OOM on the runner). **Fallback + cache now proposed as PLAN decision 19 / Step 11b (2026-11-01):** chain OLD to the newest result, up to a 3-day window, then a fresh start with a note; cache NEW's pbf for tomorrow's OLD. Jared approved 2026-11-01; Codex critique 10 points, 9 accepted + #3 in part (PLAN Review log). Step 11b implemented by Codex and reviewed by Claude (offline Verify green, DESIGN §5.11 updated) on 2026-11-01, uncommitted. **Next: Jared commits + pushes, then Claude checks the live Verify on the next two publishing scheduled runs** (cache save, then restore + "already present, checksum OK").
   5. Then P2 (Nov 10–16), launch ~Nov 17.
   - **Workflow (Jared, 2026-10-30 02:45):** Codex is back from the 03:40 session: Codex implements and writes tests, Claude reviews. If Codex hits a quota error, fall back to a Claude implementer subagent + adversarial Claude reviewer subagent and say so in the log entry. (P1a–P1b used Claude subagents.)
   - **Overnight 2026-10-30 (Jared):** autonomous from 03:40 — Claude commits each finished step itself as Jared, no co-author line, no push. Stop with a note here on anything needing Jared's call.
@@ -56,6 +56,37 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-11-01 — Step 11b: Daily chained window + snapshot cache (code done; live Verify pending)
+- **Agent:** Codex.
+- **Did:** Added the pure daily planner and CLI with one completeness predicate for skipping/chaining, UTC dates, explicit-date behavior, capped windows, fresh-start notes and warnings for ignored incomplete/future results. Daily restores OLD by hardlink before checksum verification, falls back once on an unpublished chained OLD, preserves retries for the fresh OLD and NEW, stages exactly NEW's two verified files after publishing, logs disk space, and carries notes to stdout, the job summary and the bot commit body. The workflow checks out `main`, plans before downloads and uses exact snapshot cache keys. Reports label windows longer than one day while preserving fixture labels. Offline shell tests use fake download, routing, git and issue commands in temporary directories, including the existing test-HIGH and dry-run paths.
+- **Changed:** `src/route_impact/daily.py` (new), `tests/test_daily.py` (new), `scripts/daily.sh`, `.github/workflows/daily.yml`, `src/route_impact/report.py`, `tests/test_report.py`, `PROGRESS.md` (this entry only).
+- **Verify:** Ran both required commands with `source .venv/bin/activate`, without network access. Actual final summary/output lines from the final runs:
+  - `make test` (exit 0; Python summary and JavaScript final lines):
+    ```text
+    ============================= 314 passed in 42.58s =============================
+    1..105
+    # tests 105
+    # suites 0
+    # pass 105
+    # fail 0
+    # cancelled 0
+    # skipped 0
+    # todo 0
+    # duration_ms 9825.181083
+    ```
+  - `make lint` (exit 0):
+    ```text
+    ruff check . && ruff format --check .
+    All checks passed!
+    49 files already formatted
+    ```
+- **Review (Claude, 2026-11-01):** I reran Verify: `314 passed in 43.33s`, JS `# pass 105` `# fail 0`, lint clean. `python -m route_impact.daily plan --today 2026-11-02` on the real `results/` → `old=261031 new=261101 gap_days=1`, no warnings (all six dated dirs are complete). Diff stays within the step's Files. No blocking findings. Non-blocking:
+  1. `scripts/daily.sh:174` — after a fallback, `log_note` prints the planner's note a second time, so the job summary repeats it. Cosmetic.
+  2. `.github/workflows/daily.yml:72` — the save step's implicit `success()` skips the cache if `daily.sh` fails after the push (e.g. `gh issue create` errors). The next run just downloads. Acceptable.
+  3. `src/route_impact/daily.py:76` — the incomplete-dir warning repeats on every run until the dir is fixed. That's intended: it stays visible.
+  Claude updated DESIGN §5.11. **Offline Verify complete. Live Verify waits on two scheduled runs after Jared pushes.**
+- **Gotchas:** Live cache save/restore, checksum-hit logs and Actions step timings require the two post-merge scheduled runs specified in PLAN; these were not run in this offline session. An initial lint run caught UTC-alias and explicit subprocess `check` conventions in the new files; corrected before the final passing checks above. No real downloads, routing on full snapshots, git staging, commits, pushes or issues were performed. `Current state`, `PLAN.md` and `docs/DESIGN.md` were not edited. Existing untracked `.claude/` and `.codex/` were left untouched.
 
 ### 2026-10-30 — P2e (part 1): Pages workflow, README, PLAYGROUND.md (**in progress**)
 - **Agent:** Codex (`pages.yml`, `daily.yml`); Claude (README section, `docs/PLAYGROUND.md`, review).

@@ -29,6 +29,8 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: main
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -45,6 +47,21 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Install DuckDB spatial extension
         run: make setup
+      - name: Plan window
+        id: plan
+        if: inputs.test_high != true
+        run: |
+          args=(plan --max-gap "${DAILY_MAX_GAP_DAYS:-3}")
+          if [[ -n "$DATE" ]]; then args+=(--date "$DATE"); fi
+          python -m route_impact.daily "${args[@]}"
+        env:
+          DATE: ${{ inputs.date }}
+      - name: Restore OLD snapshot
+        if: inputs.test_high != true && steps.plan.outputs.skip != 'true'
+        uses: actions/cache/restore@v5
+        with:
+          path: data/pbf-cache
+          key: norcal-pbf-${{ steps.plan.outputs.old }}
       - name: Run daily impact
         id: daily
         run: bash scripts/daily.sh
@@ -52,3 +69,9 @@ jobs:
           DATE: ${{ inputs.date }}
           TEST_HIGH: ${{ inputs.test_high }}
           GH_TOKEN: ${{ github.token }}
+      - name: Save NEW snapshot
+        if: steps.daily.outputs.publish == 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: data/pbf-cache
+          key: norcal-pbf-${{ steps.plan.outputs.new }}

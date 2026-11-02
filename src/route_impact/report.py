@@ -2,7 +2,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
 
@@ -14,7 +14,10 @@ MAP_MAX_TRIPS = 25
 
 def _date(label: str) -> str:
     if len(label) == 6 and label.isascii() and label.isdigit():
-        return datetime.strptime("20" + label, "%Y%m%d").strftime("%Y-%m-%d")
+        try:
+            return datetime.strptime("20" + label, "%Y%m%d").strftime("%Y-%m-%d")
+        except ValueError:
+            pass
     return _text(label)
 
 
@@ -50,11 +53,20 @@ def render_markdown(payload: dict, geojson_path: Path | None = None) -> str:
     """Render a report using only measurements and edit details in impact.json."""
     metrics = payload["metrics"]
     slow_minutes = payload["thresholds"]["slow_seconds"] / 60
+    window_suffix = ""
+    old, new = _date(payload["old"]), _date(payload["new"])
+    if all(
+        len(label) == 6 and label.isascii() and label.isdigit()
+        for label in (payload["old"], payload["new"])
+    ):
+        try:
+            days = (date.fromisoformat(new) - date.fromisoformat(old)).days
+            if days > 1:
+                window_suffix = f" ({days}-day window)"
+        except ValueError:
+            pass
     lines = [
-        (
-            f"# route-impact · {_date(payload['old'])} → {_date(payload['new'])}"
-            f" — RISK: {payload['risk']['level']}"
-        ),
+        (f"# route-impact · {old} → {new}{window_suffix} — RISK: {payload['risk']['level']}"),
         "",
         f"| Trips | Total | Routed | Broken | Slowed ≥{slow_minutes:g} min | Weighted travel affected |",
         "| --- | ---: | ---: | ---: | ---: | ---: |",
