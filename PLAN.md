@@ -628,11 +628,56 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
       - `make test` and `make lint` green.
   - *Status:* **P2a done 2026-10-30** (Codex code; Claude export, review, Verify; memory gate 268–280 MB after packing names) · **P2b done 2026-10-30** (Codex code; Claude browser Verify, 4 fixes) · **P2c done 2026-10-30** (Codex code, three runs; whole-worker gate median 264 MB of 5, decision 17) · **P2d done 2026-10-30** (15/15 == oracle, 2/2 presets, 75/75 paths; 50 cycles flat; keyboard-only run; 2 focus fixes) · **P2e done 2026-11-01** (live deploy + smoke test 2026-10-30; Daily → Pages paths via scheduled runs 2026-10-31/11-01; Jared's phone run on an iPhone 14, Chrome: cold load ≤ ~1 s, preset / toll-plaza Meteor / Rebuild ×10 barely noticeable, so no Meteor over 2 s and decision 16's cap stays off; VoiceOver not run, README caveat stays).
 - **P3 — More weapons:** Quake, Tornado, stacked edits with undo, Ashby junction as a Quake preset. *Status:* todo (after Nov 4)
-- **P4 — Polish** (URL hash to share an edit, animation and phone pass; decision 18). *Status:* todo (after Nov 4). Outline; it gets Files / Do / Verify detail and a Codex critique before Codex starts.
-  - **Starts after Jared's P2e phone run:** those timings set whether the large Meteor ships and how much wait the animation has to hide.
-  - **Two Meteor sizes:** small 500 m (today) and large ≈ 1.5 km. Large ships only if, on the phone, its worst stress case finishes within the unchanged 2 s gate measured **without** the animation. Before shipping: rerun P2d's browser check with the large radius added to the frozen set, and commit the results (`results/playground/`), so README numbers trace to a real file.
-  - **Impact animations for all three weapons** (Meteor landing, Stomp crack, Flip arrows): run **concurrently** with routing, reveal the numbers at impact, no artificial delay beyond the animation's own length, ≤ 600 ms. Drawn with MapLibre layers / CSS / canvas, no downloaded assets (≈ 92 kB of transfer headroom under 10 MB). Skipped entirely under `prefers-reduced-motion` (results appear immediately, as now). The 50-cycle check reruns with animations on.
-  - Earlier P2 follow-ups that fit here: the crosshair at the visible map centre (not behind the sheet); no-impact results naming the road; a damaging second preset instead of the University Ave ramp.
+- **P4 — Polish** (two Meteor sizes, impact animations, share link, P2 follow-ups; decision 18). *Status:* detail written 2026-11-01; Codex critique 8 accepted + 2 in part (Review log). Ready for Codex. P4a → P4b → P4c in order: all three edit `site/playground/app.js`, so they are not independent.
+  - **Gate input (P2e, 2026-11-01):** Jared's iPhone 14 (Chrome/WebKit) ran the 500 m toll-plaza Meteor "barely noticeable", timed by feel. That clears 500 m only; the large size needs its own measured phone number (P4a).
+  - **Non-goals for P4:** a new damaging preset (presets come from `config/demo_faults.toml` through the export, so it means re-exporting and recommitting all 24 data files; it waits for a step that re-exports anyway); place names in the trips list (same reason); downloaded animation assets; any change to the engine, the worker protocol's semantics or the exported data.
+  - **P4a — Two Meteor sizes + a measured phone gate.**
+    - **Files:** `site/playground/{app.js,index.html,style.css}`, `scripts/playground_verify_set.py`, `tests/browser/playground_verify.{html,js}`, `results/playground/{p4_verify_set.json,p4_oracle.json,p4_browser_check.json,p4_phone_gate.json}` (new; P2's result files stay unchanged).
+    - **Do:**
+      - **Size choice on Meteor:** Small 500 m (default) and Large 1,500 m, as a radio group (≥ 44 px, keyboard reachable, its change announced). One size table in `app.js` replaces `METEOR_RADIUS_M` and is the only place radii live in the page; the worker already takes `radius_m`. The ring, the hit test and the `?test` hook (`fireMeteor(lat, lon, radius_m)`) all use the chosen radius. If the gate fails, Large is removed from the table, so the control, the hook and P4c's hash all lose it together.
+      - **Meteor coordinates are canonicalized before the worker request** (rounded to 5 decimals, ≈ 1.1 m). The edit that runs, the oracle case and P4c's share link all use those same values (critique #1).
+      - **`?timing` mode:** shows "fire → result: N ms" under the result sentence, from the tap (including the road pick for Stomp/Flip) to the result render, with P4b's animation wait bypassed. It also adds a **"Run phone gate"** button that waits for the engine to be ready, then fires the 3 frozen stress Meteors at Large (exact coordinates from the verify set, not hand-aimed), 3 times each with a Rebuild between, and shows a copyable JSON: build commit, user agent, per-run ms, per-case median, verdict. Without `?timing` nothing changes.
+      - **Verify set:** `playground_verify_set.py --meteor-radii 500,1500` (default `500`, which keeps today's output byte-identical) adds the 3 stress Meteors at 1,500 m.
+      - **Harness:** `playground_verify.js` takes the verify-set path, oracle path, expected case count and output filename as parameters (P2 values stay the default, so the P2 check still runs unchanged), and adds a **real-page Large Meteor** assertion: the page's hit set and result for one Large case equal the oracle's, so the UI's radius wiring is checked, not just the worker (critique #4).
+    - **Verify:**
+      - `python scripts/playground_verify_set.py --seed 2027 --data site/playground/data --output <tmp>` is byte-identical to `results/playground/p2_verify_set.json` (`cmp`).
+      - With `--meteor-radii 500,1500` → `p4_verify_set.json` (18 cases); `route-impact playground-oracle --data site/playground/data --stress results/playground/p4_verify_set.json --output results/playground/p4_oracle.json`.
+      - Harness with the P4 parameters: **18/18 equal to the oracle**, all drawn paths valid, the real-page Large case equal, saved as `p4_browser_check.json`. The harness with defaults still gives P2's 15/15.
+      - **Phone gate (Jared):** deployed page with `?timing` → Run phone gate → paste the JSON in chat; Claude commits it as `results/playground/p4_phone_gate.json`. **Large ships only if every case median is ≤ 2,000 ms.** If not, Large is removed from the size table and the JSON is still committed (critique #5).
+      - Keyboard-only: the size control is reachable and changes the ring. `make test`, `make lint` green.
+  - **P4b — Impact animations (all three weapons).**
+    - **Files:** `site/playground/{app.js,style.css}`, `tests/browser/playground_verify.js` (the 50-cycle check gains an animations-on mode, and a rapid-edit check).
+    - **Do:**
+      - **Sequence (critique #6):** immediate tap feedback at the tap point (a small pulse, all weapons). Meteor's own effect (falling marker + shock ring to the chosen radius) starts at the tap. Stomp's crack and Flip's sweeping arrows start once the road pick resolves, since the road isn't known before. Each effect lasts ≤ 600 ms.
+      - **Reveal rule:** numbers, red roads and the announcement appear at `max(result ready, animation end)`. The animation never loops or waits beyond its own length, so it adds at most 600 ms when routing is fast and nothing when routing is slower.
+      - **Edit token (critique #3):** every edit gets a token. Committing results, the live-region announcement and the URL hash all re-check that the token is still current. A new tap, Rebuild or a worker error cancels the running animation and its pending callbacks.
+      - MapLibre layers, CSS or canvas only; no downloaded images or fonts.
+      - **Reduced motion (critique #9):** no animation runs and results appear as soon as they're ready, but the static end state still draws (the Meteor's final radius outline, the red roads). If the preference changes mid-animation, the animation stops and jumps to its end state. Stomp's effect has no flashing (no more than one luminance change; WCAG 2.3.1 limit is 3 per second).
+    - **Verify:**
+      - Browser pane: each weapon animates and ends with the same result text and red roads as with animations off (same case, same numbers).
+      - **Rapid edits:** a second tap during the first animation, and Rebuild during an animation, each leave exactly the newer state (or the cleared state), with one announcement per committed result (MutationObserver, as in P2d).
+      - 50 Meteor/Rebuild cycles **with animations on**: source and layer counts after cycle 50 equal those after cycle 1; last-10 median within 1.5× of first-10 median.
+      - Reduced motion: through the `?test` hook's `matchMedia` override, no animation frame of ours is scheduled and the static outline is present. Jared also turns on iOS Reduce Motion once and confirms no animation.
+      - `make test`, `make lint` green.
+  - **P4c — Share link + P2 follow-ups.**
+    - **Files:** `site/playground/core/share.js` (new, pure parser/serializer), `site/playground/core/test/share.test.mjs` (new), `site/playground/{app.js,style.css,index.html}`, `README.md` (playground section), `docs/PLAYGROUND.md` (Claude).
+    - **Do:**
+      - **Share one edit in the URL hash (critiques #2, #7).** Grammar, matched against the raw hash with no percent-decoding (anything else is invalid):
+        - `#stomp=<id>` and `#flip=<id>`: `<id>` is 1–15 decimal digits with no leading zero (stays within `Number.MAX_SAFE_INTEGER`) and must be an exported OSM way; Flip also requires a one-way road.
+        - `#meteor=<lat>,<lon>,<r>`: lat and lon are finite decimals with at most 5 places, inside the box; `<r>` is a radius in the size table.
+        - `#preset=<name>`: a name in `presets.json.gz` (`bay_bridge`, `university_ramp`), so compound edits share too.
+        - Exactly one key, no duplicates, no trailing text.
+      - **History:** the page writes the hash with `history.replaceState` after each committed edit and clears it on Rebuild, so no Back/Forward entries are created. A hash present on load replays once, after the engine is ready; a `hashchange` the user makes (pasting a new link) replays the new edit; the page's own writes never trigger a replay. An invalid hash shows a short notice, clears the hash and loads the normal page; it never throws. Nothing leaves the page.
+      - **Keyboard crosshair (critique #10):** the page computes the unobscured map rectangle: above the sheet at peek/half/full on phones, and to the right of the left card on desktop. The crosshair sits at that rectangle's centre, and Enter picks at the same pixel with `map.unproject()`.
+      - No-impact Stomp/Flip results name the road ("No sampled trip used University Avenue").
+      - README: the size choice and share link in the playground section; replace "phone performance hasn't been measured" with the numbers from `p4_phone_gate.json`.
+    - **Verify:**
+      - `node --test site/playground/core/test/share.test.mjs`: every valid form round-trips; rejects each of: empty value, leading zero, 16+ digit id, percent-encoded text, duplicate key, two keys, trailing junk, `NaN`/`Infinity`, 6 decimal places, outside the box, radius not in the table, unknown preset.
+      - Browser pane: each of the four forms reproduces the same result text and the same hit way ids as the hand-made edit (Meteor checked on a road at the edge of the radius); Flip on a two-way road and an unknown way id show the notice with no console error; after three edits, Back leaves the page (no hash entries); a pasted new hash replays exactly once.
+      - Crosshair: Enter picks the way under the drawn crosshair (picked way id equal to `map.queryRenderedFeatures` at the crosshair pixel) at peek, half and full on 375×812, and at 1280×800 on both sides of the desktop breakpoint, after a resize.
+      - **Final transfer (critique #8), on the deployed build after P4c:** sum the gzip response bytes (`curl -H 'Accept-Encoding: gzip'`, same method as P2e) of every first-party file the page loads, plus MapLibre JS and CSS, tiles excluded: **≤ 10,000,000 B**. Saved as `results/playground/p4_transfer.json` (URL, commit, per-file bytes, total).
+      - Live smoke test after deploy at 375×812 and 1280×800 as in P2e; `make test`, `make lint` green.
+  - **Done when:** P4a–P4c Verify pass and the deployed page has been smoke-tested. Every README number traces to `results/playground/` or `meta.json`.
 
 ## Risks / open questions
 - **Scope vs time:** 14 steps in ~5 days. **Cut order (whole features, not trimming):** (1) batch-of-10 fault runs (single faults only); (2) random suite → demos + 50 random faults (n stated); (3) map click-for-details popups (still draw routes and culprits). **Never cut:** the mandatory vertical slice, CI, demo faults, the results map.
@@ -711,6 +756,19 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Non-goals:** backfilling `results/2026-10-29/` and `results/2026-10-30/` (a manual dispatch can do it if wanted), scaling thresholds by window, changes to the results map, caching DuckDB files.
 
 ## Review log
+### 2026-11-01 — Codex critique of P4 (`codex exec --sandbox read-only`, 10 points)
+| # | Point | Decision | Reason / change |
+|---|---|---|---|
+| 1 | 5-decimal Meteor coordinates in the hash can move the blast edge across a road | **Accept** | Real: a shared link could replay a different edit. Coordinates are canonicalized before the worker request; P4c checks equal hit way ids on an edge road. |
+| 2 | The hash can't hold the Bay Bridge preset (10 ways) | **Accept** | `#preset=<name>` added; compound edits otherwise had no form. |
+| 3 | Request ids don't stop a deferred animation callback publishing over a newer edit | **Accept** | Edit token re-checked at commit, announcement and hash write; new tap/Rebuild/error cancels. Rapid-edit check in P4b Verify. |
+| 4 | Harness hardcodes P2 paths, 15 cases and a 500 m hook | **Accept** | Harness parameterized with P2 defaults; real-page Large Meteor assertion added so UI radius wiring is tested. |
+| 5 | Hand-aimed phone taps aren't reproducible; failure recorded only in PROGRESS | **Accept in part** | A "Run phone gate" button fires the frozen coordinates 3× each and emits JSON, committed as `p4_phone_gate.json`. Not accepted: a separate readiness spec; "after the engine is ready" is the existing `phase: 'ready'`. |
+| 6 | Stomp/Flip effects can't start "at the tap"; "total ≤ 600 ms" ambiguous | **Accept** | Tap pulse at once, road effects after the pick; reveal at max(result, animation end); timing mode includes the pick and bypasses the animation wait. |
+| 7 | Hash grammar, history and replay rules unspecified | **Accept in part** | Strict grammar on the raw hash, `replaceState`, replay-once rules, and a pure `core/share.js` with node tests. Percent-decoding is not supported at all rather than specified: simpler, and nothing valid needs it. |
+| 8 | Transfer check in P4b precedes P4c's new code | **Accept** | Moved to the end of P4c on the deployed build, saved as `p4_transfer.json`. |
+| 9 | Early return under reduced motion would hide the radius outline; flashing | **Accept** | Static end state still draws; mid-animation preference change jumps to the end; no flashing Stomp. Checked by hook override plus Jared's iOS Reduce Motion. |
+| 10 | `read_page` can't prove the crosshair pixel; desktop card ignored | **Accept** | Unobscured-rectangle rule for both layouts, `unproject()` at the same pixel, checked against `queryRenderedFeatures` at all sheet heights and the breakpoint. |
 ### 2026-11-01 — Codex critique of decision 19 / Step 11b (`codex exec --sandbox read-only`, 10 points)
 
 1. **A dated directory isn't proof of a finished comparison.** Accepted: one `is_complete` predicate (parsed `impact.json` with matching `new`, valid `old`, exit 0/1, report and GeoJSON present) for both skip and chain; tests for incomplete dirs.
