@@ -171,19 +171,44 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
 - **Status:** done 2026-10-29 (runs 40838962434, 40840231384, 40840922338, 40840270536; see PROGRESS Step 11 Verify)
 
 ### Step 11b — Daily: chained window + snapshot cache (decision 19)
-- **Owner:** Codex (Claude reviews)
-- **Files:** `src/route_impact/daily.py` (new), `tests/test_daily.py` (new), `scripts/daily.sh`, `.github/workflows/daily.yml`, `src/route_impact/report.py`, `tests/test_report.py`
+- **Owner:** Codex (Claude reviews; Claude updates `docs/DESIGN.md` §5.11 after Verify)
+- **Files:** `src/route_impact/daily.py` (new), `tests/test_daily.py` (new), `scripts/daily.sh`, `.github/workflows/daily.yml`, `src/route_impact/report.py`, `tests/test_report.py`; Claude: `docs/DESIGN.md` §5.11
 - **Do:**
-  - `daily.py`: a pure function `plan_window(today_utc: date, results_dir: Path, explicit: date | None, max_gap: int) -> Window`, where `Window` holds `date` (ISO NEW), `new`, `old` (YYMMDD), `gap_days`, `skip: bool` and `note: str | None`. It implements decision 19. Only directories named `YYYY-MM-DD` count, so `faults/` and `playground/` are ignored. With no dated directories at all it falls back to NEW−1. A `python -m route_impact.daily` entry point prints the fields for bash. The date logic is the same rule `daily.sh` used to compute inline.
-  - `daily.sh`: replace the inline date Python with that entry point. Read `DAILY_MAX_GAP_DAYS` (default 3, validated like `DAILY_RETRIES`). Echo `note` and append it to `$GITHUB_STEP_SUMMARY` and the commit body. Write `new=<YYMMDD>` to `$GITHUB_OUTPUT` alongside `publish`.
-  - `daily.yml`: an `actions/cache/restore@v5` step before `daily.sh` (path `data/norcal-*.osm.pbf*`, key `norcal-pbf-${{ github.run_id }}`, restore-keys `norcal-pbf-`). An `actions/cache/save@v5` step after it, `if: steps.daily.outputs.publish == 'true'`, with the **same** path glob (actions/cache derives the cache version from the path string, so a different path on save would always miss on restore) and key `norcal-pbf-<new>`. After a publishing run, `daily.sh` deletes OLD's `.osm.pbf` and `.md5`, so the glob saves only NEW (one 624 MB file, not two). Skipped for `test_high`.
-  - `report.py`: when NEW − OLD > 1 day, the title gets " (N-day window)".
+  - `daily.py`, pure functions plus a CLI:
+    - `is_complete(dir) -> bool`: the dir's name is a real calendar date `YYYY-MM-DD`, `impact.json` parses, its `new` equals that date as YYMMDD, its `old` is a valid earlier YYMMDD, `exit_code` ∈ {0, 1}, and `report.md` + `impact.geojson` exist. The same predicate is used for skipping and for chaining (critique #1).
+    - `plan_window(today_utc, results_dir, explicit, max_gap) -> Window` (`date`, `new`, `old`, `gap_days`, `skip`, `fresh_start`, `note`):
+      - NEW = `explicit` or `today_utc − 1`. If `results/<NEW>` is complete → `skip`.
+      - `explicit` given → OLD = NEW−1 (no chaining; the completed-target skip still applies).
+      - Scheduled → predecessor = the newest complete dir **strictly before** NEW. Future or incomplete dirs are ignored, with a warning in `note` (critique #2). With no predecessor, or `gap > max_gap` → OLD = NEW−1, `fresh_start`, and a note naming the uncovered dates. Otherwise OLD = the predecessor.
+    - `python -m route_impact.daily plan [--today YYYY-MM-DD] [--date YYYY-MM-DD] [--results-dir DIR] [--max-gap N]` prints `key=value` lines (and appends them to `$GITHUB_OUTPUT` if set). `--today` defaults to `datetime.now(timezone.utc).date()`, never local time.
+  - `daily.yml`:
+    - `actions/checkout@v5` with `ref: main` (critique #3: a queued run checks out the branch tip, not the SHA from when it was triggered). Dispatches don't need a branch restriction: a dispatch from another branch fails at `git push`, as it does today.
+    - A **Plan window** step (`id: plan`) runs the CLI before any download.
+    - `actions/cache/restore@v5`, path `data/pbf-cache`, key `norcal-pbf-${{ steps.plan.outputs.old }}`, **no `restore-keys`** (critique #4: prefix matching picks by creation time, not snapshot date). Skipped on `skip` and `test_high`.
+    - `actions/cache/save@v5`, the same path string `data/pbf-cache`, key `norcal-pbf-${{ steps.plan.outputs.new }}`, `if: steps.daily.outputs.publish == 'true'`.
+  - `daily.sh`:
+    - Reads the plan from the same CLI (one source of the rule). Validates `DAILY_MAX_GAP_DAYS` (default 3) like `DAILY_RETRIES`.
+    - Before downloading, hardlinks any `data/pbf-cache/norcal-<old>.osm.pbf{,.md5}` into `data/`. `download.sh` then verifies the checksum, exactly as today.
+    - **OLD unavailable** (scheduled, chained, OLD ≠ NEW−1, and the download fails with "not published"/404): no retries; switch once to a fresh start with OLD = NEW−1 and a note (critique #6). If NEW−1 is also unavailable, it retries and fails as today. The next day's run tries again.
+    - After a publishing run, empties `data/pbf-cache/` and hardlinks exactly NEW's verified `.osm.pbf` + `.md5` into it (critique #5). Logs `df -h .` before routing and after staging.
+    - The note goes to stdout, `$GITHUB_STEP_SUMMARY` and the bot commit body.
+  - `report.py`: the title gets " (N-day window)" only when both `old` and `new` are valid YYMMDD calendar dates and N > 1. Other labels render exactly as today (critique #9).
 - **Verify:**
-  - `make test` green and `make lint` clean. `tests/test_daily.py` covers: gap 1; gap 3 (window); gap 4 (fresh start with note); gap 0 and negative (skip); no dated directories; non-date directories ignored; an explicit date ignores results; `max_gap` from the argument.
-  - `tests/test_report.py`: a 3-day payload gets "(3-day window)" and a 1-day payload is unchanged.
-  - `DAILY_DRY_RUN=1` with a temp `results/2026-10-28/` prints `--old 261028 --new 261031` for a scheduled run on 2026-11-01 (the real 10-29 stall replayed). Codex adds a seam for "today" and states it in PROGRESS.
-  - Live, two runs after merge: the first publishing scheduled run logs a cache save for `norcal-pbf-<new>`. The next one logs "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", and its download time drops by about one file. Run IDs and step timings go in PROGRESS.
-- **Status:** proposed 2026-11-01. Waiting on Jared's approval of decision 19, then a Codex critique.
+  - `make test` green and `make lint` clean.
+  - `tests/test_daily.py` asserts exact windows for:
+    - gap 1, gap = cap, gap = cap + 1 (fresh start + note), each also with a non-default `max_gap` (2 and 5);
+    - NEW already complete → skip;
+    - a future complete dir plus a valid older one → chains to the older one, with a warning;
+    - an incomplete dir (`metrics.json` only; mismatched `new`; `exit_code` 2; missing `report.md`) is never chosen or skipped on;
+    - invalid names (`2026-02-30`, `faults`, `playground`) are ignored;
+    - no predecessor → fresh start;
+    - explicit date: no chaining, but still skips if complete;
+    - the year boundary (2026-12-31 → 2027-01-02) and the leap day (2028-02-28 → 2028-03-01);
+    - a `--today` of 2026-11-01 replays the real stall: with `results/2026-10-28/` complete → `old=261028 new=261031 gap_days=3`.
+  - A shell test with fake `download.sh` and `route-impact` on `PATH` and temp dirs, no network (critique #7). It asserts the exact `--old`/`--new` arguments for (a) a chained run, (b) chained OLD returning 404 → fresh start with OLD = NEW−1 once, and (c) `pbf-cache/` holding exactly NEW's two files after a publish.
+  - `tests/test_report.py`: exact titles for a 3-day window, a 1-day window, and non-date labels (unchanged).
+  - Live, after merge: the first publishing scheduled run shows a cache save `norcal-pbf-<new>` and a `df` line. The next one shows "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", and its download time drops by about one file. Run IDs and step timings go in PROGRESS.
+- **Status:** decision 19 approved 2026-11-01. Codex critique 9.5/10 accepted (Review log). Ready for Codex.
 
 ### Step 12 — Benchmark + real fault suite
 - **Owner:** Codex writes; **Jared runs on the full files**
@@ -671,22 +696,33 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - **Decision:** two sizes (500 m and ≈ 1.5 km), plus concurrent ≤ 600 ms impact animations for every weapon, skipped under reduced motion.
     - *Why the gate stays compute-only:* an animation changes how a wait feels, not how long it is. A phone that needs 3 s still needs 3 s.
 
-19. **Daily: chain OLD to the last result, up to a 3-day window; cache the snapshot** (2026-11-01, Claude's proposal; **awaiting Jared**). *Problem:* OLD is always NEW−1, so one dated snapshot that Geofabrik never publishes fails every later run, since each one needs it as OLD or NEW. This happened 10-29 → 10-31: Daily 41051491538 and 41196974293 failed (the second spent about 45 min retrying a 404), and `results/2026-10-29/` and `results/2026-10-30/` don't exist. Separately, Daily 41306368351 spent 32 of its 39 min downloading two 624 MB files at about 700 KB/s, and routing took about 7 min.
-    - **Chain rule (scheduled runs only):** OLD = the NEW date of the newest `results/YYYY-MM-DD/` directory, not NEW−1. Let `gap = NEW − OLD` in days:
-      - `gap ≤ 0` → "already done", skip (today's rule, generalized).
+19. **Daily: chain OLD to the last result, up to a 3-day window; cache the snapshot** (2026-11-01, Claude's proposal; Jared approved 2026-11-01). *Problem:* OLD is always NEW−1, so one dated snapshot that Geofabrik never publishes fails every later run, since each one needs it as OLD or NEW. This happened 10-29 → 10-31: Daily 41051491538 and 41196974293 failed (the second spent about 45 min retrying a 404), and `results/2026-10-29/` and `results/2026-10-30/` don't exist. Separately, Daily 41306368351 spent 32 of its 39 min downloading two 624 MB files at about 700 KB/s, and routing took about 7 min.
+    - **Chain rule (scheduled runs only):** skip if `results/<NEW>/` is a *complete* result (Step 11b defines complete). Otherwise OLD = the NEW date of the newest complete result **strictly before** NEW, not NEW−1. Let `gap = NEW − OLD` in days:
       - `1 ≤ gap ≤ DAILY_MAX_GAP_DAYS` (default 3) → compare OLD → NEW as one window.
-      - `gap > 3` → OLD = NEW−1 (a fresh start). The run log, the job summary and the bot commit body say "edits from OLD_last to NEW−1 not compared".
-    - **Unchanged:** a dispatch with an explicit `date` still uses NEW−1 (no chaining). Risk thresholds aren't scaled. Retries still apply, but in practice only to NEW, because the chained OLD was downloaded successfully the day it was NEW.
+      - `gap > 3`, no earlier result, or chained OLD unavailable upstream → OLD = NEW−1 (a fresh start). The run log, the job summary and the bot commit body name the uncovered dates.
+    - **Unchanged:** a dispatch with an explicit `date` still uses NEW−1 (no chaining) and still skips a completed date. Risk thresholds aren't scaled. Retries still apply to NEW. A chained OLD that is now unavailable isn't retried: the run makes a fresh start instead.
     - **Label:** `report.md`'s title already shows `old → new`. When the window is over one day it adds "(N-day window)". `impact.json` already records `old` and `new`, so nothing changes there.
-    - **Cache:** after a publishing run, save NEW's `.osm.pbf` + `.md5` with `actions/cache` (key `norcal-pbf-<NEW>`; Step 11b has the path details). Before `daily.sh`, restore with a per-run key and `restore-keys: norcal-pbf-`, which restores the newest saved snapshot. Under the chain rule that is OLD. `download.sh` already skips a dated file whose checksum matches its manifest, so a hit costs nothing and a miss (or the wrong file) just downloads, exactly as today.
-    - *Why chain to the last result rather than "the newest published older snapshot":* every edit gets compared exactly once, with no gaps or overlaps between consecutive results. It also recovers from runs that failed for any reason (runner crash, OOM), not just Geofabrik stalls. And OLD is a file we already fetched, so it never 404s and the 45-minute OLD retry loop goes away.
+    - **Cache:** the window is computed first. The run restores exactly `norcal-pbf-<OLD>` into a staging dir `data/pbf-cache/`, and after a publishing run saves exactly NEW's `.osm.pbf` + `.md5` there under `norcal-pbf-<NEW>`. `download.sh` already skips a dated file whose checksum matches its manifest, so a hit costs nothing and a miss just downloads, exactly as today.
+    - *Why chain to the last result rather than "the newest published older snapshot":* within the cap, consecutive scheduled results cover every edit once, with no gaps or overlaps. Gaps happen only at a fresh start (which names them), and overlaps only if someone backfills by hand. It also recovers from runs that failed for any reason (runner crash, OOM), not just Geofabrik stalls. And OLD is a file we fetched before, usually still in the cache, so the 45-minute OLD retry loop goes away.
     - *Why the thresholds stay unscaled:* every rule counts trips (broken, slowed ≥ 2 min, weighted share affected), not edits. A broken trip means the same thing whether one day or three days of edits broke it. A longer window just makes a rule more likely to fire, which is the correct answer for more change.
     - *Why a cap, and why 3:* longer windows mean more candidate edits, so root cause is slower and more often `joint`, and a culprit is harder to place in time. 3 is a judgment call that covers the one stall seen so far (Geofabrik's NorCal `state.txt` stopped at 2026-10-28T21:21Z and resumed by 10-31). It's an env var, like `DAILY_RETRIES`, so it can change without a code change.
     - *Why a fresh start rather than failing when the gap is over 3:* failing would repeat the exact bug, because the gap only grows and every later run would fail too. The fresh start self-heals and says out loud which days it skipped.
-    - *Why the cache is safe:* the checksum check happens either way, so a cache can only make a run faster, never different. 624 MB is far under the 10 GB per-repo limit, and GitHub evicts old entries itself.
+    - *Why the cache is safe:* the checksum check happens either way, so a cache can only make a run faster, never different. 624 MB is far under the 10 GB per-repo limit, and GitHub evicts entries unused for 7 days. *Why an exact key, not a prefix:* `restore-keys` picks the newest entry by creation time, which after a manual backfill isn't OLD.
     - **Non-goals:** backfilling `results/2026-10-29/` and `results/2026-10-30/` (a manual dispatch can do it if wanted), scaling thresholds by window, changes to the results map, caching DuckDB files.
 
 ## Review log
+### 2026-11-01 — Codex critique of decision 19 / Step 11b (`codex exec --sandbox read-only`, 10 points)
+
+1. **A dated directory isn't proof of a finished comparison.** Accepted: one `is_complete` predicate (parsed `impact.json` with matching `new`, valid `old`, exit 0/1, report and GeoJSON present) for both skip and chain; tests for incomplete dirs.
+2. **A future directory would block runs (negative gap = skip).** Accepted: skip only when `results/<NEW>` is complete; chain to the newest complete dir strictly before NEW; future dirs ignored with a warning.
+3. **A queued run can check out a stale SHA; a human push can race the bot.** Partly accepted: checkout `ref: main`, so the plan reads the branch tip. Rejected: push retries and revalidation before push. With one human committer the race is rare, a rejected push fails loudly, and the chain rule picks up the missed window the next day.
+4. **The newest cache isn't necessarily OLD's.** Accepted: compute the window first, then restore the exact key `norcal-pbf-<old>` with no `restore-keys`.
+5. **Deleting OLD doesn't leave only NEW in the glob.** Accepted: a dedicated `data/pbf-cache/` staging dir holding exactly NEW's two files, the same path on restore and save; contents tested; `df -h` logged.
+6. **A chained OLD can become unavailable after cache eviction.** Accepted: if a chained OLD 404s, make one fresh start with OLD = NEW−1 (no retries on OLD); if that also fails, fail as today and retry the next day. Tested with fakes.
+7. **`DAILY_DRY_RUN` still downloads and routes.** Accepted: window replay through the pure CLI (`--today`); a shell test with fake `download.sh`/`route-impact` on `PATH`, no network.
+8. **Explicit-date and date-edge contracts were ambiguous.** Accepted: explicit dates bypass chaining but keep the completed-target skip; tests with a non-default cap, the year boundary, the leap day and invalid names; UTC `--today` seam.
+9. **The window suffix could break non-date labels.** Accepted: suffix only when both labels are valid YYMMDD dates; regression test for other labels.
+10. **DESIGN §5.11 goes stale, and "every edit exactly once" overclaims.** Accepted: Claude updates §5.11 after Verify (added to Files); the claim now names fresh-start gaps and backfill overlaps.
 ### 2026-10-30 — Codex critique of the P2 plan (`codex exec --sandbox read-only`, 10 points)
 All 10 accepted; P2 was edited in place.
 1. **Files the exporter marks "not shipped" would reach Pages:** RoutingKit leaves `cch_order_input.bin` and `cch_order_output.bin` in the export dir, and Pages copies `site/` whole. Accepted: export to `data/playground-261027/`, copy the shipped allowlist with `scripts/ship_playground_data.py`, and check that the listing equals it. The privacy check scans decompressed bytes.
