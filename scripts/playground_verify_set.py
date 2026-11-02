@@ -9,7 +9,9 @@ from typing import Any
 from route_impact.playground_oracle import load_export
 
 
-def verification_set(directory: Path, seed: int) -> dict[str, Any]:
+def verification_set(
+    directory: Path, seed: int, meteor_radii: tuple[int, ...] = (500,)
+) -> dict[str, Any]:
     """Choose distinct baseline-used OSM ways, sorted before seeded sampling."""
     export = load_export(directory)
     presets = export.meta["presets"]
@@ -40,10 +42,19 @@ def verification_set(directory: Path, seed: int) -> dict[str, Any]:
     stress_path = Path(__file__).resolve().parents[1] / "results/playground/stress_set.json"
     stress = json.loads(stress_path.read_text(encoding="utf-8"))
     by_id = {case["id"]: case for case in stress["cases"]}
-    for name in ("bay_bridge_toll_plaza_500", "sf_financial_500", "sf_union_square_500"):
-        case = by_id[name]
-        cases.append({key: case[key] for key in ("id", "weapon", "lat", "lon", "purpose")})
-        cases[-1]["radius_m"] = 500
+    for radius in meteor_radii:
+        for name in ("bay_bridge_toll_plaza_500", "sf_financial_500", "sf_union_square_500"):
+            case = by_id[name]
+            meteor = {key: case[key] for key in ("id", "weapon", "lat", "lon", "purpose")}
+            if radius != 500:
+                meteor.update(
+                    id=name.removesuffix("_500") + f"_{radius}",
+                    lat=round(case["lat"], 5),
+                    lon=round(case["lon"], 5),
+                    purpose=case["purpose"].replace("500 m", f"{radius} m"),
+                )
+            meteor["radius_m"] = radius
+            cases.append(meteor)
     return {
         "seed": seed,
         "snapshot": export.meta["snapshot"],
@@ -57,8 +68,10 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=2027)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--meteor-radii", default="500", choices=("500", "500,1500"))
     args = parser.parse_args()
-    result = verification_set(args.data, args.seed)
+    radii = tuple(int(value) for value in args.meteor_radii.split(","))
+    result = verification_set(args.data, args.seed, radii)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 

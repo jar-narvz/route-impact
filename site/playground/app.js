@@ -1,8 +1,18 @@
 import {createLatest} from './core/latest.js';
 import {summarize} from './core/summary.js';
 
-// PLAN decision B / results/playground/feasibility.json: largest passing stress radius.
-const METEOR_RADIUS_M = 500;
+// All page Meteor radii live here: removing a size also removes its control and hook support.
+const METEOR_SIZES = [
+  {name: 'Small', radius_m: 500},
+  {name: 'Large', radius_m: 1500},
+];
+const timing = new URLSearchParams(location.search).has('timing');
+// Frozen P2 stress centers; runEdit canonicalizes these before any drawing or request.
+const PHONE_CASES = [
+  {id: 'bay_bridge_toll_plaza', lat: 37.825, lon: -122.315},
+  {id: 'sf_financial', lat: 37.7946, lon: -122.3999},
+  {id: 'sf_union_square', lat: 37.787936, lon: -122.40752},
+];
 
 const $ = id => document.getElementById(id);
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
@@ -15,6 +25,9 @@ const styles = {
 };
 const state = {
   phase: 'loading',
+  meteorRadius: METEOR_SIZES[0].radius_m,
+  fireMs: null,
+  gateRunning: false,
   theme: systemTheme.matches ? 'dark' : 'light',
   themeOverride: false,
   sheetHeight: 'peek',
@@ -57,7 +70,7 @@ function finishRequest(id, error) {
       else map.once('style.load', resolve);
     });
     style.then(afterDraw)
-      .then(() => waiter.resolve({ms: performance.now() - waiter.start, phase: state.phase}), waiter.reject);
+      .then(() => waiter.resolve({ms: performance.now() - waiter.start, fire_ms: state.fireMs, phase: state.phase}), waiter.reject);
   }
 }
 
@@ -89,10 +102,14 @@ function renderSheet() {
 
 function renderButtons() {
   document.querySelectorAll('[data-weapon]').forEach(button => {
-    button.disabled = !['ready', 'pending', 'showing'].includes(state.phase);
+    button.disabled = state.gateRunning || !['ready', 'pending', 'showing'].includes(state.phase);
     button.setAttribute('aria-pressed', String(button.dataset.weapon === state.weapon));
   });
-  $('rebuild').disabled = !['pending', 'showing'].includes(state.phase);
+  $('rebuild').disabled = state.gateRunning || !['pending', 'showing'].includes(state.phase);
+  $('meteor-sizes').hidden = state.weapon !== 'meteor';
+  document.querySelectorAll('[name="meteor-size"]').forEach(input => {
+    input.disabled = state.gateRunning || !['ready', 'pending', 'showing'].includes(state.phase);
+  });
   $('recenter').disabled = !map || !state.meta;
   const label = `Switch to ${state.theme === 'dark' ? 'light' : 'dark'} theme`;
   $('theme').setAttribute('aria-label', label);
@@ -117,6 +134,8 @@ function renderStatus() {
   $('retry').hidden = !state.error?.retryable;
   $('map-error').hidden = !state.mapError;
   $('map-error').textContent = state.mapError ?? '';
+  $('fire-timing').hidden = !timing || state.fireMs === null;
+  $('fire-timing').textContent = state.fireMs === null ? '' : `fire → result: ${Math.round(state.fireMs)} ms`;
 }
 
 function render() {
@@ -360,7 +379,7 @@ function loadNetwork() {
           state.phase = state.result ? 'showing' : 'ready';
           state.hint = picked ? 'This road is two-way' : 'No road here — zoom in';
         } else {
-          runEdit({weapon: request.weapon, way_id: picked.way_id}, request.tap);
+          runEdit({weapon: request.weapon, way_id: picked.way_id}, request.tap, request.started);
           return;
         }
       } else if (request.type === 'edit') {
@@ -377,6 +396,11 @@ function loadNetwork() {
       }
       syncMap();
       render();
+      if (request.type === 'edit' && timing) {
+        state.fireMs = performance.now() - request.started;
+        $('fire-timing').textContent = `fire → result: ${Math.round(state.fireMs)} ms`;
+        $('fire-timing').hidden = false;
+      }
       finishRequest(data.id);
     };
     worker.onerror = event => {
@@ -477,7 +501,7 @@ function renderResults() {
     const label = state.meta.presets?.[preset.name]?.label ?? fallback[preset.name] ?? preset.label;
     const button = element('button', label);
     button.type = 'button';
-    button.disabled = !['ready', 'pending', 'showing'].includes(state.phase);
+    button.disabled = state.gateRunning || !['ready', 'pending', 'showing'].includes(state.phase);
     button.dataset.preset = preset.name;
     button.addEventListener('click', () => runEdit({preset: preset.name, label}));
     presets.append(button);
@@ -487,7 +511,7 @@ function renderResults() {
 
 function clearDrawing() {
   cancelAnimationFrame(ringFrame);
-  Object.assign(state, {result: null, drawn: null, summary: null, selection: null, ring: null, meteorCenter: null});
+  Object.assign(state, {result: null, drawn: null, summary: null, selection: null, ring: null, meteorCenter: null, fireMs: null});
   syncMap();
 }
 
@@ -502,14 +526,14 @@ function panToTap(tap) {
   duration: reducedMotion() ? 0 : 600});
 }
 
-function drawRing(tap) {
+function drawRing(tap, radius_m) {
   state.meteorCenter = {type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates: [tap.lon, tap.lat]}};
   syncMap();
   const start = performance.now(), k = state.meta.earth_radius_m * Math.PI / 180;
   const kx = k * Math.cos(tap.lat * Math.PI / 180);
   function frame(now) {
-    const fraction = reducedMotion() ? 1 : Math.min(1, (now - start) / 600);
-    const radius = METEOR_RADIUS_M * fraction;
+    const fraction = timing || reducedMotion() ? 1 : Math.min(1, (now - start) / 600);
+    const radius = radius_m * fraction;
     const coordinates = Array.from({length: 64}, (_, i) => {
       const angle = i * 2 * Math.PI / 64;
       return [tap.lon + Math.cos(angle) * radius / kx, tap.lat + Math.sin(angle) * radius / k];
@@ -525,12 +549,17 @@ function drawRing(tap) {
   frame(start);
 }
 
-function runEdit(edit, tap) {
+function runEdit(edit, tap, started = performance.now()) {
+  if (edit.weapon === 'meteor') {
+    if (!METEOR_SIZES.some(size => size.radius_m === edit.radius_m)) throw new Error('Unsupported Meteor radius');
+    edit = {...edit, lat: Number(edit.lat.toFixed(5)), lon: Number(edit.lon.toFixed(5))};
+    tap = {lat: edit.lat, lon: edit.lon};
+  }
   clearDrawing();
   state.phase = 'pending';
   state.hint = null;
-  if (edit.weapon === 'meteor') drawRing(tap);
-  const id = sendRequest('edit', {edit, tap});
+  if (edit.weapon === 'meteor') drawRing(tap, edit.radius_m);
+  const id = sendRequest('edit', {edit, tap, started});
   render();
   return id;
 }
@@ -540,20 +569,38 @@ function onMapClick(event) {
 }
 
 function fireAt(tap) {
+  const started = performance.now();
+  if (state.gateRunning) return;
   if (!['ready', 'showing', 'pending'].includes(state.phase)) return;
   if (!state.weapon) {
     state.hint = 'Pick a weapon first';
     renderStatus();
     return;
   }
-  if (state.weapon === 'meteor') runEdit({weapon: 'meteor', ...tap, radius_m: METEOR_RADIUS_M}, tap);
+  if (state.weapon === 'meteor') runEdit({weapon: 'meteor', ...tap, radius_m: state.meteorRadius}, tap, started);
   else {
     const metresPerPixel = 40075016.686 * Math.cos(tap.lat * Math.PI / 180) / (512 * 2 ** map.getZoom());
-    sendRequest('pick', {...tap, max_m: 20 * metresPerPixel, weapon: state.weapon, tap});
+    sendRequest('pick', {...tap, max_m: 20 * metresPerPixel, weapon: state.weapon, tap, started});
     state.phase = 'pending';
     state.hint = null;
     render();
   }
+}
+
+for (const size of METEOR_SIZES) {
+  const label = element('label');
+  const input = element('input');
+  input.type = 'radio';
+  input.name = 'meteor-size';
+  input.value = String(size.radius_m);
+  input.checked = size.radius_m === state.meteorRadius;
+  input.addEventListener('change', () => {
+    if (!input.checked) return;
+    state.meteorRadius = size.radius_m;
+    $('announcement').textContent = `Meteor size: ${size.name} ${size.radius_m.toLocaleString('en-US')} m`;
+  });
+  label.append(input, document.createTextNode(`${size.name} ${size.radius_m.toLocaleString('en-US')} m`));
+  $('meteor-sizes').append(label);
 }
 
 document.querySelectorAll('[data-weapon]').forEach(button => {
@@ -593,6 +640,61 @@ systemTheme.addEventListener('change', event => {
   if (!state.themeOverride) setTheme(event.matches ? 'dark' : 'light');
 });
 
+async function waitForReady() {
+  const deadline = performance.now() + 120000;
+  while (state.phase !== 'ready') {
+    if (state.phase === 'error') throw new Error(state.error?.message ?? 'Engine failed');
+    if (performance.now() > deadline) throw new Error('Waiting for ready timed out');
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+}
+
+async function runPhoneGate() {
+  state.gateRunning = true;
+  $('phone-gate').disabled = true;
+  $('phone-gate-json').value = '';
+  render();
+  try {
+    // Wait out a live edit/load before resetting; never interrupt an in-flight request.
+    const deadline = performance.now() + 120000;
+    while (['loading', 'pending'].includes(state.phase)) {
+      if (performance.now() > deadline) throw new Error('Engine busy timed out');
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    if (state.phase === 'showing') await measured(rebuild);
+    await waitForReady();
+    const radius_m = METEOR_SIZES.find(size => size.name === 'Large')?.radius_m;
+    if (radius_m === undefined) throw new Error('Large Meteor is unavailable');
+    const runs = [];
+    for (const test of PHONE_CASES) {
+      for (let repeat = 0; repeat < 3; repeat++) {
+        await waitForReady();
+        const result = await measured(() => runEdit({weapon: 'meteor', lat: test.lat, lon: test.lon, radius_m}));
+        runs.push({case: test.id, ms: result.fire_ms});
+        await measured(rebuild);
+      }
+    }
+    const medians = Object.fromEntries(PHONE_CASES.map(test => [test.id,
+      runs.filter(run => run.case === test.id).map(run => run.ms).sort((a, b) => a - b)[1]]));
+    $('phone-gate-json').value = JSON.stringify({
+      export_git_commit: state.meta.git_commit, page_url: location.href, user_agent: navigator.userAgent,
+      timestamp_utc: new Date().toISOString(), radius_m, runs, medians, gate_ms: 2000,
+      verdict: Object.values(medians).every(ms => ms <= 2000) ? 'pass' : 'fail',
+    }, null, 2);
+  } catch (error) {
+    $('phone-gate-json').value = `Phone gate failed: ${error.message}`;
+  } finally {
+    state.gateRunning = false;
+    $('phone-gate').disabled = false;
+    setHeight('half');
+    render();
+  }
+}
+if (timing) {
+  $('timing-tools').hidden = false;
+  $('phone-gate').addEventListener('click', runPhoneGate);
+}
+
 document.documentElement.dataset.theme = state.theme;
 render();
 if (createMap()) loadNetwork();
@@ -620,7 +722,9 @@ $('map').addEventListener('keydown', event => {
 if (new URLSearchParams(location.search).has('test')) {
   window.__playground = {
     ready,
-    fireMeteor: (lat, lon) => measured(() => runEdit({weapon: 'meteor', lat, lon, radius_m: METEOR_RADIUS_M}, {lat, lon})),
+    fireMeteor: (lat, lon, radius_m = state.meteorRadius) => measured(() => runEdit({weapon: 'meteor', lat, lon, radius_m})),
+    result: () => structuredClone(state.result),
+    hitWayIds: () => [...new Set(state.drawn?.hit.features.map(feature => feature.properties.way_id) ?? [])].sort((a, b) => a - b),
     rebuild: () => measured(rebuild),
     counts() {
       if (!map || !styleReady) throw new Error('Map style is not ready');

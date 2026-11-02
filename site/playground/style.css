@@ -159,3 +159,19 @@ button, a { min-width: 44px; min-height: 44px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Leave room below the weapon row for Meteor's native keyboard radio group. */
+:root:has([data-weapon="meteor"][aria-pressed="true"]) { --sheet-peek: calc(236px + env(safe-area-inset-bottom, 0px)); }
+body:has([data-weapon="meteor"][aria-pressed="true"]) .sheet-controls { margin-bottom: 118px; }
+body:has([data-weapon="meteor"][aria-pressed="true"]) .weapons { bottom: calc(var(--sheet-height) - 102px); }
+#meteor-sizes { position: fixed; z-index: 3; left: 16px; right: 16px; bottom: calc(var(--sheet-height) - 170px); margin: 0; padding: 0; border: 0; display: flex; gap: 8px; }
+#meteor-sizes legend { font-size: 12px; color: var(--muted); }
+#meteor-sizes label { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; flex: 1; border-radius: 8px; background: var(--separator); font-size: 13px; cursor: pointer; }
+#meteor-sizes input { width: 20px; height: 20px; accent-color: var(--accent); }
+#timing-tools label, #phone-gate-json { display: block; width: 100%; }
+#phone-gate-json { font: 12px monospace; color: var(--fg); background: var(--bg); }
+#fire-timing { color: var(--muted); }
+@media (min-width: 900px) {
+  #meteor-sizes { top: 120px; bottom: auto; left: 32px; right: auto; width: 348px; }
+  body:has([data-weapon="meteor"][aria-pressed="true"]) .weapons { bottom: auto; }
+}

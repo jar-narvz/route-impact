@@ -1,0 +1,276 @@
+{
+  "measured_at": "2026-11-02T07:20:51.199Z",
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.4212.0 Chrome/152.0.7977.167 Safari/537.36",
+  "git_commit": "56dcd7c016016d314a725c2f3ce91cf6a05b74a0",
+  "meta_sha256": "658b284898e10d785276613b515f944b5326cbfe21a32874fd1d865a66ac97e6",
+  "cases": [
+    {
+      "id": "bay_bridge_live",
+      "equal": true,
+      "ms": 70.20000004768372,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "university_ramp_live",
+      "equal": true,
+      "ms": 6.299999952316284,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_01",
+      "equal": true,
+      "ms": 12,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "stomp_02",
+      "equal": true,
+      "ms": 4.299999952316284,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_03",
+      "equal": true,
+      "ms": 12.700000047683716,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_04",
+      "equal": true,
+      "ms": 7.400000095367432,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_05",
+      "equal": true,
+      "ms": 7.3999998569488525,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_06",
+      "equal": true,
+      "ms": 5.900000095367432,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_07",
+      "equal": true,
+      "ms": 4.299999952316284,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_08",
+      "equal": true,
+      "ms": 10.699999809265137,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_09",
+      "equal": true,
+      "ms": 3.700000047683716,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "stomp_10",
+      "equal": true,
+      "ms": 4.5,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "bay_bridge_toll_plaza_500",
+      "equal": true,
+      "ms": 95.29999995231628,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "sf_financial_500",
+      "equal": true,
+      "ms": 29,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "sf_union_square_500",
+      "equal": true,
+      "ms": 49.19999980926514,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "bay_bridge_toll_plaza_1500",
+      "equal": true,
+      "ms": 142.70000004768372,
+      "drawn_paths": 25,
+      "drawn_valid": 25
+    },
+    {
+      "id": "sf_financial_1500",
+      "equal": true,
+      "ms": 194.70000004768372,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    },
+    {
+      "id": "sf_union_square_1500",
+      "equal": true,
+      "ms": 211.20000004768372,
+      "drawn_paths": 0,
+      "drawn_valid": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "bay_bridge",
+      "equal": true
+    },
+    {
+      "name": "university_ramp",
+      "equal": true
+    }
+  ],
+  "cycles": {
+    "fire_ms": [
+      158.89999985694885,
+      142.10000014305115,
+      125.5,
+      133.5,
+      134.29999995231628,
+      119.60000014305115,
+      120.29999995231628,
+      119.30000019073486,
+      118.70000004768372,
+      119.70000004768372,
+      119.90000009536743,
+      118.5,
+      120.60000014305115,
+      118.90000009536743,
+      116.60000014305115,
+      125.70000004768372,
+      118.90000009536743,
+      120.79999995231628,
+      120.20000004768372,
+      120.89999985694885,
+      122.09999990463257,
+      119,
+      119.70000004768372,
+      120.5,
+      122.60000014305115,
+      123.89999985694885,
+      118.5,
+      122.79999995231628,
+      115.09999990463257,
+      114,
+      114.29999995231628,
+      115.79999995231628,
+      113.5,
+      112.70000004768372,
+      115.79999995231628,
+      114.59999990463257,
+      114.09999990463257,
+      115.20000004768372,
+      123.20000004768372,
+      116,
+      115.20000004768372,
+      113.90000009536743,
+      115.10000014305115,
+      113.89999985694885,
+      115.20000004768372,
+      114.80000019073486,
+      112.90000009536743,
+      113,
+      115.10000014305115,
+      112.5
+    ],
+    "rebuild_ms": [
+      26.5,
+      24.399999856948853,
+      22.600000143051147,
+      23,
+      24.299999952316284,
+      23.299999952316284,
+      22.700000047683716,
+      23.699999809265137,
+      23,
+      21.799999952316284,
+      24.5,
+      23.59999990463257,
+      23.299999952316284,
+      24.59999990463257,
+      25.299999952316284,
+      23.799999952316284,
+      23.299999952316284,
+      23.700000047683716,
+      23.299999952316284,
+      24.600000143051147,
+      24.200000047683716,
+      24,
+      23.200000047683716,
+      23,
+      23.5,
+      26.40000009536743,
+      27,
+      32.299999952316284,
+      23.40000009536743,
+      28.09999990463257,
+      24.700000047683716,
+      24,
+      24.899999856948853,
+      22.399999856948853,
+      22.800000190734863,
+      23.5,
+      23.40000009536743,
+      22.899999856948853,
+      23.799999952316284,
+      24.09999990463257,
+      23,
+      23.699999809265137,
+      23.5,
+      23.100000143051147,
+      24.09999990463257,
+      23.899999856948853,
+      28.700000047683716,
+      23.5,
+      25,
+      24.899999856948853
+    ],
+    "counts_after_1": {
+      "sources": 10,
+      "layers": 55,
+      "features": 2
+    },
+    "counts_after_50": {
+      "sources": 10,
+      "layers": 55,
+      "features": 2
+    },
+    "pass": true,
+    "large_meteor": {
+      "id": "bay_bridge_toll_plaza_1500",
+      "equal": true,
+      "first_difference": null
+    }
+  },
+  "totals": {
+    "cases_equal": 18,
+    "cases": 18,
+    "presets_equal": 2,
+    "drawn_valid": 100,
+    "drawn_total": 100
+  },
+  "code_commit": "2e8a5ee",
+  "code_dirty": true,
+  "timing_note": "Measured with the browser pane visible (foreground). git_commit is the export's; code_commit is HEAD plus the uncommitted P4a diff. MacBook Pro M3 Max."
+}

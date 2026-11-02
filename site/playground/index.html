@@ -17,6 +17,7 @@
       <button type="button" disabled data-weapon="flip" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4"/></svg>Flip</button>
       <button type="button" disabled data-weapon="meteor" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="15" r="5"/><path d="m12 11 8-8m-4 10 6-6M6 8l6-6"/></svg>Meteor</button>
     </div>
+    <fieldset id="meteor-sizes" hidden><legend>Meteor size</legend></fieldset>
     <div id="map" tabindex="0" role="application" aria-label="Map. Arrow keys pan, plus and minus zoom, Enter fires the selected weapon at the crosshair."></div>
     <div class="crosshair" aria-hidden="true"></div>
     <section id="sheet" class="sheet" aria-label="Road edits and results">
@@ -31,6 +32,7 @@
       <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
       <div class="status-area">
         <p id="status">Loading the Bay road network…</p>
+        <p id="fire-timing" hidden></p>
         <div id="progress" class="progress" role="progressbar" aria-label="Loading the Bay road network"><span></span></div>
         <p id="error" hidden></p>
         <button id="retry" type="button" hidden>Retry</button>
@@ -38,6 +40,11 @@
       </div>
       <div id="half-content" hidden inert>
         <div id="results"></div>
+        <div id="timing-tools" hidden>
+          <button id="phone-gate" type="button">Run phone gate</button>
+          <label for="phone-gate-json">Phone gate JSON (select and copy)</label>
+          <textarea id="phone-gate-json" readonly rows="10" spellcheck="false"></textarea>
+        </div>
         <h3>Try these</h3>
         <div id="presets" class="presets"></div>
         <p class="caveat">Only roads inside the Bay box exist here, so detours outside it don't.</p>

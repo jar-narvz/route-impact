@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>P2 playground verification</title>
+  <title>Playground verification</title>
   <style>
     body { font: 16px system-ui; margin: 24px; color: #172536; }
     table { border-collapse: collapse; width: 100%; }
@@ -16,7 +16,8 @@
   <script type="module" src="./playground_verify.js"></script>
 </head>
 <body>
-  <h1>P2 playground verification</h1>
+  <h1>Playground verification</h1>
+  <p>Optional query parameters: <code>set</code>, <code>oracle</code>, <code>expected</code>, <code>output</code>. Defaults run the P2 checks.</p>
   <p id="status" role="status">Starting worker checks…</p>
   <p id="verdict">RUNNING</p>
   <table><thead><tr><th>Check</th><th>Equal / pass</th><th>ms</th><th>Valid / drawn paths</th><th>First difference</th></tr></thead><tbody id="checks"></tbody></table>

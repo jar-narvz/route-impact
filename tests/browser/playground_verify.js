@@ -3,6 +3,14 @@ import {canonical} from '../../site/playground/core/procedure.js';
 
 const $ = id => document.getElementById(id);
 const dataBase = '../../site/playground/data/';
+// Paths resolve relative to this harness page, e.g. ?set=../../results/playground/p4_verify_set.json
+// &oracle=../../results/playground/p4_oracle.json&expected=18&output=p4_browser_check.json
+const params = new URLSearchParams(location.search);
+const setPath = params.get('set') ?? '../../results/playground/p2_verify_set.json';
+const oraclePath = params.get('oracle') ?? '../../results/playground/p2_oracle.json';
+const expectedCases = Number(params.get('expected') ?? 15);
+const outputFilename = params.get('output') ?? 'p2_browser_check.json';
+$('download').textContent = `Download ${outputFilename}`;
 async function fetchBytes(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
@@ -65,7 +73,7 @@ function workerClient(worker) {
 }
 async function arrays(meta) {
   const names = ['csr_offsets', 'edge_target', 'edge_ms', 'edge_way', 'edge_initially_active',
-    'edge_twin', 'way_osm_id', 'trip_origin', 'trip_destination'];
+    'edge_twin', 'way_osm_id', 'trip_origin', 'trip_destination', 'geometry_coords', 'geometry_offsets'];
   const types = {'<f8': Float64Array, '<u4': Uint32Array, '<i4': Int32Array, u1: Uint8Array};
   const entries = await Promise.all(names.map(async name => {
     const spec = meta.arrays.find(entry => entry.name === name);
@@ -82,6 +90,26 @@ async function arrays(meta) {
   for (let vertex = 0; vertex < a.csr_offsets.length - 1; vertex++)
     a.edge_source.fill(vertex, a.csr_offsets[vertex], a.csr_offsets[vertex + 1]);
   return a;
+}
+// canonical-v1 records only the hit count. Independently reconstruct the full hit set
+// from the oracle case and shipped geometry, using its local metre projection.
+function meteorHits(a, meta, edit) {
+  const k = meta.earth_radius_m * Math.PI / 180, kx = k * Math.cos(edit.lat * Math.PI / 180);
+  const point = p => [(a.geometry_coords[2 * p + 1] / meta.geometry_scale - edit.lon) * kx,
+    (a.geometry_coords[2 * p] / meta.geometry_scale - edit.lat) * k];
+  const hits = [];
+  for (let w = 0; w < a.way_osm_id.length; w++) {
+    for (let p = a.geometry_offsets[w] + 1; p < a.geometry_offsets[w + 1]; p++) {
+      const [ax, ay] = point(p - 1), [bx, by] = point(p);
+      const dx = bx - ax, dy = by - ay, length2 = dx * dx + dy * dy;
+      const t = length2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / length2)) : 0;
+      if ((ax + t * dx) ** 2 + (ay + t * dy) ** 2 <= edit.radius_m ** 2) {
+        hits.push(a.way_osm_id[w]);
+        break;
+      }
+    }
+  }
+  return hits.sort((a, b) => a - b);
 }
 function validatePaths(a, edit, result) {
   if (!Array.isArray(result.debug?.drawn)) throw new Error('Missing debug.drawn');
@@ -134,7 +162,7 @@ async function withTimeout(promise, label, ms = 120000) {
     })]);
   } finally { clearTimeout(timer); }
 }
-async function cycles() {
+async function cycles(largeCase, oracle, a, meta) {
   const frame = document.createElement('iframe');
   frame.title = 'Real playground cycle check';
   const loaded = new Promise(resolve => { frame.onload = resolve; });
@@ -157,12 +185,29 @@ async function cycles() {
   }
   result.pass = !firstDifference(result.counts_after_1, result.counts_after_50)
     && ['fire_ms', 'rebuild_ms'].every(key => median(result[key].slice(-10)) <= 1.5 * median(result[key].slice(0, 10)));
+  if (largeCase) {
+    const doc = frame.contentDocument;
+    doc.querySelector('[data-weapon="meteor"]').click();
+    const large = doc.querySelector(`[name="meteor-size"][value="${largeCase.radius_m}"]`);
+    if (!large) throw new Error('Large Meteor control unavailable');
+    large.click();
+    // Omit radius deliberately: exercise the selected radio, not just the explicit hook argument.
+    await withTimeout(hook.fireMeteor(largeCase.lat, largeCase.lon), 'Large Meteor draw');
+    const expected = oracle.outputs[largeCase.id];
+    const difference = firstDifference(routing(hook.result()), expected);
+    const hitDifference = firstDifference(hook.hitWayIds(),
+      meteorHits(a, meta, largeCase));
+    result.large_meteor = {id: largeCase.id, equal: !difference && !hitDifference,
+      first_difference: difference ?? hitDifference};
+    addRow('Real page Large Meteor', result.large_meteor.equal, '', '', difference ?? hitDifference ?? '');
+    await withTimeout(hook.rebuild(), 'Large Meteor Rebuild');
+  }
   return result;
 }
 async function main() {
   const [set, oracle, metaBytes] = await Promise.all([
-    fetchBytes('../../results/playground/p2_verify_set.json').then(decode),
-    fetchBytes('../../results/playground/p2_oracle.json').then(decode), fetchBytes(dataBase + 'meta.json'),
+    fetchBytes(setPath).then(decode),
+    fetchBytes(oraclePath).then(decode), fetchBytes(dataBase + 'meta.json'),
   ]);
   const meta = decode(metaBytes);
   if (set.snapshot !== meta.snapshot || oracle.snapshot !== meta.snapshot || set.seed !== oracle.seed)
@@ -197,15 +242,18 @@ async function main() {
       addRow(`Preset ${name}`, !difference, '', '', difference || '');
     }
   } finally { worker.terminate(); }
-  report.cycles = await cycles();
+  const largeCase = set.cases.find(edit => edit.weapon === 'meteor' && edit.radius_m === 1500);
+  if (expectedCases > 15 && !largeCase) throw new Error('Missing Large Meteor oracle case');
+  report.cycles = await cycles(largeCase, oracle, a, meta);
   addRow('50 page cycles', report.cycles.pass);
   report.totals = {cases_equal: report.cases.filter(row => row.equal).length, cases: report.cases.length,
     presets_equal: report.presets.filter(row => row.equal).length,
     drawn_valid: report.cases.reduce((sum, row) => sum + row.drawn_valid, 0),
     drawn_total: report.cases.reduce((sum, row) => sum + row.drawn_paths, 0)};
   const totals = report.totals;
-  const pass = totals.cases === 15 && totals.cases_equal === 15 && totals.presets_equal === 2
-    && totals.drawn_valid === totals.drawn_total && report.cycles.pass;
+  const pass = totals.cases === expectedCases && totals.cases_equal === expectedCases && totals.presets_equal === 2
+    && totals.drawn_valid === totals.drawn_total && report.cycles.pass
+    && (!largeCase || report.cycles.large_meteor.equal);
   $('verdict').textContent = pass ? 'PASS' : 'FAIL';
   $('verdict').style.color = pass ? '#176a32' : '#b02020';
   $('status').textContent = `${totals.cases_equal}/${totals.cases} cases; ${totals.presets_equal}/2 presets; ${totals.drawn_valid}/${totals.drawn_total} drawn paths valid.`;
@@ -215,7 +263,7 @@ async function main() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2) + '\n'], {type: 'application/json'}));
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'p2_browser_check.json';
+    link.download = outputFilename;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
