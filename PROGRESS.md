@@ -1,13 +1,13 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2, branch `playground`. P1a `b2edc58`, P1b `f638798`, P1c committed 2026-10-30 (see log). **P1 is done.** Stopped before P2: it needs Jared's decisions.
+- **Working on:** Phase 2 on `main`. **P1 and P2 are done** (P2 closed 2026-11-01 after Jared's phone run). Open: Step 11b live Verify (item 4), then P4 detail.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). ~~(1) Daily → `pages.yml` paths~~ — exercised by scheduled runs, no dispatch needed: failed Daily 41196974293 (2026-10-31, snapshot 404) → Pages 41200117069 `skipped`; publishing Daily 41306368351 (2026-11-01) → Pages 41309441377 `success` on the bot's result commit `5e97b7b`, and `results/2026-10-31/impact.json` returns 200 on the live site. **P2e left for Jared:** his phone run (+ optional VoiceOver). Then Claude closes P2. Follow-ups noted in the P2e log entry. **Next after P2: P4 per decision 18** (two Meteor sizes + impact animations), gated on the phone timings.
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). ~~(1) Daily → `pages.yml` paths~~ — exercised by scheduled runs, no dispatch needed: failed Daily 41196974293 (2026-10-31, snapshot 404) → Pages 41200117069 `skipped`; publishing Daily 41306368351 (2026-11-01) → Pages 41309441377 `success` on the bot's result commit `5e97b7b`, and `results/2026-10-31/impact.json` returns 200 on the live site. ~~P2e phone run~~ — done 2026-11-01 (iPhone 14, Chrome: cold load ≤ ~1 s, everything else barely noticeable; VoiceOver skipped). **P2 is closed.** Polish follow-ups are in the P2e part 1 log entry. **Next: P4 per decision 18** (two Meteor sizes + impact animations). The phone gate passed; P4 needs Files / Do / Verify detail and a Codex critique before Codex starts.
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Exercised 2026-10-31 (run 41196974293: three 404 attempts over ~45 min, then a clean failure).
   4. ~~Geofabrik stalled~~ — resumed; Daily 2026-11-01 published `results/2026-10-31/` (download 32 of 39 min, impact ~7 min, no OOM on the runner). **Fallback + cache now proposed as PLAN decision 19 / Step 11b (2026-11-01):** chain OLD to the newest result, up to a 3-day window, then a fresh start with a note; cache NEW's pbf for tomorrow's OLD. Jared approved 2026-11-01; Codex critique 10 points, 9 accepted + #3 in part (PLAN Review log). Step 11b implemented by Codex and reviewed by Claude (offline Verify green, DESIGN §5.11 updated). Pushed as `8ef39c1` (plan `1f4d7d1`, critique `b02a792`); CI 41401285220 green. **Next: Claude checks the live Verify:** the first publishing scheduled run after `8ef39c1` (expected 2026-11-02, NEW=261101) logs a `df` line and saves the cache `norcal-pbf-261101`; the next one logs "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", with about one download less. Read the step timings with `gh run view <id> --json jobs`, record the run IDs in the Step 11b log entry, then mark Step 11b done in PLAN. Read to resume for this item: `sed -n 173,212p PLAN.md` (Step 11b) and `sed -n 699,712p PLAN.md` (decision 19).
-  5. Then P2 (Nov 10–16), launch ~Nov 17.
+  5. Then P4 detail (decision 18), launch ~Nov 17.
   - **Workflow (Jared, 2026-10-30 02:45):** Codex is back from the 03:40 session: Codex implements and writes tests, Claude reviews. If Codex hits a quota error, fall back to a Claude implementer subagent + adversarial Claude reviewer subagent and say so in the log entry. (P1a–P1b used Claude subagents.)
   - **Overnight 2026-10-30 (Jared):** autonomous from 03:40 — Claude commits each finished step itself as Jared, no co-author line, no push. Stop with a note here on anything needing Jared's call.
   - Leftovers:
@@ -56,6 +56,20 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-11-01 — P2e (part 2): Jared's phone run; P2 closed (**done**)
+- **Agent:** Jared (phone run); Claude (record, close).
+- **Did:** Jared opened the deployed playground on his own phone and ran the PLAN P2e phone check: cold load, the Bay Bridge preset, a Meteor on the Bay Bridge toll plaza (Oakland approach, ~37.825, -122.315), and Fire → Rebuild ×10.
+- **Changed:** `PLAN.md` (P2 and P2e status → done), `PROGRESS.md`.
+- **Verify (Jared, reported in chat; timed by feel, not instrumented):**
+  - Device: **iPhone 14, Chrome** (Chrome on iOS uses WebKit, so this covers the Safari engine, not desktop-class Blink).
+  - Cold load: "less or about 1 second".
+  - Bay Bridge preset, toll-plaza Meteor, Rebuild ×10: "short enough where it's barely noticeable"; no slowdown or reload reported.
+  - **No Meteor over 2 s → decision 16's revisit clause doesn't fire; the attribution cap stays off.**
+  - VoiceOver: not run. The README keeps "has not yet been tested with a screen reader" (`README.md:129`).
+  - Earlier P2e parts: deploy + live smoke test + transfer 9,907,730 B (part 1 entry below); Daily → Pages paths (Current state item 1). `make test`/`make lint`: no code changed since `8ef39c1`, CI 41401285220 green.
+- **Review:** these are rough human timings, so nothing from this run goes in the README as a number.
+- **Gotchas:** for P4, "barely noticeable" on an iPhone 14 means the large Meteor isn't ruled out by time; P4's own Verify must still time it, since a bigger radius touches more roads.
 
 ### 2026-11-01 — Step 11b: Daily chained window + snapshot cache (code done; live Verify pending)
 - **Agent:** Codex.
