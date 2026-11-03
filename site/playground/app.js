@@ -550,9 +550,8 @@ function renderResults() {
   // Re-rendering replaces the buttons, so keep keyboard focus on the preset just pressed.
   const focusedPreset = presets.contains(document.activeElement) ? document.activeElement.dataset.preset : null;
   presets.replaceChildren();
-  const fallback = {bay_bridge: 'Bay Bridge', university_ramp: 'University Ave ramp'};
   for (const preset of state.presets) {
-    const label = state.meta.presets?.[preset.name]?.label ?? fallback[preset.name] ?? preset.label;
+    const label = presetLabel(preset.name);
     const button = element('button', label);
     button.type = 'button';
     button.disabled = state.gateRunning || !['ready', 'pending', 'showing'].includes(state.phase);
@@ -815,6 +814,13 @@ function rebuild() {
 }
 $('rebuild').addEventListener('click', rebuild);
 
+// Preset buttons and replayed preset links must show the same title.
+function presetLabel(name) {
+  const fallback = {bay_bridge: 'Bay Bridge', university_ramp: 'University Ave ramp'};
+  return state.meta.presets?.[name]?.label ?? fallback[name]
+    ?? state.presets.find(preset => preset.name === name)?.label;
+}
+
 function shareOptions(lookupWay) {
   return {box: state.meta?.box, sizes: METEOR_SIZES,
     presetNames: state.presets.map(preset => preset.name), lookupWay};
@@ -877,7 +883,7 @@ async function replayShare(hash) {
     if (version !== shareVersion) return;
     if (!parsed.ok) { rejectShare(); return; }
     const edit = parsed.edit;
-    if (edit.preset) edit.label = state.presets.find(preset => preset.name === edit.preset)?.label;
+    if (edit.preset) edit.label = presetLabel(edit.preset);
     if (edit.weapon) state.weapon = edit.weapon;
     if (edit.weapon === 'meteor') {
       state.meteorRadius = edit.radius_m;

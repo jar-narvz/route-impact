@@ -89,7 +89,7 @@ Terms from [DESIGN.md §2](DESIGN.md#2-glossary) (segment, edge, vertex, LSCC, t
 - **Quake, Tornado, stacked edits with undo** in the Nov 4 scope (P3).
 - **Agreement with the full-NorCal pipeline.** The playground uses pipeline road rules on a bounded graph; detours outside the box don't exist in it (§5.1).
 - **Turn restrictions, traffic, live data** — same limits as the pipeline.
-- **Saving or sharing edits** (no accounts, no backend). A URL hash for one edit is at most a later nicety (P4).
+- **Saving edits or sharing more than one** (no accounts, no backend). A link to one edit shipped in P4 (§5.11).
 - **Matching the pipeline's numbers exactly on a real day.** The playground uses a cut graph and a subset of trips; it demonstrates the method, it doesn't replace `route-impact impact`.
 
 ## 5. Solution design
@@ -163,6 +163,7 @@ flowchart LR
 - **Old browser without `DecompressionStream` or Web Workers:** detected in the worker / on load; show a plain message naming the supported browsers instead of a blank map.
 - **Fetch or worker failure:** visible error with a Retry button (N8).
 - **Flip on a two-way road:** Flip is unavailable for that road, with "this road is two-way".
+- **Broken or stale share link** (bad syntax, unknown way, Flip on a two-way road, preset no longer shipped): a short notice and the normal page (§5.11).
 - **No WebGL** (MapLibre needs it): plain message instead of a blank map (N8).
 - **Phone:** tap targets ≥ 44 px; the sheet never covers the blast — the map pans so the tap point stays visible above the sheet; slower routing is acceptable.
 
@@ -195,7 +196,7 @@ Patterns taken from Apple Maps (layout and behavior only; no Apple assets, see N
 - **Weapon toolbar:** a segmented row of icon + label buttons (open-source icon set) in the sheet's peek height, with the selected weapon highlighted in the accent color.
 - **Color:** one accent blue for "after" routes and selection; grey for "before" routes; red for broken, orange for slowed — always paired with text, never color alone (N10).
 - **Feedback:** a Meteor shows a simple expanding ring where it lands (CSS/MapLibre layer); routes redraw. Richer animation is P4. All motion is reduced under `prefers-reduced-motion`.
-- **Without a pointer:** a crosshair marks the map center. Arrow keys pan, and **Enter fires the selected weapon at the crosshair** (Stomp/Flip take the road nearest it). Results are announced through a polite live region, focus is always visible, and the sheet heights are buttons. P2 verifies the full flow — pick weapon, fire, read damage, Rebuild — by keyboard only.
+- **Without a pointer:** a crosshair marks the centre of the *visible* map: above the sheet on phones, right of the card on desktop (P4c-1), so it never sits under the sheet. Arrow keys pan, and **Enter fires the selected weapon at the crosshair** (Stomp/Flip take the road nearest it). Results are announced through a polite live region, focus is always visible, and the sheet heights are buttons. P2 verifies the full flow — pick weapon, fire, read damage, Rebuild — by keyboard only.
 - **Light and dark:** follows the system setting, with a matching dark map style.
 
 ### 5.10 Exact fast routing: customizable contraction hierarchies (P0c)
@@ -233,6 +234,14 @@ Patterns taken from Apple Maps (layout and behavior only; no Apple assets, see N
   - Load-time and memory limits are set in PLAN P0c.
   - Drop what the browser no longer needs: vertex coordinates and OSM ids, `edge_source`, landmark tables, the exclusion list in `meta.json`.
 - **Fallback at the P0c cutoff (PLAN):** progressive results (numbers first, explanation streamed), recorded as an explicit gate change. Nothing is cut.
+
+### 5.11 Sharing one edit (P4c)
+**Decision — the current edit lives in the URL hash, one edit per link, with nothing stored anywhere.** *Why:* a link is the only way to share without a backend (Non-goals), and the hash never reaches the server, so GitHub Pages serves the same files and nothing about the visit leaves the page. One edit is enough to show someone "delete this and watch what breaks"; stacked edits would need undo semantics the playground doesn't have (P3). *Cost:* a link replays the edit on the *current* export, so after a data refresh the same way id can give a different result or no longer exist.
+
+- **Grammar (`core/share.js`, pure and unit-tested):** `#stomp=<id>`, `#flip=<id>`, `#meteor=<lat>,<lon>,<r>`, `#preset=<name>`. Exactly one key; the raw hash is matched with no percent-decoding, so one edit has exactly one spelling. Way ids are 1–15 digits with no leading zero (safe as JavaScript numbers); coordinates have at most 5 decimals (about 1 m, and what the page rounds a Meteor tap to) and must lie in the box; the radius must be in the size table; the preset must be a shipped one. *Why strict:* anything the parser accepts is replayed, so a narrow grammar is the input validation; a loose one would turn odd links into odd edits.
+- **Way checks need the data:** a Stomp or Flip link is only valid for an exported way, and Flip only for a one-way. The parser takes a lookup function instead of importing data, so the same code runs in tests and the page.
+- **History:** the page writes the hash with `history.replaceState` after each committed edit and clears it on Rebuild. *Why:* `replaceState` adds no Back entries (Back leaves the page, as visitors expect from a map) and fires no `hashchange`, so the page's own writes can't trigger a replay. A hash on load replays once, after the engine is ready; a link pasted into the address bar replays once.
+- **Invalid links never throw:** they show a short notice, clear the hash and leave the normal page.
 
 ## 6. Solution implementation
 ### 6.1 Mockup (phone; sheet at half height after a Meteor)

@@ -134,7 +134,7 @@ for (const [hash, edit] of [
   ['#stomp=1', {weapon: 'stomp', way_id: 1}],
   ['#flip=6320410', {weapon: 'flip', way_id: 6320410}],
   ['#meteor=37.78794,-122.40752,1500', {weapon: 'meteor', lat: 37.78794, lon: -122.40752, radius_m: 1500}],
-  ['#preset=bay_bridge', {preset: 'bay_bridge', label: 'bay_bridge'}],
+  ['#preset=bay_bridge', {preset: 'bay_bridge', label: 'Bay Bridge'}], // same title as the preset button
 ]) {
   test(`page replays ${hash} once after load and writes without replay`, async () => {
     const p = await sharePage(hash);
