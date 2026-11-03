@@ -206,8 +206,56 @@ async function cycles(largeCase, oracle, a, meta, cases) {
     await withTimeout(hook.rebuild(), 'Large Meteor Rebuild');
   }
   result.animation_checks = await animationChecks(frame, hook, cases, oracle);
-  result.pass &&= result.animation_checks.pass;
+  result.page_cases = [];
+  if (animationsOn) for (const edit of cases) {
+    hook.setReducedMotion(false);
+    if (edit.weapon === 'meteor') await hook.fireMeteor(edit.lat,edit.lon,edit.radius_m);
+    else await hook.fireRoad(edit.weapon,edit.way_id ?? edit.way_ids);
+    result.page_cases.push({id:edit.id,equal:!firstDifference(routing(hook.result()),oracle.outputs[edit.id])});
+    await hook.rebuild();
+  }
+  result.fx_checks = await fxChecks(frame,hook);
+  result.hidden_traffic = await hiddenTrafficCheck(hook,frame.contentDocument);
+  result.pass &&= result.animation_checks.pass && result.page_cases.every(row => row.equal) && result.fx_checks.pass && result.hidden_traffic.pass!==false;
   return result;
+}
+
+async function waitUntil(check,label) {
+  const deadline=performance.now()+30000;
+  while (!check()) {
+    if (performance.now()>deadline) throw new Error(`${label} timed out`);
+    await new Promise(resolve => setTimeout(resolve,50));
+  }
+}
+
+async function fxChecks(frame,hook) {
+  await waitUntil(() => hook.fxStats().enabled,'FX load');
+  const first=hook.fxStats(), doc=frame.contentDocument, radii=[];
+  hook.setReducedMotion(false);
+  const meteor=hook.fireMeteor(37.7946,-122.3999,500);
+  await new Promise(resolve => setTimeout(resolve,540));
+  for (const zoom of [13,14]) {
+    hook.camera({lng:-122.3999,lat:37.7946,zoom,pitch:0});
+    await new Promise(resolve => frame.contentWindow.requestAnimationFrame(resolve));
+    radii.push({zoom,fx:hook.fxRingRadiusPx(),overlay:hook.fxRingRadiusPx(true)});
+  }
+  await meteor;
+  const scale=radii.every(r => r.fx>0 && Math.abs(r.fx-r.overlay)<=2) && Math.abs(radii[1].fx/radii[0].fx-2)<=0.06;
+  await hook.rebuild();
+  for (let i=0;i<3;i++) {
+    doc.getElementById('theme').click();
+    await waitUntil(() => {try{return hook.fxStats().enabled && hook.counts().fx_layers===1;}catch{return false;}},'Theme FX');
+  }
+  hook.loseContext();
+  await waitUntil(() => !hook.fxStats().enabled,'Context loss');
+  hook.restoreContext();
+  await waitUntil(() => {try{return hook.fxStats().enabled && hook.counts().fx_layers===1;}catch{return false;}},'Context restore');
+  hook.fxRing(37.7946,-122.3999,500,1000);
+  await waitUntil(() => hook.fxStats().drawnLastFrame>0,'Restored FX drawing');
+  const last=hook.fxStats(), lifecycle=hook.counts().fx_layers===1 && last.buffers===first.buffers && last.programs===first.programs;
+  await hook.rebuild();
+  addRow('FX metre scale',scale); addRow('FX lifecycle',lifecycle);
+  return {radii,scale,first,last,lifecycle,pass:scale && lifecycle};
 }
 
 async function animationChecks(frame, hook, cases, oracle) {
@@ -268,11 +316,18 @@ async function animationChecks(frame, hook, cases, oracle) {
       && hook.hitWayIds().length === 0 && !hook.staticOutline()
       && !hook.animationsRunning() && announcements.length === 0 && announcement.textContent === '';
     hook.setReducedMotion(true);
+    hook.camera({lng:-122.3999,lat:37.7946,zoom:16,pitch:40});
+    await waitUntil(() => hook.buildingIdProbe().sample.some(b => b.hasId),'Reduced-motion buildings');
     const framesBefore = hook.animationFramesScheduled();
     const reduced = await hook.fireMeteor(37.7946, -122.3999);
-    await sleep(0);
+    const positions=hook.trafficSample(20), trafficFrames=hook.trafficFramesRequested();
+    await sleep(1000);
+    const endState=hook.fxEndState();
+    const stillTraffic=!firstDifference(hook.trafficSample(20),positions)
+      && hook.trafficFramesRequested()===trafficFrames && !hook.trafficStats().moving;
+    const staticFx=endState.crater && endState.sunk>0 && endState.sinkK===0 && hook.fxStats().drawnLastFrame>=2;
     const reducedPass = reduced.phase === 'showing' && !hook.animationsRunning()
-      && hook.animationFramesScheduled() === framesBefore && hook.staticOutline()
+      && hook.animationFramesScheduled() === framesBefore && hook.staticOutline() && stillTraffic && staticFx
       && !firstDifference(routing(hook.result()), expected)
       && !firstDifference(hook.hitWayIds(), expectedHits) && announcements.length === 1;
     await hook.rebuild();
@@ -291,6 +346,26 @@ async function animationChecks(frame, hook, cases, oracle) {
     for (const [name, pass] of Object.entries(checks)) if (name !== 'pass') addRow(name, pass);
     return checks;
   } finally { observer.disconnect(); }
+}
+// Opt in with &visibility=1, switch away, then return. Visibility is never simulated.
+async function hiddenTrafficCheck(hook, doc) {
+  if (params.get('visibility')!=='1') return {skipped:'Requires a real tab switch; opt in with visibility=1'};
+  addRow('Switch to another tab for at least one second, then return', true);
+  return new Promise(resolve => {
+    let before, hiddenAt;
+    const timeout=setTimeout(() => finish({pass:false,reason:'No complete tab switch within 60 s'}),60000);
+    function finish(result) { clearTimeout(timeout); doc.removeEventListener('visibilitychange',change); resolve(result); }
+    async function change() {
+      if (doc.hidden) { before=hook.trafficFramesRequested(); hiddenAt=performance.now(); }
+      else if (before!==undefined) {
+        const paused=hook.trafficFramesRequested()===before, elapsed=performance.now()-hiddenAt;
+        await sleep(100);
+        finish({pass:paused && elapsed>=1000 && hook.trafficFramesRequested()>before,hidden_ms:elapsed});
+      }
+    }
+    hook.setReducedMotion(false);
+    doc.addEventListener('visibilitychange',change);
+  });
 }
 async function main() {
   const [set, oracle, metaBytes] = await Promise.all([

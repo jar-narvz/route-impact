@@ -40,20 +40,27 @@ export function createProtocol({meta, a, order, presets, loadMs}) {
     });
   }
   function baseline() {
-    const used = new Uint8Array(meta.counts.ways);
+    const used = new Uint16Array(meta.counts.ways);
+    const seen = new Int32Array(used.length).fill(-1);
     for (let trip = 0; trip < meta.counts.trips; trip++)
-      for (let p = a.trip_path_offsets[trip]; p < a.trip_path_offsets[trip+1]; p++)
-        used[a.edge_way[a.trip_path_edges[p]]] = 1;
+      for (let p = a.trip_path_offsets[trip]; p < a.trip_path_offsets[trip+1]; p++) {
+        const w = a.edge_way[a.trip_path_edges[p]];
+        if (seen[w] !== trip) { used[w] = Math.min(65535, used[w]+1); seen[w] = trip; }
+      }
     let lines = 0, points = 0;
     for (let w = 0; w < used.length; w++) {
       const count = a.geometry_offsets[w+1] - a.geometry_offsets[w];
       if (used[w] && count >= 2) { lines++; points += count; }
     }
     const coords = new Float32Array(points * 2), offsets = new Uint32Array(lines + 1);
+    const way_ids = new Float64Array(lines), oneway = new Uint8Array(lines),
+      weights = new Uint16Array(lines), highway = new Uint8Array(lines);
     let line = 0, point = 0;
     for (let w = 0; w < used.length; w++) {
       if (!used[w] || a.geometry_offsets[w+1] - a.geometry_offsets[w] < 2) continue;
-      offsets[line++] = point;
+      offsets[line] = point;
+      way_ids[line] = a.way_osm_id[w]; oneway[line] = a.way_oneway[w];
+      weights[line] = used[w]; highway[line++] = a.way_highway[w];
       for (let p = a.geometry_offsets[w]; p < a.geometry_offsets[w+1]; p++) {
         coords[2*point] = a.geometry_coords[2*p+1] / meta.geometry_scale;
         coords[2*point+1] = a.geometry_coords[2*p] / meta.geometry_scale;
@@ -61,7 +68,7 @@ export function createProtocol({meta, a, order, presets, loadMs}) {
       }
     }
     offsets[line] = point;
-    return {coords, offsets};
+    return {coords, offsets, way_ids, oneway, weights, highway};
   }
 
   function edit(test, debug) {

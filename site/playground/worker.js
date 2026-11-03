@@ -13,11 +13,21 @@ async function load() {
     return response.arrayBuffer();
   }
   const decode = raw => JSON.parse(new TextDecoder().decode(raw));
-  const meta = decode(await fetchBytes('meta.json')), bytes = new Map();
+  const metaRaw = await fetchBytes('meta.json');
+  const meta = decode(metaRaw), bytes = new Map();
+  let loaded_bytes = metaRaw.byteLength;
+  const total_bytes = meta.files.filter(f => f.shipped !== false && f.file !== 'meta.json')
+    .reduce((sum, f) => sum + f.gzip_bytes, metaRaw.byteLength);
+  let remaining = meta.files.filter(f => f.shipped !== false && f.file !== 'meta.json').length;
+  const progress = () => self.postMessage({type: 'progress', loaded_bytes, total_bytes, preparing: remaining === 0});
+  progress();
   const sha = async raw => [...new Uint8Array(await crypto.subtle.digest('SHA-256', raw))]
     .map(v => v.toString(16).padStart(2, '0')).join('');
   await Promise.all(meta.files.filter(f => f.shipped !== false && f.file !== 'meta.json').map(async spec => {
     const raw = await fetchBytes(spec.file);
+    loaded_bytes += raw.byteLength;
+    remaining--;
+    progress();
     if (spec.sha256 && await sha(raw) !== spec.sha256) throw new Error(`Hash mismatch ${spec.file}`);
     bytes.set(spec.file, raw);
   }));
@@ -60,7 +70,7 @@ self.onmessage = ({data}) => {
       const reply = protocol.handle(data);
       const baseline = data.type === 'load' && reply.ok ? reply.result.baseline : null;
       const display = data.type === 'edit' && reply.ok ? reply.result.display : null;
-      const transfers = baseline ? [baseline.coords.buffer, baseline.offsets.buffer] : [];
+      const transfers = baseline ? Object.values(baseline).map(array => array.buffer) : [];
       if (display) for (const lines of [display.before, display.after, display.hit])
         transfers.push(lines.coords.buffer, lines.offsets.buffer, lines.ids.buffer);
       self.postMessage(reply, transfers);

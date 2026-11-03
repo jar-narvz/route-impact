@@ -191,3 +191,35 @@ test('debug flag returns exact engine after-paths only when explicitly true', ()
     assert.deepEqual(canonical(routing(reply.result)), canonical(routing(protocol.handle({type: 'edit', edit}).result)));
   }
 });
+
+for (const entry of readdirSync(root, {withFileTypes:true}).filter(e => e.isDirectory())) {
+  test(`baseline traffic metadata and distinct-trip weights: ${entry.name}`, () => {
+    const decoded=load(new URL(`${entry.name}/`,root)), {meta,a}=decoded;
+    const baseline=createProtocol(decoded).handle({type:'load'}).result.baseline;
+    assert.ok(baseline.way_ids instanceof Float64Array);
+    assert.ok(baseline.oneway instanceof Uint8Array);
+    assert.ok(baseline.weights instanceof Uint16Array);
+    assert.ok(baseline.highway instanceof Uint8Array);
+    assert.equal(baseline.way_ids.length,baseline.offsets.length-1);
+    const trips=Array.from({length:meta.counts.trips},(_,t) => new Set(Array.from(
+      a.trip_path_edges.slice(a.trip_path_offsets[t],a.trip_path_offsets[t+1]),e => a.edge_way[e])));
+    for (let i=0;i<baseline.way_ids.length;i++) {
+      const w=a.way_osm_id.indexOf(baseline.way_ids[i]);
+      assert.equal(baseline.weights[i],Math.min(65535,trips.filter(path => path.has(w)).length));
+      assert.equal(baseline.oneway[i],a.way_oneway[w]);
+      assert.equal(baseline.highway[i],a.way_highway[w]);
+    }
+  });
+}
+
+test('a path visiting a way repeatedly contributes only one traffic weight', () => {
+  const decoded=load(new URL('stomp/',root)), a=decoded.a;
+  const end=a.trip_path_offsets[1], edge=a.trip_path_edges[0];
+  a.trip_path_edges=new Uint32Array([...a.trip_path_edges.slice(0,end),edge,edge,...a.trip_path_edges.slice(end)]);
+  for (let t=1;t<a.trip_path_offsets.length;t++) a.trip_path_offsets[t]+=2;
+  const b=createProtocol(decoded).handle({type:'load'}).result.baseline;
+  const w=a.edge_way[edge], index=b.way_ids.indexOf(a.way_osm_id[w]);
+  let expected=0;
+  for (let t=0;t<decoded.meta.counts.trips;t++) if (Array.from(a.trip_path_edges.slice(a.trip_path_offsets[t],a.trip_path_offsets[t+1])).some(e => a.edge_way[e]===w)) expected++;
+  assert.equal(b.weights[index],expected);
+});

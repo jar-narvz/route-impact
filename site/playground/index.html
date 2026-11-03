@@ -1,73 +1,64 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-home="true">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Explore how road edits change sampled trips across the Bay Area, with routing in your browser.">
-  <title>Fault playground — route-impact</title>
+  <title>Route Impact playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..600&family=Geist+Mono:wght@400..500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <link rel="stylesheet" href="./style.css">
   <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script type="module" src="./app.js"></script>
 </head>
 <body>
-  <main aria-label="Fault playground">
-    <div class="weapons" role="group" aria-label="Weapons">
+  <section id="home" aria-label="Route Impact playground">
+    <div class="home-copy">
+      <p class="label">Route-impact / Playground</p>
+      <h1>Break a road.<br>Watch the Bay reroute.</h1>
+      <p id="home-description">Real trips across the Bay Area, routed in your browser on OpenStreetMap data. Close a road and see which trips detour, which break, and which road caused it.</p>
+      <div class="home-actions"><button id="start" class="primary" type="button">Start<span id="start-progress" role="progressbar" aria-label="Loading roads" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></span></button><button id="home-preset" type="button">Bay Bridge closed →</button></div>
+      <p id="home-error" role="status" hidden></p><button id="home-retry" type="button" hidden>Retry</button>
+      <footer class="home-footer"><p id="home-stats" class="mono">Loading roads…</p><nav aria-label="Project links"><a href="https://github.com/jar-narvz/route-impact#fault-playground">How it works</a><a href="https://github.com/jar-narvz/route-impact">GitHub</a><a href="https://github.com/jar-narvz">Jared Narvaez</a><button id="theme" type="button" aria-label="Switch to light theme"><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></svg><span id="theme-label">Light theme</span></button></nav></footer>
+    </div>
+  </section>
+  <main id="game" aria-label="Road playground">
+    <header class="topbar"><button id="back" type="button">← Route Impact</button><div class="map-buttons"><button id="rebuild" type="button" aria-label="Rebuild roads" hidden>⟲ <span>Rebuild</span></button><button id="recenter" class="round" type="button" aria-label="Recenter on the Bay box">◎</button></div></header>
+    <aside id="panel" aria-label="Road controls">
+      <div id="dock">
+        <div class="weapons" role="group" aria-label="Weapons">
       <button type="button" disabled data-weapon="stomp" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7v9l5 3v4H5v-5h2ZM3 22h18"/></svg>Stomp</button>
       <button type="button" disabled data-weapon="flip" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4"/></svg>Flip</button>
       <button type="button" disabled data-weapon="meteor" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="15" r="5"/><path d="m12 11 8-8m-4 10 6-6M6 8l6-6"/></svg>Meteor</button>
     </div>
     <fieldset id="meteor-sizes" hidden><legend>Meteor size</legend></fieldset>
-    <div id="map" tabindex="0" role="application" aria-label="Map. Arrow keys pan, plus and minus zoom, Enter fires the selected weapon at the crosshair."></div>
-    <div class="crosshair" aria-hidden="true"></div>
-    <section id="sheet" class="sheet" aria-label="Road edits and results">
-      <div class="sheet-controls">
-        <button id="grabber" type="button" aria-label="Expand sheet to half height" title="Change sheet height"><span></span></button>
-        <div class="height-buttons" role="group" aria-label="Sheet height">
-          <button type="button" data-height="peek" aria-pressed="true">Peek</button>
-          <button type="button" data-height="half" aria-pressed="false">Half</button>
-          <button type="button" data-height="full" aria-pressed="false">Full</button>
-        </div>
       </div>
-      <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
-      <div class="status-area">
-        <p id="status">Loading the Bay road network…</p>
-        <p id="fire-timing" hidden></p>
-        <div id="progress" class="progress" role="progressbar" aria-label="Loading the Bay road network"><span></span></div>
-        <p id="error" hidden></p>
-        <button id="retry" type="button" hidden>Retry</button>
-        <p id="map-error" hidden></p>
+      <div class="status-area" id="status-area">
+        <p id="status">Loading roads 0%</p>
+        <div id="progress" class="progress"><span></span></div>
+        <p id="error" hidden></p><button id="retry" type="button" hidden>Retry</button>
         <p id="share-notice" role="status" hidden></p>
       </div>
-      <div id="half-content" hidden inert>
-        <div id="results"></div>
-        <a id="share-link" class="share-link" hidden>Share this edit: copy this link</a>
-        <div id="timing-tools" hidden>
-          <button id="phone-gate" type="button">Run phone gate</button>
-          <label for="phone-gate-json">Phone gate JSON (select and copy)</label>
-          <textarea id="phone-gate-json" readonly rows="10" spellcheck="false"></textarea>
-        </div>
-        <h3>Try these</h3>
-        <div id="presets" class="presets"></div>
-        <p class="caveat">Only roads inside the Bay box exist here, so detours outside it don't.</p>
+    </aside>
+    <div id="map" tabindex="0" role="application" aria-label="Map. Arrow keys pan, plus and minus zoom, Enter fires at the crosshair."></div>
+    <div class="crosshair" aria-hidden="true"></div>
+    <p id="map-error" role="status" hidden></p>
+    <section id="sheet" aria-label="Road edits and results" hidden>
+      <div id="summary"><div id="results"></div><button id="details-button" type="button" aria-expanded="false" aria-controls="details-content"><span id="details-label">Details</span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+      <div id="details-content" hidden inert>
+        <div id="roads"></div>
+        <details id="affected"><summary><span id="affected-label">Affected trips</span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><ul id="trips"></ul></details>
+        <button id="copy-link" type="button">Copy link</button><input id="share-link" aria-label="Share link" readonly hidden>
+        <div id="perf-tools" hidden><button id="perf-check" type="button">Run perf check</button><label for="perf-json">Perf JSON</label><textarea id="perf-json" readonly rows="12" spellcheck="false"></textarea></div>
+        <div id="timing-tools" hidden><p id="fire-timing" hidden></p><button id="phone-gate" type="button">Run phone gate</button><label for="phone-gate-json">Phone gate JSON</label><textarea id="phone-gate-json" readonly rows="10" spellcheck="false"></textarea></div>
+        <h3>Try a preset</h3><div id="presets" class="presets"></div>
         <footer id="snapshot"></footer>
       </div>
-      <div id="full-content" hidden inert>
-        <ul id="trips" aria-label="Affected trips"></ul>
-      </div>
     </section>
-    <div class="map-buttons" aria-label="Map controls">
-      <button id="rebuild" class="round" type="button" aria-label="Rebuild roads" title="Rebuild roads" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 2 8M4 4v6h6"/></svg>
-      </button>
-      <button id="recenter" class="round" type="button" aria-label="Recenter on the Bay box" title="Recenter on the Bay box" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
-      </button>
-      <button id="theme" class="round" type="button" aria-label="Switch to dark theme" title="Switch to dark theme">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>
-      </button>
-    </div>
-    <noscript><p class="no-script">This playground needs JavaScript to load the map and route trips in your browser.</p></noscript>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+    <noscript><p class="no-script">Enable JavaScript to load roads.</p></noscript>
   </main>
 </body>
 </html>

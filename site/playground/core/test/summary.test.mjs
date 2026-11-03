@@ -5,7 +5,7 @@ import {load} from '../load.mjs';
 import {createEngine} from '../engine.js';
 import {createProtocol} from '../protocol.js';
 import {canonical} from '../procedure.js';
-import {summarize} from '../summary.js';
+import {summarize, groupName, rankRoads} from '../summary.js';
 
 const root = new URL('../../../../tests/fixtures/playground/', import.meta.url);
 const json = url => JSON.parse(readFileSync(url));
@@ -26,7 +26,8 @@ for (const entry of readdirSync(root, {withFileTypes: true}).filter(entry => ent
     assert.deepEqual(summary.trips.map(row => row.trip), result.rows.map(row => row.trip));
     for (const trip of summary.trips) {
       const row = result.rows.find(row => row.trip === trip.trip);
-      assert.equal(trip.title, `Trip ${row.trip_label.trip_id} · ${row.trip_label.kind}`);
+      assert.equal(trip.title, row.trip_label.kind === 'intercity' ? 'Intercity trip' : 'Local trip');
+      assert.equal(trip.id_text, row.trip_label.trip_id);
       assert.equal(trip.status, row.status);
       assert.equal(trip.before_min, (row.trip_ms / 60000).toFixed(1));
       assert.equal(trip.after_min, row.distance_ms === null ? null : (row.distance_ms / 60000).toFixed(1));
@@ -34,164 +35,140 @@ for (const entry of readdirSync(root, {withFileTypes: true}).filter(entry => ent
   });
 }
 
-test('exact miss, unused roads, singular and formatted plural rerouted-none messages', () => {
-  const result = {ways_hit: 0, candidate_trips: 0, affected_trips: 0, rows: []};
-  const meta = {counts: {trips: 2057}};
-  assert.deepEqual(summarize(result, {meta, edit: {weapon: 'meteor'}}), {
-    message: 'Missed — no roads here', announcement: 'Missed — no roads here', trips: []});
-  result.ways_hit = 2;
-  assert.deepEqual(summarize(result, {meta, edit: {weapon: 'stomp'}}), {
-    message: 'No sampled trip used these roads', note: 'Only the sampled trips were tested.',
-    announcement: 'No sampled trip used these roads', trips: []});
-  for (const [count, text] of [[1, '1 trip rerouted, none slowed by 2 min or more'],
-    [2057, '2,057 trips rerouted, none slowed by 2 min or more']]) {
-    result.candidate_trips = count;
-    assert.deepEqual(summarize(result, {meta, edit: {weapon: 'meteor'}}), {
-      message: text, note: 'Only the sampled trips were tested.', announcement: text, trips: []});
-  }
-});
 
-test('single Stomp exact numbers, cause and trip durations', () => {
-  assert.deepEqual(oracle('stomp').summary, {
-    headline: 'Stomp hit 1 road',
-    numbers: {broken: 0, slowed: 2, added_minutes: 4, sample: 'of 4 sampled trips'},
-    mattered: {kind: 'one-road', way: {way_id: 102, name: 'Way 102'}, text: 'This road is the cause.'},
-    announcement: 'Stomp hit 1 road: 0 trips broken, 2 slowed by 2 min or more, 4 added minutes of 4 sampled trips.',
-    trips: [{trip: 0, title: 'Trip 0 · local', status: 'slowed', before_min: '0.3', after_min: '2.5'},
-      {trip: 1, title: 'Trip 1 · local', status: 'slowed', before_min: '0.2', after_min: '2.3'}],
-  });
-});
-
-test('Meteor run, broken singles, and several-together wording', () => {
-  const run = oracle('meteor_run').summary;
-  assert.equal(run.headline, 'Meteor hit 3 roads');
-  assert.deepEqual(run.mattered, {kind: 'attribution', singles: [], runs: [{ways: [
-    {way_id: 501, name: 'Way 501'}, {way_id: 502, name: 'Way 502'}], name: 'Way 501 + Way 502 (2 ways)', trips: 2, trip_text: '2 trips'}], several_together: 0});
-  assert.equal(run.announcement, 'Meteor hit 3 roads: 0 trips broken, 2 slowed by 2 min or more, 10 added minutes of 3 sampled trips.');
-  const broken = oracle('meteor_ring').summary;
-  assert.deepEqual(broken.numbers, {broken: 3, slowed: 0, added_minutes: 0, sample: 'of 5 sampled trips'});
-  assert.deepEqual(broken.mattered, {kind: 'attribution', singles: [901, 902, 904].map(way_id => ({way_id, name: `Way ${way_id}`, trips: 1, trip_text: '1 trip'})),
-    runs: [], several_together: 0});
-  assert.deepEqual(broken.trips.map(row => row.after_min), [null, null, null]);
-  assert.equal(broken.announcement, 'Meteor hit 3 roads: 3 trips broken, 0 slowed by 2 min or more, 0 added minutes of 5 sampled trips.');
-  const several = oracle('several_together').summary;
-  assert.deepEqual(several.mattered, {kind: 'attribution', singles: [{way_id: 601, name: 'Way 601', trips: 1, trip_text: '1 trip'}], runs: [], several_together: 1});
-  assert.equal(several.headline, 'Stomp hit 2 roads');
-  assert.equal(several.announcement, 'Stomp hit 2 roads: 0 trips broken, 2 slowed by 2 min or more, 7 added minutes of 2 sampled trips.');
-});
-
-test('distinct run way-sets count rows once; singles sort by frequency then OSM id; missing names', () => {
-  const {result, meta} = oracle('meteor_run');
-  result.rows[0].confirmed_singles = [503, 501, 501];
-  result.rows[1].confirmed_singles = [502, 503];
-  result.rows[0].confirmed_runs = [[502, 501], [501, 502]];
-  result.rows[1].confirmed_runs = [[501, 502]];
-  result.ways = [{way_id: 501, name: ''}, {way_id: 503, name: 'Third'}];
-  const summary = summarize(result, {meta, edit: {weapon: 'meteor'}});
-  assert.deepEqual(summary.mattered, {kind: 'attribution', singles: [
-    {way_id: 503, name: 'Third', trips: 2, trip_text: '2 trips'}, {way_id: 501, name: null, trips: 1, trip_text: '1 trip'}, {way_id: 502, name: null, trips: 1, trip_text: '1 trip'}],
-  runs: [{ways: [{way_id: 502, name: null}, {way_id: 501, name: null}], name: 'unnamed road (2 ways)', trips: 2, trip_text: '2 trips'}], several_together: 0});
-});
-
-test('one-hit Meteor and Flip use one-road cause; trip labels use actual id and kind', () => {
-  const {result, meta} = oracle('stomp');
-  result.rows[0].trip_label = {trip_id: 'ic-00001', kind: 'intercity'};
-  for (const weapon of ['meteor', 'flip']) {
-    const summary = summarize(result, {meta, edit: {weapon}});
-    assert.equal(summary.headline, `${weapon === 'meteor' ? 'Meteor' : 'Flip'} hit 1 road`);
-    assert.equal(summary.mattered.text, 'This road is the cause.');
-    assert.equal(summary.trips[0].title, 'Trip ic-00001 · intercity');
-  }
-});
-
-test('real precomputed Bay Bridge: compound attribution and honest sample totals', () => {
-  const {meta, a, presets} = load(new URL('../../data/', import.meta.url));
-  // Add precisely the protocol display fields, without building a full-size routing engine in tests.
-  const result = structuredClone(presets.bay_bridge);
-  result.precomputed = true;
-  result.ways = meta.presets.bay_bridge.ids.map(way_id => ({way_id, name: a.way_names.get(a.way_osm_id.indexOf(way_id)) || null}));
-  result.rows = result.rows.map(row => ({...row, trip_label: a.trip_labels.get(row.trip), trip_ms: a.trip_ms[row.trip]}));
-  const summary = summarize(result, {meta, edit: {preset: 'bay_bridge', label: 'Bay Bridge'}});
-  assert.equal(summary.headline, 'Bay Bridge hit 10 roads');
-  assert.equal(result.affected_trips, 171);
-  assert.deepEqual(summary.numbers, {broken: 2, slowed: 169, added_minutes: 2859, sample: 'of 2,057 sampled trips'});
-  assert.equal(summary.precomputed, true);
-  assert.equal(summary.mattered.kind, 'attribution');
-  assert.equal(summary.mattered.several_together, 170);
-  assert.deepEqual(summary.mattered.runs, []);
-  assert.deepEqual(summary.mattered.singles, [{way_id: 661905446, name: result.ways.find(way => way.way_id === 661905446).name, trips: 1, trip_text: '1 trip'}]);
-  assert.equal(summary.trips.length, 171);
-  assert.equal(summary.announcement, 'Bay Bridge hit 10 roads: 2 trips broken, 169 slowed by 2 min or more, 2,859 added minutes of 2,057 sampled trips.');
-});
-
-test('preset meta label, singular broken announcement and minutes rounded only at display', () => {
-  const {result, meta} = oracle('stomp');
-  result.broken = 1; result.slowed = 1; result.added_ms = 150000;
-  Object.assign(result.rows[0], {status: 'broken', distance_ms: null, added_ms: null});
-  Object.assign(result.rows[1], {distance_ms: result.rows[1].trip_ms + 150000, added_ms: 150000});
-  result.precomputed = true;
-  meta.presets = {test: {label: 'Test bridge'}};
-  const summary = summarize(result, {meta, edit: {preset: 'test'}});
-  assert.equal(summary.headline, 'Test bridge hit 1 road');
-  assert.equal(summary.precomputed, true);
-  assert.equal(summary.numbers.added_minutes, 3);
-  assert.equal(summary.announcement, 'Test bridge hit 1 road: 1 trip broken, 1 slowed by 2 min or more, 3 added minutes of 4 sampled trips.');
-});
-
-
-test('group names are unique in path order, with full ways retained', () => {
-  const {result, meta} = oracle('meteor_run');
-  result.ways = [{way_id: 501, name: 'Broadway'}, {way_id: 502, name: 'Bonita Street'},
-    {way_id: 503, name: 'Polk Street'}, {way_id: 504, name: 'Broadway'}, {way_id: 505, name: null}];
-  result.rows[0].confirmed_runs = [[502, 503, 501, 504, 505]];
-  result.rows[1].confirmed_runs = [];
-  let run = summarize(result, {meta, edit: {weapon: 'meteor'}}).mattered.runs[0];
-  assert.equal(run.name, 'Bonita Street + Polk Street + Broadway + unnamed road (5 ways)');
-  assert.equal(run.trip_text, '1 trip');
-  assert.deepEqual(run.ways.map(way => way.way_id), [502, 503, 501, 504, 505]);
-  result.ways = result.ways.map(way => ({...way, name: 'Van Ness Avenue'}));
-  run = summarize(result, {meta, edit: {weapon: 'meteor'}}).mattered.runs[0];
-  assert.equal(run.name, 'Van Ness Avenue (5 ways)');
-});
-
-
-test('singular sample count', () => {
-  const {result, meta, edit} = oracle('stomp');
-  meta.counts.trips = 1;
-  assert.equal(summarize(result, {meta, edit}).numbers.sample, 'of 1 sampled trip');
-});
-
-for (const weapon of ['stomp', 'flip']) {
-  for (const [label, name] of [['named', 'University Avenue'], ['null', null], ['empty', '']]) {
-    test(`${weapon} ${label} single-road no-impact messages name the road`, () => {
-      const result = {ways_hit: 1, ways: [{way_id: 123, name}], candidate_trips: 0, affected_trips: 0, rows: []};
-      const context = {meta: {}, edit: {weapon}};
-      const road = name || 'this unnamed road';
-      for (const [count, message] of [[0, `No sampled trip used ${road}`],
-        [1, `1 trip rerouted around ${road}, none slowed by 2 min or more`],
-        [2057, `2,057 trips rerouted around ${road}, none slowed by 2 min or more`]]) {
+test('exact no-damage copy for named, unnamed, multi-road and missed edits', () => {
+  const result = {ways_hit: 1, ways: [{way_id: 123, name: 'University Avenue'}], candidate_trips: 0, affected_trips: 0, rows: []};
+  for (const weapon of ['stomp','flip']) {
+    for (const name of ['University Avenue', null, '']) {
+      result.ways[0].name = name;
+      for (const count of [0,1,2057]) {
         result.candidate_trips = count;
-        assert.deepEqual(summarize(result, context), {message, announcement: message,
-          note: 'Only the sampled trips were tested.', trips: []});
+        const road = name || 'an unnamed road'; // R2: "Flip reversed an unnamed road."
+        let message = count ? `${count.toLocaleString('en-US')} ${count === 1 ? 'trip' : 'trips'} ${weapon === 'flip' ? `changed route after ${road} was reversed` : `rerouted around ${road}`}. None lost 2 min or more.` : `No sampled trip used ${road}`;
+        if (weapon === 'flip') message = `Flip reversed ${road}.`;
+        assert.deepEqual(summarize(result, {meta: {}, edit: {weapon}}), {
+          message, rerouted_label: 'Rerouted', announcement: message, note: 'Only the sampled trips were tested.', trips: []});
       }
-    });
-  }
-}
-
-for (const [label, edit, ways_hit] of [
-  ['multi-road Stomp', {weapon: 'stomp'}, 2], ['multi-road Flip', {weapon: 'flip'}, 2],
-  ['Meteor', {weapon: 'meteor'}, 1], ['preset', {preset: 'bridge'}, 1],
-  ['Stomp preset', {weapon: 'stomp', preset: 'bridge'}, 1],
-  ['Flip preset', {weapon: 'flip', preset: 'bridge'}, 1],
-]) {
-  test(`${label} retains exact no-impact messages`, () => {
-    const result = {ways_hit, ways: [{way_id: 123, name: 'University Avenue'}], candidate_trips: 0, affected_trips: 0, rows: []};
-    for (const [count, message] of [[0, 'No sampled trip used these roads'],
-      [1, '1 trip rerouted, none slowed by 2 min or more'],
-      [2, '2 trips rerouted, none slowed by 2 min or more']]) {
-      result.candidate_trips = count;
-      assert.deepEqual(summarize(result, {meta: {}, edit}), {message, announcement: message,
-        note: 'Only the sampled trips were tested.', trips: []});
     }
-  });
-}
+  }
+  result.ways_hit = 2; result.candidate_trips = 2;
+  assert.equal(summarize(result, {meta: {}, edit: {weapon: 'meteor'}}).message, '2 trips rerouted. None lost 2 min or more.');
+  result.ways_hit = 0;
+  assert.deepEqual(summarize(result, {meta: {}, edit: {weapon: 'meteor'}}), {
+    message: 'No roads inside the circle.', rerouted_label: 'Rerouted', announcement: 'No roads inside the circle.', trips: []});
+});
+
+test('group naming frequency, lowest road id tie, and unnamed roads', () => {
+  const ways = [{way_id: 9,name:'Third'}, {way_id: 3,name:'Broadway'}, {way_id: 7,name:'Third'}];
+  assert.equal(groupName(ways), 'Third');
+  assert.equal(groupName(ways.slice(0,2)), 'Broadway');
+  assert.equal(groupName(ways.map(way => ({...way,name:null}))), 'Unnamed road');
+  assert.equal(groupName([{way_id:1,name:'A very long road name'}]), 'A very long road name');
+});
+
+test('ranking merges matching headlines with distinct trips and distinct road counts', () => {
+  const result = {ways: [{way_id:1,name:'First'}, {way_id:2,name:'Second'}, {way_id:3,name:'Third'}], rows: [
+    {trip:10, confirmed_singles:[3,3,2], confirmed_runs:[[2,1],[1,2]]},
+    {trip:10, confirmed_singles:[3], confirmed_runs:[[1,2]]},
+    {trip:20, confirmed_singles:[3,1], confirmed_runs:[[2,1]]},
+  ]};
+  assert.deepEqual(rankRoads(result), {count:3, rows:[
+    {ways:[{way_id:1,name:'First'},{way_id:2,name:'Second'}],name:'First',secondary:'',trips:2,caption:'1 road · 2 trips',share:1},
+    {ways:[{way_id:3,name:'Third'}],name:'Third',secondary:'',trips:2,caption:'1 road · 2 trips',share:1},
+    {ways:[{way_id:2,name:'Second'}],name:'Second',secondary:'',trips:1,caption:'1 road · 1 trip',share:0.5},
+  ]});
+});
+
+test('exact result numbers and mattered count come from confirmed roads', () => {
+  const stomp = oracle('stomp').summary;
+  assert.deepEqual(stomp.numbers, {broken:0,slowed:2,added_minutes:4,sample:'of 4 sampled trips'});
+  assert.equal(stomp.detail, 'Stomp hit 1 road.');
+  assert.deepEqual(stomp.mattered, {rows:[{ways:[{way_id:102,name:'Unnamed road'}],name:'Unnamed road',secondary:'',trips:2,caption:'1 road · 2 trips',share:1}],count:1,more_text:'Show all 1 groups',several_together:0});
+  assert.equal(stomp.announcement, 'Stomp hit 1 road: 0 trips broken, 2 slowed by 2 min or more, 4 added minutes of 4 sampled trips.');
+  const run = oracle('meteor_run').summary;
+  assert.equal(run.detail, 'Meteor hit 3 roads.');
+  assert.equal(run.mattered.rows[0].name, 'Unnamed road');
+  const several = oracle('several_together').summary;
+  assert.equal(several.mattered.several_together, 1);
+  assert.equal(several.mattered.count, 1);
+});
+
+test('all oracle summary strings meet copy rules; trips and result metrics stay exact', () => {
+  const visit = value => {
+    if (typeof value === 'string') assert.doesNotMatch(value, /—|\b(successfully|just|simply|please)\b|!/i);
+    else if (value && typeof value === 'object') Object.values(value).forEach(visit);
+  };
+  for (const entry of readdirSync(root, {withFileTypes:true}).filter(entry => entry.isDirectory())) {
+    const {summary,result} = oracle(entry.name);
+    visit(summary);
+    if (summary.numbers) {
+      assert.equal(summary.numbers.broken,result.broken);
+      assert.equal(summary.numbers.slowed,result.slowed);
+      assert.equal(summary.numbers.added_minutes,Math.round(result.added_ms/60000));
+    }
+  }
+});
+
+test('trip copy separates kind, id, status and exact durations', () => {
+  const rows = [
+    {trip: 3, trip_label: {trip_id: 'ic-00003', kind: 'intercity'}, status: 'slowed', trip_ms: 1032000, distance_ms: 2406000},
+    {trip: 4, trip_label: {trip_id: 'lo-00004', kind: 'local'}, status: 'broken', trip_ms: 744000, distance_ms: null},
+  ];
+  const result = {rows, ways_hit: 0, candidate_trips: 0};
+  assert.deepEqual(summarize(result, {meta: {}, edit: {weapon: 'meteor'}}).trips, [
+    {trip: 3, title: 'Intercity trip', id_text: 'ic-00003', status: 'slowed', before_min: '17.2', after_min: '40.1', duration_text: '17.2 → 40.1 min'},
+    {trip: 4, title: 'Local trip', id_text: 'lo-00004', status: 'broken', before_min: '12.4', after_min: null, duration_text: '12.4 min → no route'},
+  ]);
+});
+
+
+test('R1 a merged row counts each road once; row road counts never exceed the roads hit', () => {
+  const ways = [1,2,3,4,5].map(way_id => ({way_id, name: way_id < 4 ? 'Highway' : null}));
+  const result = {ways_hit: 5, ways, rows: [
+    {trip:1, confirmed_runs:[[1,2,3]]}, {trip:2, confirmed_runs:[[1,2,4]]}, {trip:3, confirmed_runs:[[2,3]]},
+    {trip:4, confirmed_runs:[[4,5,1]]}, {trip:5, confirmed_singles:[3]},
+  ]};
+  const {rows} = rankRoads(result);
+  assert.deepEqual(rows.map(row => [row.name,row.caption]), [['Highway','3 roads · 4 trips'],['Unnamed road','2 roads · 1 trip']]);
+  const sum = rows.reduce((n,row) => n+Number(row.caption.split(' ')[0]),0);
+  assert.ok(sum <= result.ways_hit, `${sum} > ${result.ways_hit}`);
+  const flip = summarize({ways_hit:1, ways:[{way_id:9,name:null}], candidate_trips:3, affected_trips:0, rows:[]}, {meta:{}, edit:{weapon:'flip'}});
+  assert.equal(flip.message, 'Flip reversed an unnamed road.');
+});
+
+test('D1 joint causes rank alongside merged road headlines', () => {
+  const result = {ways:[{way_id:1,name:'Highway'},{way_id:2,name:'Ramp'},{way_id:3,name:'Highway'}], rows:[
+    {trip:1,label:'several_together',confirmed_singles:[1]},
+    {trip:2,label:'several_together'}, {trip:2,label:'several_together'},
+    {trip:3,confirmed_runs:[[1,2]]}, {trip:4,confirmed_singles:[3]},
+  ]};
+  const ranked = rankRoads(result);
+  assert.deepEqual(ranked.rows.map(row => [row.name,row.secondary,row.trips,row.share]), [
+    ['Highway','',3,1], ['Several roads together','',2,2/3],
+  ]);
+  assert.equal(ranked.rows[0].caption, '3 roads · 3 trips');
+  assert.deepEqual(ranked.rows[0].ways, result.ways);
+  assert.equal(ranked.rows[1].caption, '2 trips'); // all three roads are already counted above
+});
+
+test('D6 and D7 result labels and group expansion explain the numbers', () => {
+  const summary = oracle('stomp').summary;
+  assert.deepEqual(summary.labels, {broken:'Broken',slowed:'Slowed',added_minutes:'Added min'});
+  assert.equal(summary.mattered.more_text, 'Show all 1 groups');
+  assert.equal(summary.detail, 'Stomp hit 1 road.');
+});
+
+
+test('D1 OSM ids never become road names; unnamed rows merge with a trip union', () => {
+  const ways=[{way_id:123,name:'Road 123'}, {way_id:124,name:'Way 124'}, {way_id:125,name:'125'},
+    {way_id:126,name:null}, {way_id:127,name:'OSM way 127',ref:'I-80'}];
+  const ranked=rankRoads({ways,rows:[
+    {trip:1,confirmed_singles:[123,124]}, {trip:1,confirmed_runs:[[125,126]]},
+    {trip:2,confirmed_singles:[124,127]},
+  ]});
+  assert.deepEqual(ranked.rows.map(({name,secondary,trips,caption,share}) => ({name,secondary,trips,caption,share})),[
+    {name:'Unnamed road',secondary:'',trips:2,caption:'4 roads · 2 trips',share:1},
+    {name:'I-80',secondary:'',trips:1,caption:'1 road · 1 trip',share:.5},
+  ]);
+  assert.deepEqual(ranked.rows[0].ways.map(way=>way.way_id),[123,124,125,126]);
+});

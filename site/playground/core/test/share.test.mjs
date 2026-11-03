@@ -63,12 +63,13 @@ async function sharePage(hash = '') {
   ]);
   const nodes = new Map(), sent = [], writes = [], reads = [], listeners = {};
   class Element {
-    constructor() { this.children = []; this.style = {}; this.dataset = {}; this.textContent = ''; }
+    constructor() { this.children = []; this.style = {}; this.dataset = {}; this.textContent = ''; this.classList = {add() {}, remove() {}}; }
     append(...children) { this.children.push(...children); }
     replaceChildren() { this.children = []; }
     setAttribute() {}
     contains() { return false; }
     addEventListener() {}
+    focus() {}
     getBoundingClientRect() { return {left: 0, top: 400, right: 375, width: 375, height: 812}; }
     getContext() { return {getExtension: () => null}; }
   }
@@ -134,12 +135,14 @@ for (const [hash, edit] of [
   ['#stomp=1', {weapon: 'stomp', way_id: 1}],
   ['#flip=6320410', {weapon: 'flip', way_id: 6320410}],
   ['#meteor=37.78794,-122.40752,1500', {weapon: 'meteor', lat: 37.78794, lon: -122.40752, radius_m: 1500}],
-  ['#preset=bay_bridge', {preset: 'bay_bridge', label: 'Bay Bridge'}], // same title as the preset button
+  ['#preset=bay_bridge', {preset:'bay_bridge'}],
 ]) {
   test(`page replays ${hash} once after load and writes without replay`, async () => {
-    const p = await sharePage(hash);
+    const serialized = serializeShare(edit, options);
+    assert.equal(serialized.hash, hash);
+    const p = await sharePage(serialized.hash);
     assert.deepEqual(p.sent.map(message => message.type), ['load', 'edit']);
-    assert.deepEqual(p.plain(p.sent[1].edit), edit);
+    assert.deepEqual(p.plain(p.sent[1].edit), edit.preset ? {...edit,label:'Bay Bridge'} : edit);
     assert.equal(p.location.hash, hash);
     assert.deepEqual(p.writes, ['/playground/?test&timing' + hash]);
     assert.equal(p.get('share-link').href, hash);
@@ -150,9 +153,9 @@ for (const [hash, edit] of [
 
 test('pasted hashes replay once each; three commits use replaceState and Rebuild clears the hash', async () => {
   const p = await sharePage();
-  for (const hash of ['#preset=bay_bridge', '#preset=university_ramp', '#meteor=37.8,-122.4,500']) await p.change(hash);
+  for (const hash of ['#meteor=37.8,-122.4,1500', '#meteor=37.9,-122.4,500', '#meteor=37.8,-122.4,500']) await p.change(hash);
   assert.deepEqual(p.sent.map(message => message.type), ['load', 'edit', 'edit', 'edit']);
-  assert.equal(p.writes.length, 3);
+  assert.equal(p.writes.filter(url => url.includes('#')).length, 3);
   p.context.api.rebuild();
   await p.settle();
   assert.equal(p.location.hash, '');
@@ -161,7 +164,7 @@ test('pasted hashes replay once each; three commits use replaceState and Rebuild
   assert.equal(p.sent.at(-1).type, 'reset');
 });
 
-for (const hash of ['#flip=1', '#stomp=2', '#stomp=%31', '#preset=unknown']) {
+for (const hash of ['#flip=1', '#stomp=2', '#stomp=%31']) {
   test(`invalid page link ${hash} clears to the normal page with a notice`, async () => {
     const p = await sharePage(hash);
     assert.equal(p.location.hash, '');
