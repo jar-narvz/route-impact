@@ -57,6 +57,14 @@
 
 ## Log (append-only, newest on top)
 
+### 2026-11-02 — README pass for the Nov 3–4 deadline
+- **Agent:** Claude.
+- **Did:** Added the 2026-10-31 and 2026-11-01 daily rows (from `results/<date>/impact.json` `metrics`: rerouted / improved / changed_segments); explained the missing 10-29/10-30 days and the 0-change 11-01 day; described the Step 11b chaining + cache in "How it works"; added the 10-31 runner time; added the playground's first-visit transfer; fixed "Mac described below" → "above".
+- **Changed:** `README.md`, `PROGRESS.md`.
+- **Verify (every new number traced):** 10-31 row 339 / 2 / 43 and 11-01 row 0 / 0 / 0 from `impact.json`. 11-01 is real, not a duplicate snapshot: Geofabrik md5 `ae55960d…` (261031) vs `246c5c58…` (261101), sizes 655,172,903 vs 655,196,573 B. Failed runs: 41051491538 log "norcal-261029.osm.pbf not published on Geofabrik" (404, then a 502), 41196974293 404s; 261029 exists now, so it was late, not skipped. 9 min 15 s = run 40838962434 (07:59:19 → 08:08:34), a **workflow_dispatch**, so the README no longer calls it scheduled. 39 min 14 s = run 41306368351; downloads ended 12:56:40 after the step started 12:25:09 = 31 min 31 s. 9,914,015 B from `results/playground/p4_transfer.json`.
+- **Resume bullets:** drafted for Jared's approval (in chat), from `results/2026-10-27/metrics.json`, `results/faults/261027/scores.json`, `results/playground/`.
+- **Gotchas:** PROGRESS earlier said "scheduled" for the 10-28 job; it was the Step 11 dispatch (a).
+
 ### 2026-11-02 — P4c part 3: deployed transfer + live smoke test (**P4c done, P4 done**)
 - **Agent:** Claude.
 - **Did:** After Jared pushed `1cdf596` (Pages run 41553294023 success, CI 41553294015 success), measured the deployed transfer and ran the live smoke test with the pane shown.

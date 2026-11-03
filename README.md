@@ -50,10 +50,10 @@ Full design with the reasoning behind each decision: [docs/DESIGN.md](docs/DESIG
    - **MEDIUM:** any broken trip, or any intercity trip slowed by ≥ 2 min.
    - **LOW:** otherwise.
 
-A GitHub Actions workflow runs this every day at 06:00 UTC on yesterday's snapshot pair. It commits the results, opens an issue on HIGH, and publishes the map to GitHub Pages.
+A GitHub Actions workflow runs this every day at 06:00 UTC. It commits the results, opens an issue on HIGH, and publishes the map to GitHub Pages. OLD is the newest snapshot that already has a result, not simply yesterday's. So if Geofabrik skips or delays a day, the next run compares across the gap (up to 3 days) and every edit is still checked exactly once. Past 3 days it starts fresh and names the dates it didn't cover. Each run caches its NEW snapshot, so the next run usually downloads one file instead of two.
 
 ## Results on real snapshots
-Five consecutive days of Geofabrik NorCal snapshots, 5,660 trips each (3,660 intercity + 2,000 local). Source: `results/<date>/impact.json`.
+Seven daily comparisons of Geofabrik NorCal snapshots, 5,660 trips each (3,660 intercity + 2,000 local). Source: `results/<date>/impact.json`.
 
 | NEW date | OLD → NEW | Risk | Broken | Slowed ≥ 2 min | Rerouted | Got faster | Changed segments on trip paths |
 |---|---|---|---|---|---|---|---|
@@ -62,8 +62,10 @@ Five consecutive days of Geofabrik NorCal snapshots, 5,660 trips each (3,660 int
 | [2026-10-26](results/2026-10-26/report.md) | 261025 → 261026 | LOW | 0 | 0 | 39 | 1 | 25 |
 | [2026-10-27](results/2026-10-27/report.md) | 261026 → 261027 | LOW | 0 | 0 | 142 | 5 | 29 |
 | [2026-10-28](results/2026-10-28/report.md) | 261027 → 261028 | LOW | 0 | 0 | 19 | 2 | 81 |
+| [2026-10-31](results/2026-10-31/report.md) | 261030 → 261031 | LOW | 0 | 0 | 339 | 2 | 43 |
+| [2026-11-01](results/2026-11-01/report.md) | 261031 → 261101 | LOW | 0 | 0 | 0 | 0 | 0 |
 
-The 2026-10-28 row came from the scheduled GitHub Actions job; the others were run locally. Every day changed segments on some trips' paths, and the reroute found an equally fast or faster alternative each time. That's what most days look like, and it's why the fault suite below exists.
+The 2026-10-28, 2026-10-31 and 2026-11-01 rows came from the GitHub Actions job (2026-10-28 by manual dispatch, the other two on schedule); the others were run locally. There are no results for 2026-10-29 and 2026-10-30 because Geofabrik's NorCal updates stalled: on 2026-10-30 and 2026-10-31 the scheduled run's new snapshot wasn't published yet (HTTP 404), so both runs failed. That led to the fallback described above. On every day but 2026-11-01, edits changed segments on some trips' paths, and the reroute found an equally fast or faster alternative each time. On 2026-11-01 the two snapshots were different files, but no edit touched any trip's path. That's what most days look like, and it's why the fault suite below exists.
 
 **Benchmark** (`results/2026-10-27/metrics.json`: one full 261026 → 261027 run on an Apple M3 Max with 36 GB RAM; DuckDB 2.0.0 with `threads = 2` and `memory_limit = 2GB`):
 
@@ -77,7 +79,7 @@ The 2026-10-28 row came from the scheduled GitHub Actions job; the others were r
 | Pipeline total | 438.23 s (448.46 s wall) |
 | Peak RSS | 9,797,926,912 B (`/usr/bin/time -l`) |
 
-Routing dominates the run. On GitHub's hosted runner, the scheduled daily job for 2026-10-28, including downloading both snapshots, finished in 9 min 15 s.
+Routing dominates the run. On GitHub's hosted runner, the daily job for 2026-10-28 (a manual dispatch), including downloading both snapshots, finished in 9 min 15 s. Download speed from Geofabrik varies a lot: the scheduled job for 2026-10-31 took 39 min 14 s, 31 min 31 s of it downloading the two snapshots.
 
 ### Example: a deletion that is not a breakage (US 199)
 On 26 → 27, ways [`1566890644`](https://www.openstreetmap.org/way/1566890644) and [`1566890645`](https://www.openstreetmap.org/way/1566890645) on US 199 (Redwood Highway, near Crescent City) were deleted in a cleanup edit. A gate that counts edits ("2 highway ways deleted") would flag this. But both were short stubs whose node pairs live on in other ways, and running the tool's own segment diff on just those two ways finds **0 changed segments**: both `a → b` steps still exist in 261027 at the same travel time. So no trip is rerouted, no culprit is named, and the day stays LOW, which is correct, because the road is still drivable. This is why segments are compared, not ways.
@@ -112,13 +114,13 @@ By fault type (single runs):
 - The root-cause score only covers **connectivity-type faults** (deleted ways and bridges, one-way changes, disconnected nodes), because those were the only ones that affected a trip. It says nothing about attributing slowdowns.
 - These are scores on **injected** faults, not a real-world catch rate.
 
-Each single run took 125.96 s on average, after a one-time 18.19 s extract and 309.80 s of baseline routing, on the Mac described below.
+Each single run took 125.96 s on average, after a one-time 18.19 s extract and 309.80 s of baseline routing, on the Mac described above.
 
 ## Fault playground
 The same method as a game you run in the browser. Pick **Stomp** (delete the road you tap), **Flip** (reverse a one-way) or **Meteor** (delete every road within the chosen size: Small 500 m or Large 1,500 m). Each committed edit updates a share link in the URL; copy the address or the result's share link to replay that edit, including compound presets. Rebuild clears it. The page reroutes the affected sampled trips and shows how many broke, how many slowed by 2 minutes or more, the added minutes, and which destroyed roads actually mattered: the same restore-one-edit root cause as the daily pipeline.
 
 - **What it routes:** the Bay Area box (37.2–38.1° N, 122.6–121.7° W) from snapshot 261027: 213,910 vertices, 551,760 directed edges and 180,633 OSM ways, with 2,057 sampled trips fully inside the box (`site/playground/data/meta.json`). Python exports the graph with the pipeline's own road rules; the browser never rebuilds it.
-- **How it's fast enough:** exact routing with customizable contraction hierarchies (CCH) in plain JavaScript, inside a Web Worker. An edit only re-customizes the changed part of the hierarchy. The node order is computed offline with RoutingKit. Shipped data is 9,664,256 B gzipped.
+- **How it's fast enough:** exact routing with customizable contraction hierarchies (CCH) in plain JavaScript, inside a Web Worker. An edit only re-customizes the changed part of the hierarchy. The node order is computed offline with RoutingKit. Shipped data is 9,664,256 B gzipped. A first visit downloads 9,914,015 B in total, including code and MapLibre but not map tiles ([measured on the live site](results/playground/p4_transfer.json)).
 - **How it's checked:** an independent Python oracle fully recomputes every case on the same exported graph. On a frozen set of 15 cases (both presets as live edits, 10 seeded Stomps, 3 Meteors) the browser matched it 15/15, and 75/75 drawn routes were valid against the shipped arrays (`results/playground/p2_browser_check.json`). In that run the worker answered each case in 93.8 ms or less, and 50 Meteor/Rebuild cycles through the real page stayed flat (median 117.6 ms from tap to drawn result; MacBook Pro M3 Max).
 - **Example:** deleting both Bay Bridge spans (10 ways) breaks 2 of the 2,057 sampled trips and slows 169 by 2 minutes or more, adding 2,859 minutes in total (`results/playground/p2_oracle.json`).
 
