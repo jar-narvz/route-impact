@@ -1,0 +1,29 @@
+{
+  "page_url": "http://127.0.0.1:8781/site/playground/?perf#meteor=37.825,-122.315,1500",
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "timestamp_utc": "2026-11-03T14:28:21.459Z",
+  "export_git_commit": "56dcd7c016016d314a725c2f3ce91cf6a05b74a0",
+  "viewport": {
+    "width": 1280,
+    "height": 800,
+    "dpr": 1
+  },
+  "cars": 5921,
+  "particles_scale": 1,
+  "ladder_steps": [],
+  "frame_ms": {
+    "p50": 16.69999999999709,
+    "p95": 16.700000000004366,
+    "p99": 16.80000000000291,
+    "max": 33.39999999999782,
+    "over_50": 0
+  },
+  "meteor_fire_to_result_ms": [
+    1094.7000000476837,
+    1088.8999998569489,
+    1082,
+    1080.7000000476837
+  ],
+  "run_environment": "Headless Chrome over CDP on this Mac with --use-angle=metal (Apple M3 Max GPU), 1280x800, dpr 1. Headless has no display vsync, so frame intervals are indicative; the iPhone run on the deployed page is the phone number.",
+  "wall_seconds": 36
+}

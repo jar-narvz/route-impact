@@ -1,6 +1,7 @@
 # PROGRESS.md — route-impact
 
 ## Current state
+- **P5 redesign (2026-11-03): local Verify done.** Monochrome page, home screen, WebGL effects and traffic, two independent reviews (3 fix rounds). Harness 18/18 + 15/15 + 18/18 (animations on) on the GPU, `make test` 314 + 265, lint clean, ledger 9,998,364 B. **Open (Jared):** commit (commands in the newest log entry), push, then the iPhone `?perf` JSON, the deployed transfer and the live smoke test. Also still open: Step 11b run 2 (item 4 below).
 - **Working on:** Phase 2 on `main`. **P1, P2 and P4 are done**; README pass and resume bullets done 2026-11-02 (bullets approved, in the newest log entry). Open: Step 11b live Verify run 2 (item 4). Next phase P3 is after Nov 4.
 - **Next session, start here:**
   1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). ~~(1) Daily → `pages.yml` paths~~ — exercised by scheduled runs, no dispatch needed: failed Daily 41196974293 (2026-10-31, snapshot 404) → Pages 41200117069 `skipped`; publishing Daily 41306368351 (2026-11-01) → Pages 41309441377 `success` on the bot's result commit `5e97b7b`, and `results/2026-10-31/impact.json` returns 200 on the live site. ~~P2e phone run~~ — done 2026-11-01 (iPhone 14, Chrome: cold load ≤ ~1 s, everything else barely noticeable; VoiceOver skipped). **P2 is closed.** Polish follow-ups are in the P2e part 1 log entry. **Next: P4 per decision 18.** Detail P4a–P4c written 2026-11-01, Codex critique 8 accepted + 2 in part (PLAN Review log). **P4a done 2026-11-02** (phone gate pass, Large ships; see log). Decision 18 amended: Meteor fall 600 / 1,040 ms by size. **P4b done 2026-11-02**; **P4c-1 done 2026-11-02** (crosshair, named results, size-scaled Meteor marker; see log). **Start here next session:** (a) Step 11b run 2: `gh run list --workflow daily.yml -L 1`, then `gh run view <id> --log | grep -E 'Cache restored|already present|old=|new='` and step times via `gh run view <id> --json jobs`; record it in the Step 11b log entry and mark Step 11b done in PLAN. (b) ~~P4c~~ and ~~README/resume pass~~ done 2026-11-02 (see log). (c) Then Jared's call: P3 detail (Quake, Tornado, stacked edits with undo; `grep -n 'P3 — More weapons' PLAN.md`) or the small follow-ups below. Read to resume: the P4 block in PLAN (`grep -n 'P4 — Polish' PLAN.md`).
@@ -57,6 +58,128 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-11-03 — P5 follow-up: Meteor impact shake (Jared's request)
+- **Step:** P5 polish. **Agent:** Claude (small visual change; checked in headless Chrome on the GPU).
+- **Did:** On Meteor impact the map canvas shakes for 560 ms: damped, seeded jitter that peaks at 7 px × scale (capped at 14 px), with a slight zoom that eases out so the canvas edges never show. Only the canvas element moves (CSS transform through the Web Animations API), not the camera, so hit tests, traffic and the UI are unaffected. It is skipped under reduced motion, in still mode, when the tab is hidden, and when a replay resumes more than 0.25 s after impact. Clear/Rebuild cancels it. It follows the slow-mo `timeScale`.
+- **Changed:** `site/playground/fx.js`, `docs/PLAYGROUND_UI.md`, `results/playground/p5b_browser_check.json` (re-run on this code).
+- **Verify:**
+  - Probe at 375×812: one `animate` call, duration 560; the first transform `matrix(1.0647, 0, 0, 1.0647, -6.4, -3.2)` at 733 ms after firing a 1.5 km meteor; transform back to `none` at 1,324 ms.
+  - The frame paused mid-shake shows no canvas edges.
+  - `make test-js` `# pass 265` `# fail 0`; lint clean.
+  - Harness `?animations=1` on the GPU: "PASS 15/15 cases; 2/2 presets; 75/75 drawn paths valid." Animation checks all pass (reduced_motion, rapid_edit included). Counts after 50 cycles equal the counts after 1.
+- **Review:** not reviewed by a second agent (one small, isolated function).
+- **Gotchas:** the shake is invisible under swiftshader (frames too slow to catch it); use `GPU=1`.
+
+### 2026-11-03 — P5: monochrome redesign, effects, traffic, reviews (**local Verify done**)
+- **Step:** P5a + P5b + P5c (PLAN decision 20; spec docs/PLAYGROUND_UI.md). **Agents:** Codex implemented P5a, P5b-1…4 and review rounds P5c-1/2. Claude subagents did the work that needs a visual loop, because Codex's sandbox can't launch Chrome: the effects/traffic fixes (P5b-5) and review round 3. Two fresh Claude subagents did the design critique and the adversarial QA. Codex reviewed the subagent code (2 + 2 findings). Claude planned, triaged and verified.
+- **Did:**
+  - Home screen.
+  - Monochrome Geist UI with grayscale basemap (`mono.js`).
+  - Two-state result card.
+  - Custom WebGL layer (`fx.js`, pure math in `fxmath.js`) with:
+    - geo-anchored effects in metres;
+    - meteor fall, trail, flash, shock ring, crater and sinking buildings;
+    - Stomp dust, debris and glowing cracks;
+    - Flip chevrons.
+  - Trip-weighted traffic that recycles cars into the view.
+  - Accessibility, share-link and error-handling fixes from the reviews.
+- **Changed:**
+  - `site/playground/{index.html,style.css,app.js,worker.js,fx.js}`
+  - `site/playground/core/{summary.js,mono.js,fxmath.js,protocol.js}` + tests and two style fixtures
+  - `scripts/playground_bytes.py`
+  - `tests/browser/playground_verify.js`
+  - `results/playground/{p5a_browser_check,p5b_browser_check,p5_perf_mac,p5b_bytes,p5a_bytes,p5_external_bytes}.json`
+  - `results/playground/p5/` (8 screenshots, `checks.json`, `review_design.md`, `review_qa.md`, `review_triage.md`)
+  - README playground section; PLAYGROUND.md §5.9 pointer; PLAN P5 status
+- **Verify (actual):**
+  - **Harness, headless Chrome on the M3 Max GPU (ANGLE Metal), each run alone, final code:**
+    - P4 set with animations off: PASS, "18/18 cases; 2/2 presets; 100/100 drawn paths valid."
+    - P2 defaults: PASS, "15/15 cases; 2/2 presets; 75/75 drawn paths valid."
+    - P4 set with animations on: PASS, 18/18, 100/100.
+    - Counts after cycles 1 and 50 are equal in all three: 10 sources, 56 layers, 1 fx layer, 2 features.
+    - Fire medians, first 10 → last 10: 151.5→144.4 ms, 149.6→139.3 ms and 646.9→646.9 ms (the last is the animation deadline).
+  - **Scale:** Meteor ring at z13→14 is 66.30→132.60 px (ratio 2.000) and matches the overlay within 0 px.
+  - **Lifecycle:** after 3 theme switches and a context loss/restore, 1 fx layer and 3 buffers / 3 programs, as on first load.
+  - **Reduced motion:** 0 frames scheduled and traffic frozen.
+  - **Hidden tab:** no traffic frames while hidden, and traffic resumes.
+  - **`?perf` at 1280×800 on the GPU:** p50/p95/p99 16.7/16.7/16.8 ms, 0 frames over 50 ms, 5,921 cars, no ladder steps.
+  - **Screens:** contrast 0 failures on 46 screens, both themes, 7 viewports. Layout pairs left over are clipped scroll content and full-width text boxes, checked by eye.
+  - **Tests:** `make test`: 314 passed, JS `# tests 265 # pass 265 # fail 0`. `make lint` clean.
+  - **Ledger:** `scripts/playground_bytes.py --output results/playground/p5b_bytes.json` → 9,998,364 B, pass.
+- **Review:**
+  - The design review (12 findings) and the QA review (7) were triaged in `results/playground/p5/review_triage.md`. 17 were accepted, D3 was accepted in part, and D9 was rejected: the model closes whole ways, so the drawing must not clip them.
+  - The re-checks after each round added N1–N4 and R1–R2; all were fixed.
+  - Codex reviews:
+    - P5b-5: 2 accepted, fixed. View-span clipping; expired trails stop allocating.
+    - Round 3: C1 rejected, because rotation is disabled. C2 accepted: Claude enforced the car cap on resize, checked 6,000 → 3,000.
+- **Gotchas:**
+  - The in-app browser pane reports `document.hidden`, so all browser checks used headless Chrome over CDP. `--use-angle=metal` gives the real GPU headless.
+  - Under swiftshader, the harness `rapid_edit` row is flaky: a 100 ms sleep stretches to ~700 ms. It passed 8/8 on the GPU.
+  - `counts().fx_layers` used `getStyle().layers`, which never lists custom layers in 4.7.1. Fixed to `map.getLayer('fx')`.
+  - The meteor fall was invisible because its approach ran along the camera's line of sight at pitch 55.
+  - `scripts/playground_bytes.py` defaults to `p5a_bytes.json`, so later runs overwrote the P5a-time figure. That file now holds the final total, the same as `p5b_bytes.json`.
+  - Screenshots: 8 curated ones are committed; the full set of 46 stays in the scratchpad (17 MB). In `1280x800_dark_meteor.png` the size control shows 500 m although the test hook fired 1.5 km (the hook doesn't move the control).
+  - Remaining limits are in the README: traffic only on roads sampled trips use; phone frame rate not measured.
+- **Next (Jared):**
+  - Commit and push.
+  - On iPhone 14, open the deployed `?perf`, run the check and paste the JSON → `results/playground/p5_perf_iphone.json`.
+  - Then Claude measures the deployed transfer (`p5_transfer.json`) and runs the live smoke test at 375×812 and 1280×800.
+
+### 2026-11-03 — P5a review round 1 fixes
+- **Agent:** Codex.
+- **Did:** Hid and faded game chrome around home; kept prose in Geist and stats as nowrap items; reduced home to Start and Bay Bridge; moved the loading bar to the button edge and removed it at ready; styled the theme ghost button with sun/moon icons. Used compact attribution and observed card/dock/status geometry. Gave Details its own row and explicit open/closed labels with chevrons; constrained the scroll region above the dock and removed collapsed trips from layout. Generated kind/id/duration trip copy in summary.js and rendered status words/dots with right-aligned mono durations. Thinned affected paths and removed the CSS named-color table except transparent/black/white.
+- **Changed:** `site/playground/{index.html,style.css,app.js}`, `site/playground/core/{summary.js,mono.js}`, `site/playground/core/test/{summary.test.mjs,app.test.mjs,mono.test.mjs}`, `results/playground/p5a_bytes.json`, `PROGRESS.md`.
+- **Verify:** Actual final output (JS TAP footer; Python session output; Ruff output; ledger footer):
+
+```text
+$ make test-js
+node --test 'site/playground/core/test/*.test.mjs'
+1..197
+# tests 197
+# suites 0
+# pass 197
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9973.664958
+$ .venv/bin/python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 314 items
+
+tests/test_check_outputs.py .......................                      [  7%]
+tests/test_daily.py .............................................        [ 21%]
+tests/test_extract.py ......                                             [ 23%]
+tests/test_faults.py ................................................... [ 39%]
+                                                                         [ 39%]
+tests/test_graph.py .............                                        [ 43%]
+tests/test_impact.py .......................................             [ 56%]
+tests/test_metrics.py ...............                                    [ 61%]
+tests/test_playground_export.py ................                         [ 66%]
+tests/test_playground_oracle.py ........................................ [ 78%]
+...........................                                              [ 87%]
+tests/test_report.py ................                                    [ 92%]
+tests/test_rootcause.py ................                                 [ 97%]
+tests/test_smoke.py .                                                    [ 98%]
+tests/test_trips.py ......                                               [100%]
+
+============================= 314 passed in 41.70s =============================
+$ .venv/bin/ruff check scripts/playground_bytes.py && .venv/bin/ruff format --check scripts/playground_bytes.py
+All checks passed!
+1 file already formatted
+$ python3 scripts/playground_bytes.py --output results/playground/p5a_bytes.json
+  "total_bytes": 9979537,
+  "limit": 10000000,
+  "pass": true
+$ git diff --check
+```
+
+- **Review:** Pending Claude; no browser rerun by Codex in this round.
+- **Gotchas:** Read revised PLAYGROUND_UI §4.5 and §5.3. The first regression run exposed the need to retain transparent's alpha in the reduced table and keep theme icons static for the existing share-page DOM double; both corrected before the passing run. New tests cover trip copy, unknown named-color passthrough, loading/ready status, home visibility/prose/stats, Details labels, attribution geometry and overlay styling. Existing P5a work and PLAN.md edits were present at task start; PLAN.md and docs were not edited. No commit or push.
 
 ### 2026-11-02 — README pass for the Nov 3–4 deadline
 - **Agent:** Claude.

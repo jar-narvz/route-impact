@@ -1,0 +1,12 @@
+{
+  "measured": "2026-11-03, curl with an iPhone Safari user agent and Accept-Encoding: gzip; size_download per file",
+  "fonts_css_url": "https://fonts.googleapis.com/css2?family=Geist:wght@400..600&family=Geist+Mono:wght@400..500&display=swap",
+  "files": {
+    "https://fonts.googleapis.com/css2?family=Geist:wght@400..600&family=Geist+Mono:wght@400..500&display=swap": 696,
+    "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2": 29288,
+    "https://fonts.gstatic.com/s/geistmono/v6/or3nQ6H-1_WfwkMZI_qYFrcdmhHkjko.woff2": 23108,
+    "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js": 211109,
+    "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css": 9196
+  },
+  "note": "The page loads only the latin subsets for English text; other unicode-range faces in the CSS are not fetched."
+}

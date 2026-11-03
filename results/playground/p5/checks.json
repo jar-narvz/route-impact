@@ -1,0 +1,2860 @@
+{
+  "generated": "2026-11-03",
+  "environment": "Headless Chrome 156 over CDP on this Mac, --use-angle=swiftshader (software WebGL). Pages served from http://127.0.0.1:8781. Scripts: scratchpad cdp/checks.mjs, shots.mjs, followup.mjs, contrastrun.mjs.",
+  "scale": {
+    "method": "fireMeteor(37.7946,-122.3999,500), sample 540 ms in at pitch 0 (same timing as the harness), fx ring radius = fxRingRadiusPx(), overlay = fxRingRadiusPx(true); 2x +/-3% and +/-2 px",
+    "pairs": [
+      {
+        "radii": [
+          {
+            "zoom": 13,
+            "fx": 66.29759735773007,
+            "overlay": 66.29759735773007
+          },
+          {
+            "zoom": 14,
+            "fx": 132.59519471546014,
+            "overlay": 132.59519471546014
+          }
+        ],
+        "after_result": [
+          {
+            "zoom": 13,
+            "fx": 66.29759735773007,
+            "overlay": 66.29759735773007
+          },
+          {
+            "zoom": 14,
+            "fx": 132.59519471546014,
+            "overlay": 132.59519471546014
+          }
+        ],
+        "ratio_fx": 2,
+        "ratio_ok": true,
+        "overlay_match_px": [
+          0,
+          0
+        ],
+        "overlay_ok": true
+      },
+      {
+        "radii": [
+          {
+            "zoom": 12,
+            "fx": 33.14879867886509,
+            "overlay": 33.14879867886509
+          },
+          {
+            "zoom": 13,
+            "fx": 66.29759735773007,
+            "overlay": 66.29759735773007
+          }
+        ],
+        "after_result": [
+          {
+            "zoom": 12,
+            "fx": 33.14879867886509,
+            "overlay": 33.14879867886509
+          },
+          {
+            "zoom": 13,
+            "fx": 66.29759735773007,
+            "overlay": 66.29759735773007
+          }
+        ],
+        "ratio_fx": 2,
+        "ratio_ok": true,
+        "overlay_match_px": [
+          0,
+          0
+        ],
+        "overlay_ok": true
+      }
+    ],
+    "pass": true
+  },
+  "scale_note": "fxRingRadiusPx() projects the fx ring's own centre and metre radius through map.project; it is not a pixel measurement of the drawn ring.",
+  "lifecycle": {
+    "note": "fx layer counted via the live map instance (captured by an injected test-only script wrapping maplibregl.Map.prototype.addLayer), because counts().fx_layers reads map.getStyle(), which never lists the custom fx layer (it stays 0 even while getLayer(\"fx\") exists)",
+    "first": {
+      "fx": {
+        "enabled": true,
+        "buffers": 3,
+        "programs": 3,
+        "textures": 0,
+        "drawnLastFrame": 1
+      },
+      "fx_layers_in_style_order": 1,
+      "getLayer_fx": true,
+      "counts_fx_layers_unpatched_getStyle": 0,
+      "traffic": {
+        "cars": 6000,
+        "moving": true,
+        "paused": false
+      },
+      "theme": "dark"
+    },
+    "first_traffic": {
+      "cars_sampled": 20,
+      "changed": true
+    },
+    "switches": [
+      {
+        "wait": {
+          "ok": true,
+          "ms": 1117
+        },
+        "fx": {
+          "enabled": true,
+          "buffers": 3,
+          "programs": 3,
+          "textures": 0,
+          "drawnLastFrame": 1
+        },
+        "fx_layers_in_style_order": 1,
+        "getLayer_fx": true,
+        "counts_fx_layers_unpatched_getStyle": 0,
+        "traffic": {
+          "cars": 3000,
+          "moving": true,
+          "paused": false
+        },
+        "theme": "light"
+      },
+      {
+        "wait": {
+          "ok": true,
+          "ms": 1106
+        },
+        "fx": {
+          "enabled": true,
+          "buffers": 3,
+          "programs": 3,
+          "textures": 0,
+          "drawnLastFrame": 1
+        },
+        "fx_layers_in_style_order": 1,
+        "getLayer_fx": true,
+        "counts_fx_layers_unpatched_getStyle": 0,
+        "traffic": {
+          "cars": 3000,
+          "moving": true,
+          "paused": false
+        },
+        "theme": "dark"
+      },
+      {
+        "wait": {
+          "ok": true,
+          "ms": 1107
+        },
+        "fx": {
+          "enabled": true,
+          "buffers": 3,
+          "programs": 3,
+          "textures": 0,
+          "drawnLastFrame": 1
+        },
+        "fx_layers_in_style_order": 1,
+        "getLayer_fx": true,
+        "counts_fx_layers_unpatched_getStyle": 0,
+        "traffic": {
+          "cars": 3000,
+          "moving": true,
+          "paused": false
+        },
+        "theme": "light"
+      }
+    ],
+    "context_lost": {
+      "ok": true,
+      "ms": 0
+    },
+    "during_loss": {
+      "fx": {
+        "enabled": false,
+        "buffers": 0,
+        "programs": 0,
+        "textures": 0,
+        "drawnLastFrame": 0
+      },
+      "fx_layers_in_style_order": 1,
+      "getLayer_fx": true,
+      "counts_fx_layers_unpatched_getStyle": 0,
+      "traffic": {
+        "cars": 0,
+        "moving": false,
+        "paused": true
+      },
+      "theme": "light"
+    },
+    "context_restored": {
+      "ok": true,
+      "ms": 139
+    },
+    "restored_drawing": {
+      "ok": true,
+      "ms": 0
+    },
+    "last": {
+      "fx": {
+        "enabled": true,
+        "buffers": 3,
+        "programs": 3,
+        "textures": 0,
+        "drawnLastFrame": 1
+      },
+      "fx_layers_in_style_order": 1,
+      "getLayer_fx": true,
+      "counts_fx_layers_unpatched_getStyle": 0,
+      "traffic": {
+        "cars": 3000,
+        "moving": true,
+        "paused": false
+      },
+      "theme": "light"
+    },
+    "last_traffic": {
+      "cars_sampled": 20,
+      "changed": true
+    },
+    "routing_after_restore": {
+      "phase": "showing",
+      "broken": 0
+    },
+    "pass": true
+  },
+  "reduced_motion": {
+    "frames_before": 0,
+    "frames_after": 0,
+    "fire": {
+      "phase": "showing",
+      "ms": 647.6000001430511
+    },
+    "traffic_samples": 20,
+    "traffic_unchanged_1s": true,
+    "traffic_before_fire": {
+      "cars": 6000,
+      "moving": false,
+      "paused": true
+    },
+    "traffic_after": {
+      "cars": 5922,
+      "moving": false,
+      "paused": true
+    },
+    "crater": true,
+    "sunk_buildings": 1,
+    "static_outline": true,
+    "red_road_ways": 155,
+    "broken": 3,
+    "slowed": 170,
+    "pass": true
+  },
+  "reduced_motion_screenshot": "p5/1280x800_dark_reduced-motion-meteor.png",
+  "hidden_tab": {
+    "attempts": [
+      {
+        "method": "baseline visible",
+        "a": {
+          "hidden": false,
+          "vis": "visible",
+          "frames": 7,
+          "traffic": {
+            "cars": 6000,
+            "moving": true,
+            "paused": false
+          }
+        },
+        "b_after_1s": {
+          "hidden": false,
+          "vis": "visible",
+          "frames": 10,
+          "traffic": {
+            "cars": 6000,
+            "moving": true,
+            "paused": false
+          }
+        }
+      },
+      {
+        "method": "Target.createTarget + activateTarget (second tab foreground)",
+        "a": {
+          "hidden": true,
+          "vis": "hidden",
+          "frames": 11,
+          "traffic": {
+            "cars": 3000,
+            "moving": false,
+            "paused": true
+          }
+        },
+        "b_after_1s": {
+          "hidden": true,
+          "vis": "hidden",
+          "frames": 11,
+          "traffic": {
+            "cars": 3000,
+            "moving": false,
+            "paused": true
+          }
+        }
+      },
+      {
+        "method": "Browser.setWindowBounds minimized",
+        "a": {
+          "hidden": true,
+          "vis": "hidden",
+          "frames": 15,
+          "traffic": {
+            "cars": 3000,
+            "moving": false,
+            "paused": true
+          }
+        },
+        "b_after_1s": {
+          "hidden": true,
+          "vis": "hidden",
+          "frames": 15,
+          "traffic": {
+            "cars": 3000,
+            "moving": false,
+            "paused": true
+          }
+        }
+      },
+      {
+        "method": "restored normal",
+        "a": {
+          "hidden": false,
+          "vis": "visible",
+          "frames": 21,
+          "traffic": {
+            "cars": 3000,
+            "moving": true,
+            "paused": false
+          }
+        },
+        "b_after_1s": {
+          "hidden": false,
+          "vis": "visible",
+          "frames": 26,
+          "traffic": {
+            "cars": 3000,
+            "moving": true,
+            "paused": false
+          }
+        }
+      }
+    ],
+    "ran": true,
+    "pass": true,
+    "note": "document.hidden achieved via Target.createTarget + activateTarget (second tab foreground)"
+  },
+  "no_damage_stomp": {
+    "way_id": 22372600,
+    "name_shown": "Bonita Avenue",
+    "why": "way is on no baseline trip path (edge_way over trip_path_edges), so deleting it cannot change any shortest path",
+    "results": [
+      {
+        "file": "375x812_dark_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      },
+      {
+        "file": "375x812_light_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      },
+      {
+        "file": "390x844_dark_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      },
+      {
+        "file": "390x844_light_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      },
+      {
+        "file": "768x1024_dark_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      },
+      {
+        "file": "768x1024_light_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      },
+      {
+        "file": "1280x800_dark_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      },
+      {
+        "file": "1280x800_light_stomp.png",
+        "broken": 0,
+        "slowed": 0,
+        "phase": "showing"
+      }
+    ]
+  },
+  "layout": {
+    "script": "scratchpad/layout_check.js (raw bounding-box overflow + sibling-intersection list)",
+    "per_screenshot": [
+      {
+        "file": "375x812_dark_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_dark_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_dark_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_dark_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_dark_meteor.png",
+        "count": 20,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Unnamed road + 7 mor"
+          ]
+        ]
+      },
+      {
+        "file": "375x812_light_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_light_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_light_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_light_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "375x812_light_meteor.png",
+        "count": 20,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Unnamed road + 7 mor"
+          ]
+        ]
+      },
+      {
+        "file": "390x844_dark_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_dark_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_dark_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_dark_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_dark_meteor.png",
+        "count": 12,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "BUTTON:Unnamed road + 7 mor"
+          ]
+        ]
+      },
+      {
+        "file": "390x844_light_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_light_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_light_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_light_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "390x844_light_meteor.png",
+        "count": 12,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "BUTTON:Unnamed road + 7 mor"
+          ]
+        ]
+      },
+      {
+        "file": "768x1024_dark_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_dark_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_dark_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_dark_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_dark_meteor.png",
+        "count": 5,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "affected-label:Affected trips (170)"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "copy-link:Copy link"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "copy-link:Copy link"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "H3:Try a preset"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "H3:Try a preset"
+          ]
+        ]
+      },
+      {
+        "file": "768x1024_light_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_light_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_light_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_light_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "768x1024_light_meteor.png",
+        "count": 5,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "affected-label:Affected trips (170)"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "copy-link:Copy link"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "copy-link:Copy link"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "H3:Try a preset"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "H3:Try a preset"
+          ]
+        ]
+      },
+      {
+        "file": "1280x800_dark_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_dark_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_dark_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_dark_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_dark_meteor.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_light_home.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_light_preset.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_light_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_light_stomp.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "1280x800_light_meteor.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "899x800_dark_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "899x800_dark_meteor.png",
+        "count": 18,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "road-name:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "BUTTON:Unnamed road + 7 mor"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "trip-count:8 roads \u00b7 8 trips"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Unnamed road + 7 mor"
+          ]
+        ]
+      },
+      {
+        "file": "900x800_dark_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "900x800_dark_meteor.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "812x375_dark_ready.png",
+        "count": 0,
+        "issues": []
+      },
+      {
+        "file": "812x375_dark_meteor.png",
+        "count": 11,
+        "issues": [
+          [
+            "intersect",
+            "BUTTON:Stomp",
+            "H3:Roads that mattered"
+          ],
+          [
+            "intersect",
+            "BUTTON:Flip",
+            "H3:Roads that mattered"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "details-button:Hide details"
+          ],
+          [
+            "intersect",
+            "BUTTON:Meteor",
+            "H3:Roads that mattered"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "LABEL:500 m",
+            "road-name:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "BUTTON:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "road-name:Dwight D. Eisenhower"
+          ],
+          [
+            "intersect",
+            "LABEL:1.5 km",
+            "A:\u2197"
+          ],
+          [
+            "intersect",
+            "INPUT:",
+            "BUTTON:Dwight D. Eisenhower"
+          ]
+        ]
+      }
+    ],
+    "clip_aware_recheck_meteor_details": {
+      "375x812": {
+        "top": {
+          "raw_count": 20,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        },
+        "scrolled_bottom": {
+          "raw_count": 32,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        }
+      },
+      "390x844": {
+        "top": {
+          "raw_count": 12,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        },
+        "scrolled_bottom": {
+          "raw_count": 34,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        }
+      },
+      "768x1024": {
+        "top": {
+          "raw_count": 5,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        },
+        "scrolled_bottom": {
+          "raw_count": 25,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        }
+      },
+      "899x800": {
+        "top": {
+          "raw_count": 18,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        },
+        "scrolled_bottom": {
+          "raw_count": 36,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        }
+      },
+      "812x375": {
+        "top": {
+          "raw_count": 11,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        },
+        "scrolled_bottom": {
+          "raw_count": 13,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        }
+      },
+      "1280x800": {
+        "top": {
+          "raw_count": 0,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        },
+        "scrolled_bottom": {
+          "raw_count": 45,
+          "visible_after_scroll_clip_count": 0,
+          "visible_after_scroll_clip": []
+        }
+      }
+    },
+    "note": "All non-empty raw lists are in the meteor+details-open state below 900 px: road rows inside the scrolling details area intersect the weapon dock by bounding box. With each rect clipped by its overflow ancestors (scratchpad cdp/clipcheck.js) the visible intersection count is 0 at the top and after scrolling details to the bottom, in every viewport; the screenshots show the rows clipped above the dock. The raw script does not model scroll clipping."
+  },
+  "result_sentence_once": {
+    "per_screenshot": [
+      {
+        "file": "375x812_dark_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "375x812_dark_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "375x812_dark_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "375x812_light_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "375x812_light_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "375x812_light_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "390x844_dark_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "390x844_dark_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "390x844_dark_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "390x844_light_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "390x844_light_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "390x844_light_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "768x1024_dark_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "768x1024_dark_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "768x1024_dark_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "768x1024_light_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "768x1024_light_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "768x1024_light_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "1280x800_dark_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "1280x800_dark_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "1280x800_dark_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "1280x800_light_preset.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "1280x800_light_stomp.png",
+        "innerText_count": 2
+      },
+      {
+        "file": "1280x800_light_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "899x800_dark_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "900x800_dark_meteor.png",
+        "innerText_count": 1
+      },
+      {
+        "file": "812x375_dark_meteor.png",
+        "innerText_count": 1
+      }
+    ],
+    "stomp_locations": {
+      "sentence": "No sampled trip used Bonita Avenue",
+      "hits": [
+        {
+          "el": "status",
+          "parent": "status-area",
+          "sr_only": false,
+          "clip": "auto",
+          "w": 0,
+          "h": 0
+        },
+        {
+          "el": "message",
+          "parent": "results",
+          "sr_only": false,
+          "clip": "auto",
+          "w": 309,
+          "h": 20.296875
+        },
+        {
+          "el": "announcement",
+          "parent": "game",
+          "sr_only": true,
+          "clip": "auto",
+          "w": 1,
+          "h": 1
+        }
+      ]
+    },
+    "note": "innerText count 2 for the no-damage Stomp comes from #status (0x0, not visible) or the sr-only #announcement live region; it is drawn once (.message in #results)."
+  },
+  "road_names_one_line": {
+    "multiline_found": [],
+    "show_all_names_one_line": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "road_rows_collapsed_and_show_all": {
+    "meteor_500m_collapsed_rows": [
+      [
+        "375x812_dark_meteor.png",
+        5,
+        null
+      ],
+      [
+        "375x812_light_meteor.png",
+        5,
+        null
+      ],
+      [
+        "390x844_dark_meteor.png",
+        5,
+        null
+      ],
+      [
+        "390x844_light_meteor.png",
+        5,
+        null
+      ],
+      [
+        "768x1024_dark_meteor.png",
+        5,
+        null
+      ],
+      [
+        "768x1024_light_meteor.png",
+        5,
+        null
+      ],
+      [
+        "1280x800_dark_meteor.png",
+        5,
+        null
+      ],
+      [
+        "1280x800_light_meteor.png",
+        5,
+        null
+      ],
+      [
+        "899x800_dark_meteor.png",
+        5,
+        null
+      ],
+      [
+        "900x800_dark_meteor.png",
+        5,
+        null
+      ],
+      [
+        "812x375_dark_meteor.png",
+        5,
+        null
+      ]
+    ],
+    "large_meteor_show_all": {
+      "375x812": [
+        {
+          "lat": 37.7946,
+          "lon": -122.3999,
+          "radius_m": 1500,
+          "collapsed": 5,
+          "show_all": "Show all 25",
+          "label_n": 25,
+          "rows_after": 25,
+          "names_one_line_after": true,
+          "focus_after": "BUTTON",
+          "pass": true
+        },
+        {
+          "lat": 37.825,
+          "lon": -122.315,
+          "radius_m": 1500,
+          "collapsed": 5,
+          "show_all": "Show all 12",
+          "label_n": 12,
+          "rows_after": 12,
+          "names_one_line_after": true,
+          "focus_after": "BUTTON",
+          "pass": true
+        },
+        {
+          "lat": 37.788,
+          "lon": -122.4075,
+          "radius_m": 1500,
+          "collapsed": 5,
+          "show_all": "Show all 31",
+          "label_n": 31,
+          "rows_after": 31,
+          "names_one_line_after": true,
+          "focus_after": "BUTTON",
+          "pass": true
+        }
+      ],
+      "1280x800": [
+        {
+          "lat": 37.7946,
+          "lon": -122.3999,
+          "radius_m": 1500,
+          "collapsed": 5,
+          "show_all": "Show all 25",
+          "label_n": 25,
+          "rows_after": 25,
+          "names_one_line_after": true,
+          "focus_after": "BUTTON",
+          "pass": true
+        },
+        {
+          "lat": 37.825,
+          "lon": -122.315,
+          "radius_m": 1500,
+          "collapsed": 5,
+          "show_all": "Show all 12",
+          "label_n": 12,
+          "rows_after": 12,
+          "names_one_line_after": true,
+          "focus_after": "BUTTON",
+          "pass": true
+        },
+        {
+          "lat": 37.788,
+          "lon": -122.4075,
+          "radius_m": 1500,
+          "collapsed": 5,
+          "show_all": "Show all 31",
+          "label_n": 31,
+          "rows_after": 31,
+          "names_one_line_after": true,
+          "focus_after": "BUTTON",
+          "pass": true
+        }
+      ]
+    }
+  },
+  "contrast": {
+    "script": "scratchpad/contrast_check.js variant returning min ratio (cdp/contrast_min.js); composites element/ancestor background colors over --bg, not the map pixels behind translucent surfaces",
+    "failures_in_screenshot_runs": 0,
+    "min_ratio_by_viewport_theme_state": {
+      "375x812_dark": {
+        "home": {
+          "min_ratio": 6.08,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 6.08,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 8.13,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 16.91,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 7.66,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 7.66,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        }
+      },
+      "375x812_light": {
+        "home": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 17.93,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 6.69,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        }
+      },
+      "390x844_dark": {
+        "home": {
+          "min_ratio": 6.08,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 6.08,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 8.13,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 16.91,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 7.66,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 7.66,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        }
+      },
+      "390x844_light": {
+        "home": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 17.93,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 6.69,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        }
+      },
+      "768x1024_dark": {
+        "home": {
+          "min_ratio": 6.08,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 6.08,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 8.13,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 16.91,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 7.66,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 7.66,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        }
+      },
+      "768x1024_light": {
+        "home": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 17.93,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 6.69,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        }
+      },
+      "1280x800_dark": {
+        "home": {
+          "min_ratio": 6.08,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 6.08,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 8.13,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 16.91,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 14,
+          "lowest": [
+            {
+              "text": "Sampled trips only. Roads outs",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 7.66,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 40,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 29,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        }
+      },
+      "1280x800_light": {
+        "home": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 13,
+          "lowest": [
+            {
+              "text": "Route-impact / Playground",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "2,057 trips",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            }
+          ]
+        },
+        "ready": {
+          "min_ratio": 17.93,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 17.93,
+              "need": 4.5,
+              "color": "rgb(23, 23, 23)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 14,
+          "lowest": [
+            {
+              "text": "Sampled trips only. Roads outs",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 6.69,
+              "need": 4.5,
+              "color": "rgb(92, 92, 92)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 40,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 4.74,
+          "failures": 0,
+          "texts": 29,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 4.74,
+              "need": 4.5,
+              "color": "rgb(115, 115, 115)"
+            }
+          ]
+        }
+      },
+      "899x800_dark": {
+        "ready": {
+          "min_ratio": 16.91,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 7.66,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 7.66,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        }
+      },
+      "900x800_dark": {
+        "ready": {
+          "min_ratio": 16.91,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 14,
+          "lowest": [
+            {
+              "text": "Sampled trips only. Roads outs",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 7.66,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 40,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 29,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        }
+      },
+      "812x375_dark": {
+        "ready": {
+          "min_ratio": 16.91,
+          "failures": 0,
+          "texts": 6,
+          "lowest": [
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            },
+            {
+              "text": "Flip",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "stomp_no_damage": {
+          "min_ratio": 7.66,
+          "failures": 0,
+          "texts": 9,
+          "lowest": [
+            {
+              "text": "No sampled trip used Bonita Av",
+              "ratio": 7.66,
+              "need": 4.5,
+              "color": "rgb(161, 161, 161)"
+            },
+            {
+              "text": "\u2190 Route Impact",
+              "ratio": 16.91,
+              "need": 4.5,
+              "color": "rgb(237, 237, 237)"
+            }
+          ]
+        },
+        "meteor_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 41,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        },
+        "preset_from_details": {
+          "min_ratio": 5.73,
+          "failures": 0,
+          "texts": 19,
+          "lowest": [
+            {
+              "text": "broken",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            },
+            {
+              "text": "slowed",
+              "ratio": 5.73,
+              "need": 4.5,
+              "color": "rgb(138, 138, 138)"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "landscape_812x375_finding": {
+    "status": "FAIL (usability, not caught by the overlap script)",
+    "observed": "With details open after a Meteor at 812x375, #details-content is 16-17 px tall (scrollHeight 808) inside #sheet (overflow hidden, 80-266 px); the road list is not visible. With the Meteor size row showing (812x375_dark_meteor.png) the 'Hide details' button is also clipped out of the card. Without the size row (stomp weapon selected after ?test load, 812x375_dark_meteor-details-no-size-row.png) 'Hide details' is visible and hit-testable at y 197-241 but the details area is still 16 px.",
+    "measured": {
+      "summary": [
+        81,
+        257
+      ],
+      "details-button": [
+        197,
+        241
+      ],
+      "details-content": {
+        "top": 257,
+        "bottom": 274,
+        "clientHeight": 16,
+        "scrollHeight": 808
+      },
+      "sheet": {
+        "top": 80,
+        "bottom": 266,
+        "overflowY": "hidden"
+      },
+      "dock": [
+        274,
+        359
+      ]
+    }
+  },
+  "final_screens": {
+    "note": "Regenerated on the final P5 code (after review rounds 1-3), headless Chrome on the Metal GPU. Layout pairs are bounding-box intersections; the remaining pairs are rows inside the scrolling details area (clipped by its scroll container, not visible) and full-width text boxes next to the Details button, checked visually.",
+    "shots": [
+      {
+        "file": "1280x800_dark_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_dark_preset.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_dark_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_dark_stomp.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_dark_meteor.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_light_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_light_preset.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_light_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_light_stomp.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "1280x800_light_meteor.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_dark_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_dark_preset.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_dark_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_dark_stomp.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_dark_meteor.png",
+        "layout_pairs": 8,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_light_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_light_preset.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_light_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_light_stomp.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "375x812_light_meteor.png",
+        "layout_pairs": 8,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_dark_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_dark_preset.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_dark_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_dark_stomp.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_dark_meteor.png",
+        "layout_pairs": 6,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_light_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_light_preset.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_light_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_light_stomp.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "390x844_light_meteor.png",
+        "layout_pairs": 6,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_dark_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_dark_preset.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_dark_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_dark_stomp.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_dark_meteor.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_light_home.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_light_preset.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_light_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_light_stomp.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "768x1024_light_meteor.png",
+        "layout_pairs": 2,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "812x375_dark_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "812x375_dark_meteor.png",
+        "layout_pairs": 27,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "899x800_dark_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "899x800_dark_meteor.png",
+        "layout_pairs": 5,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "900x800_dark_ready.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      },
+      {
+        "file": "900x800_dark_meteor.png",
+        "layout_pairs": 0,
+        "contrast_failures": 0,
+        "min_contrast": null
+      }
+    ],
+    "total_contrast_failures": 0,
+    "screens": 46
+  }
+}
