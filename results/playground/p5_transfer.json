@@ -1,0 +1,67 @@
+{
+  "url": "https://jar-narvz.github.io/route-impact/site/playground/",
+  "commit": "869e2e8",
+  "pages_run": 41735914991,
+  "method": "curl -H 'Accept-Encoding: gzip' with an iPhone Safari user agent, size_download per file; file list from the P5 byte ledger; tiles excluded",
+  "files": {
+    "own_code": {
+      "app.js": 18121,
+      "core/cch.js": 5740,
+      "core/engine.js": 1071,
+      "core/fxmath.js": 4566,
+      "core/latest.js": 193,
+      "core/mono.js": 1910,
+      "core/packed.js": 1167,
+      "core/pick.js": 1450,
+      "core/procedure.js": 3564,
+      "core/protocol.js": 2092,
+      "core/share.js": 803,
+      "core/summary.js": 2308,
+      "fx.js": 10797,
+      "index.html": 2072,
+      "style.css": 3973,
+      "worker.js": 1732
+    },
+    "external": {
+      "https://fonts.googleapis.com/css2?family=Geist:wght@400..600&family=Geist+Mono:wght@400..500&display=swap": 696,
+      "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2": 29288,
+      "https://fonts.gstatic.com/s/geistmono/v6/or3nQ6H-1_WfwkMZI_qYFrcdmhHkjko.woff2": 23108,
+      "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js": 211099,
+      "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css": 9205
+    },
+    "data": {
+      "data/cch_order.bin.gz": 525982,
+      "data/csr_offsets.bin.gz": 298429,
+      "data/edge_initially_active.bin.gz": 47249,
+      "data/edge_ms.bin.gz": 1224121,
+      "data/edge_target.bin.gz": 1321852,
+      "data/edge_twin.bin.gz": 525077,
+      "data/edge_way.bin.gz": 1088059,
+      "data/excluded_trips.json.gz": 9886,
+      "data/geometry_coords.bin.gz": 2850841,
+      "data/geometry_offsets.bin.gz": 252335,
+      "data/meta.json": 2709,
+      "data/order_manifest.json.gz": 421,
+      "data/presets.json.gz": 12357,
+      "data/trip_destination.bin.gz": 3761,
+      "data/trip_labels.json.gz": 5648,
+      "data/trip_ms.bin.gz": 7745,
+      "data/trip_origin.bin.gz": 3689,
+      "data/trip_path_edges.bin.gz": 455654,
+      "data/trip_path_offsets.bin.gz": 5197,
+      "data/trip_weight.bin.gz": 3580,
+      "data/way_highway.bin.gz": 41400,
+      "data/way_names.json.gz": 594456,
+      "data/way_oneway.bin.gz": 18943,
+      "data/way_osm_id.bin.gz": 358082
+    }
+  },
+  "totals": {
+    "own_code": 61559,
+    "external": 273396,
+    "data": 9657473
+  },
+  "total_bytes": 9992428,
+  "limit_bytes": 10000000,
+  "pass": true
+}

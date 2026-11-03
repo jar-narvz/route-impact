@@ -1,7 +1,7 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **P5 redesign (2026-11-03): local Verify done.** Monochrome page, home screen, WebGL effects and traffic, two independent reviews (3 fix rounds). Harness 18/18 + 15/15 + 18/18 (animations on) on the GPU, `make test` 314 + 265, lint clean, ledger 9,998,364 B. **Open (Jared):** commit (commands in the newest log entry), push, then the iPhone `?perf` JSON, the deployed transfer and the live smoke test. Also still open: Step 11b run 2 (item 4 below).
+- **P5 redesign (2026-11-03): deployed.** Live at `869e2e8`: monochrome page, home screen, WebGL effects, traffic, Meteor shake. Deployed transfer 9,992,428 B and the live smoke test at 375×812 and 1280×800 pass (newest log entry). **Only open P5 item (Jared):** on iPhone 14, open the deployed `?perf`, run the check and paste the JSON → `results/playground/p5_perf_iphone.json`. Also still open: Step 11b run 2 (item 4 below).
 - **Working on:** Phase 2 on `main`. **P1, P2 and P4 are done**; README pass and resume bullets done 2026-11-02 (bullets approved, in the newest log entry). Open: Step 11b live Verify run 2 (item 4). Next phase P3 is after Nov 4.
 - **Next session, start here:**
   1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). ~~(1) Daily → `pages.yml` paths~~ — exercised by scheduled runs, no dispatch needed: failed Daily 41196974293 (2026-10-31, snapshot 404) → Pages 41200117069 `skipped`; publishing Daily 41306368351 (2026-11-01) → Pages 41309441377 `success` on the bot's result commit `5e97b7b`, and `results/2026-10-31/impact.json` returns 200 on the live site. ~~P2e phone run~~ — done 2026-11-01 (iPhone 14, Chrome: cold load ≤ ~1 s, everything else barely noticeable; VoiceOver skipped). **P2 is closed.** Polish follow-ups are in the P2e part 1 log entry. **Next: P4 per decision 18.** Detail P4a–P4c written 2026-11-01, Codex critique 8 accepted + 2 in part (PLAN Review log). **P4a done 2026-11-02** (phone gate pass, Large ships; see log). Decision 18 amended: Meteor fall 600 / 1,040 ms by size. **P4b done 2026-11-02**; **P4c-1 done 2026-11-02** (crosshair, named results, size-scaled Meteor marker; see log). **Start here next session:** (a) Step 11b run 2: `gh run list --workflow daily.yml -L 1`, then `gh run view <id> --log | grep -E 'Cache restored|already present|old=|new='` and step times via `gh run view <id> --json jobs`; record it in the Step 11b log entry and mark Step 11b done in PLAN. (b) ~~P4c~~ and ~~README/resume pass~~ done 2026-11-02 (see log). (c) Then Jared's call: P3 detail (Quake, Tornado, stacked edits with undo; `grep -n 'P3 — More weapons' PLAN.md`) or the small follow-ups below. Read to resume: the P4 block in PLAN (`grep -n 'P4 — Polish' PLAN.md`).
@@ -59,6 +59,17 @@
 
 ## Log (append-only, newest on top)
 
+### 2026-11-03 — P5: deployed transfer + live smoke test
+- **Step:** P5c after-deploy Verify. **Agent:** Claude.
+- **Did:** After Jared pushed `869e2e8` (Pages 41735914991 success, CI 41735915052 success), measured the deployed transfer and ran the live smoke test. Also repaired `p5b_browser_check.json`: the shake re-run had replaced the 18-case record with a 15-case one, so the README claim no longer traced to it.
+- **Changed:** `results/playground/p5_transfer.json` (new), `results/playground/p5b_browser_check.json`, `results/playground/p5/live_smoke.json` + 3 `live_*.png` (new), `README.md` (deployed transfer replaces the ledger number), `PLAN.md` (P5 status), `PROGRESS.md`.
+- **Verify:**
+  - **Transfer (`curl -H 'Accept-Encoding: gzip'`, size_download, 45 files from the ledger list, tiles excluded):** own code 61,559 B + MapLibre and fonts 273,396 B + data 9,657,473 B = **9,992,428 B ≤ 10,000,000**. Data matches P4 exactly.
+  - **Smoke, 375×812 and 1280×800 (dark, real mouse events):** home screen; Bay Bridge preset "2 BROKEN 169 SLOWED +2,859 ADDED MIN", hash `#preset=bay_bridge`; Rebuild clears hash and card; Meteor tap gives a result and hash, one 560 ms shake at 427 / 432 ms after the tap, canvas transform back to `none`; Details opens; cold `#stomp=45473226` link "Stomp hit 1 road", 45 slowed, skips home; no horizontal overflow; 0 failed requests. Light theme at 1280×800: same preset numbers.
+  - **Harness, 18-case set, `animations=1`, GPU, code equal to `869e2e8`:** PASS "18/18 cases; 2/2 presets; 100/100 drawn paths valid."; 18/18 page cases; animation, FX and 50-cycle checks pass.
+- **Review:** measurement and checks, plus the one README number; no code changed.
+- **Gotchas:** the only console error is a 404 for `/favicon.ico` (the page declares no icon; harmless). The weapon buttons are always enabled, so a script should wait on `#home-preset` for readiness. Daily failed 2026-11-03 (run 41643547873): snapshot 404s plus one 502 from the download, the known Geofabrik pattern, not related to P5.
+
 ### 2026-11-03 — P5 follow-up: Meteor impact shake (Jared's request)
 - **Step:** P5 polish. **Agent:** Claude (small visual change; checked in headless Chrome on the GPU).
 - **Did:** On Meteor impact the map canvas shakes for 560 ms: damped, seeded jitter that peaks at 7 px × scale (capped at 14 px), with a slight zoom that eases out so the canvas edges never show. Only the canvas element moves (CSS transform through the Web Animations API), not the camera, so hit tests, traffic and the UI are unaffected. It is skipped under reduced motion, in still mode, when the tab is hidden, and when a replay resumes more than 0.25 s after impact. Clear/Rebuild cancels it. It follows the slow-mo `timeScale`.
@@ -67,7 +78,7 @@
   - Probe at 375×812: one `animate` call, duration 560; the first transform `matrix(1.0647, 0, 0, 1.0647, -6.4, -3.2)` at 733 ms after firing a 1.5 km meteor; transform back to `none` at 1,324 ms.
   - The frame paused mid-shake shows no canvas edges.
   - `make test-js` `# pass 265` `# fail 0`; lint clean.
-  - Harness `?animations=1` on the GPU: "PASS 15/15 cases; 2/2 presets; 75/75 drawn paths valid." Animation checks all pass (reduced_motion, rapid_edit included). Counts after 50 cycles equal the counts after 1.
+  - Harness `?animations=1` on the GPU: "PASS 15/15 cases; 2/2 presets; 75/75 drawn paths valid." Animation checks all pass (reduced_motion, rapid_edit included). Counts after 50 cycles equal the counts after 1. **Correction:** this run used the P2 set, but `p5b_browser_check.json` backs the README's 18-case claim, so the file committed in `869e2e8` was wrong. Fixed in the entry above.
 - **Review:** not reviewed by a second agent (one small, isolated function).
 - **Gotchas:** the shake is invisible under swiftshader (frames too slow to catch it); use `GPU=1`.
 
