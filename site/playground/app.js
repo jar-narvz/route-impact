@@ -1,5 +1,6 @@
 import {createLatest} from './core/latest.js';
 import {summarize} from './core/summary.js';
+import {parseShare, serializeShare} from './core/share.js';
 
 // All page Meteor radii live here: removing a size also removes its control and hook support.
 const METEOR_SIZES = [
@@ -52,6 +53,8 @@ const state = {
   selection: null,
   error: null,
   mapError: null,
+  shareHash: null,
+  shareNotice: null,
 };
 const latest = createLatest();
 let map;
@@ -65,6 +68,9 @@ let animation;
 let pendingReveal;
 let effectCanvas;
 let animationFramesScheduled = 0;
+let pendingShareHash = location.hash || '';
+let shareVersion = 0;
+let wayLookupPromise;
 let resolveReady;
 const ready = new Promise(resolve => { resolveReady = resolve; });
 const drawWaiters = new Map();
@@ -153,6 +159,10 @@ function renderStatus() {
   $('retry').hidden = !state.error?.retryable;
   $('map-error').hidden = !state.mapError;
   $('map-error').textContent = state.mapError ?? '';
+  $('share-notice').hidden = !state.shareNotice;
+  $('share-notice').textContent = state.shareNotice ?? '';
+  $('share-link').hidden = !state.shareHash;
+  $('share-link').href = state.shareHash || '#';
   $('fire-timing').hidden = !timing || state.fireMs === null;
   $('fire-timing').textContent = state.fireMs === null ? '' : `fire → result: ${Math.round(state.fireMs)} ms`;
 }
@@ -441,6 +451,11 @@ function loadNetwork() {
       syncMap();
       render();
       finishRequest(data.id);
+      if (request.type === 'load' && pendingShareHash) {
+        const hash = pendingShareHash;
+        pendingShareHash = '';
+        replayShare(hash);
+      }
     };
     worker.onerror = event => {
       if (worker !== activeWorker) return;
@@ -591,6 +606,7 @@ function cancelAnimation() {
 
 function cancelEdit() {
   editToken++;
+  shareVersion++;
   pendingReveal = undefined;
   cancelAnimation();
   for (const id of drawWaiters.keys()) finishRequest(id, 'Edit cancelled');
@@ -625,8 +641,12 @@ function revealResult() {
     state.fireMs = performance.now() - request.started;
     renderStatus();
   }
-  // Future hash writes must use this same guard.
   if (request.token !== editToken) return;
+  // A successful road edit has already been validated by the worker.
+  if (window.history?.replaceState) {
+    const shared = serializeShare(request.edit, shareOptions(() => ({oneway: true})));
+    writeShareHash(shared.ok ? shared.hash : '');
+  }
   $('announcement').textContent = state.summary.announcement;
   finishRequest(data.id);
 }
@@ -717,6 +737,7 @@ function runEdit(edit, tap, started = performance.now(), token, line) {
     tap = {lat: edit.lat, lon: edit.lon};
   }
   if (token === undefined) { token = cancelEdit(); clearDrawing(); }
+  state.shareNotice = null;
   if (token !== editToken) return;
   state.phase = 'pending';
   state.hint = null;
@@ -776,6 +797,9 @@ document.querySelectorAll('[data-weapon]').forEach(button => {
   });
 });
 function rebuild() {
+  pendingShareHash = '';
+  state.shareNotice = null;
+  writeShareHash('');
   cancelEdit();
   // Rebuild disables itself, which would drop keyboard focus to the page; hand it to the weapons.
   const hadFocus = document.activeElement === $('rebuild');
@@ -790,6 +814,96 @@ function rebuild() {
   return id;
 }
 $('rebuild').addEventListener('click', rebuild);
+
+function shareOptions(lookupWay) {
+  return {box: state.meta?.box, sizes: METEOR_SIZES,
+    presetNames: state.presets.map(preset => preset.name), lookupWay};
+}
+
+function writeShareHash(hash) {
+  state.shareHash = hash;
+  // replaceState creates no Back entries and dispatches no hashchange event.
+  window.history?.replaceState(null, '', location.pathname + location.search + hash);
+  $('share-link').hidden = !hash;
+  $('share-link').href = hash || '#';
+}
+
+async function loadWayLookup() {
+  // Only road-link replay needs these two small arrays. Reuse the shipped URLs/cache;
+  // geometry and the rest of the graph stay in the worker.
+  if (!wayLookupPromise) wayLookupPromise = (async () => {
+    const read = async (name, Type) => {
+      const spec = state.meta.arrays.find(array => array.name === name);
+      const response = await fetch(`./data/${spec.file}`);
+      if (!response.ok) throw new Error('Way lookup unavailable');
+      const packed = await response.arrayBuffer();
+      const digest = await crypto.subtle.digest('SHA-256', packed);
+      const sha = [...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join('');
+      if (sha !== state.meta.files.find(file => file.file === spec.file).sha256) throw new Error('Way lookup hash mismatch');
+      const raw = await new Response(new Blob([packed]).stream()
+        .pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+      const offset = spec.byte_offset ?? 0;
+      if (raw.byteLength - offset !== spec.length * Type.BYTES_PER_ELEMENT) throw new Error('Way lookup length mismatch');
+      return new Type(raw.slice(offset));
+    };
+    const [ids, oneway] = await Promise.all([read('way_osm_id', Float64Array), read('way_oneway', Uint8Array)]);
+    return id => {
+      const index = ids.indexOf(id);
+      return index < 0 ? null : {oneway: Boolean(oneway[index])};
+    };
+  })().catch(error => { wayLookupPromise = undefined; throw error; });
+  return wayLookupPromise;
+}
+
+async function replayShare(hash) {
+  // Cancel an older edit immediately, so its late result cannot overwrite this link.
+  cancelEdit();
+  const version = shareVersion;
+  latest.next();
+  clearDrawing();
+  state.phase = 'ready';
+  state.hint = null;
+  state.shareNotice = null;
+  render();
+  if (!hash) { rebuild(); return; }
+  try {
+    // Validate raw syntax before fetching a lookup for road ids.
+    let parsed = parseShare(hash, shareOptions(() => ({oneway: true})));
+    if (parsed.ok && parsed.edit.way_id !== undefined) {
+      const lookup = await loadWayLookup();
+      if (version !== shareVersion) return;
+      parsed = parseShare(hash, shareOptions(lookup));
+    }
+    if (version !== shareVersion) return;
+    if (!parsed.ok) { rejectShare(); return; }
+    const edit = parsed.edit;
+    if (edit.preset) edit.label = state.presets.find(preset => preset.name === edit.preset)?.label;
+    if (edit.weapon) state.weapon = edit.weapon;
+    if (edit.weapon === 'meteor') {
+      state.meteorRadius = edit.radius_m;
+      document.querySelectorAll('[name="meteor-size"]').forEach(input => {
+        input.checked = Number(input.value) === edit.radius_m;
+      });
+    }
+    runEdit(edit);
+  } catch {
+    if (version === shareVersion) rejectShare();
+  }
+}
+
+function rejectShare() {
+  rebuild();
+  state.shareNotice = 'This share link is invalid or unavailable. Pick a new edit.';
+  renderStatus();
+}
+
+window.addEventListener('hashchange', event => {
+  // Skip superseded events if several hashes changed before their events arrived.
+  const hash = location.hash || '';
+  if (event.newURL && new URL(event.newURL).hash !== hash) return;
+  if (state.phase === 'loading') pendingShareHash = hash;
+  else if (['ready', 'pending', 'showing'].includes(state.phase)) replayShare(hash);
+});
 
 $('grabber').addEventListener('click', () => {
   setHeight(heights[(heights.indexOf(state.sheetHeight) + 1) % heights.length]);

@@ -115,7 +115,7 @@ By fault type (single runs):
 Each single run took 125.96 s on average, after a one-time 18.19 s extract and 309.80 s of baseline routing, on the Mac described below.
 
 ## Fault playground
-The same method as a game you run in the browser. Pick **Stomp** (delete the road you tap), **Flip** (reverse a one-way) or **Meteor** (delete every road within 500 m of the tap). The page reroutes the affected sampled trips and shows how many broke, how many slowed by 2 minutes or more, the added minutes, and which destroyed roads actually mattered: the same restore-one-edit root cause as the daily pipeline.
+The same method as a game you run in the browser. Pick **Stomp** (delete the road you tap), **Flip** (reverse a one-way) or **Meteor** (delete every road within the chosen size: Small 500 m or Large 1,500 m). Each committed edit updates a share link in the URL; copy the address or the result's share link to replay that edit, including compound presets. Rebuild clears it. The page reroutes the affected sampled trips and shows how many broke, how many slowed by 2 minutes or more, the added minutes, and which destroyed roads actually mattered: the same restore-one-edit root cause as the daily pipeline.
 
 - **What it routes:** the Bay Area box (37.2–38.1° N, 122.6–121.7° W) from snapshot 261027: 213,910 vertices, 551,760 directed edges and 180,633 OSM ways, with 2,057 sampled trips fully inside the box (`site/playground/data/meta.json`). Python exports the graph with the pipeline's own road rules; the browser never rebuilds it.
 - **How it's fast enough:** exact routing with customizable contraction hierarchies (CCH) in plain JavaScript, inside a Web Worker. An edit only re-customizes the changed part of the hierarchy. The node order is computed offline with RoutingKit. Shipped data is 9,664,256 B gzipped.
@@ -127,7 +127,7 @@ Playground limits:
 - **Sampled trips only.** "No sampled trip used these roads" doesn't mean an edit is harmless.
 - **Not total traffic.** Added minutes are summed over the sampled trips delayed by 2 minutes or more; broken trips are counted separately, not as minutes.
 - **Accessibility:** it works without a pointer (arrow keys plus Enter at a crosshair) and respects reduced motion. Results are announced through an ARIA live region; this has not yet been tested with a screen reader.
-- Timings are from one laptop; phone performance hasn't been measured.
+- **Phone timing:** on iPhone 14 in Chrome on iOS (WebKit), the 1,500 m Meteor medians were 395 ms at Bay Bridge toll plaza, 482 ms at SF Financial and 537 ms at SF Union Square; the maximum run was 575 ms. These fire-to-result measurements used `?timing`, which bypasses animations ([recorded phone gate](results/playground/p4_phone_gate.json)).
 
 ## Limitations
 - **No turn restrictions, no traffic.** Routes use free-flow travel times from speed limits and class defaults. Turn-restriction relations are ignored, so a broken restriction is invisible and some routes are shorter than in reality.

@@ -1,9 +1,9 @@
 # PROGRESS.md — route-impact
 
 ## Current state
-- **Working on:** Phase 2 on `main`. **P1 and P2 are done** (P2 closed 2026-11-01 after Jared's phone run). Open: Step 11b live Verify (item 4), then P4 detail.
+- **Working on:** Phase 2 on `main`. **P4c part 1 is implemented and awaiting Claude review** (share links + README; offline checks passed). P1/P2, P4a/P4b and P4c-1 are done. P4c browser checks, deployed transfer measurement, live smoke test and Claude documentation remain; Step 11b live Verify (item 4) is also open.
 - **Next session, start here:**
-  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). ~~(1) Daily → `pages.yml` paths~~ — exercised by scheduled runs, no dispatch needed: failed Daily 41196974293 (2026-10-31, snapshot 404) → Pages 41200117069 `skipped`; publishing Daily 41306368351 (2026-11-01) → Pages 41309441377 `success` on the bot's result commit `5e97b7b`, and `results/2026-10-31/impact.json` returns 200 on the live site. ~~P2e phone run~~ — done 2026-11-01 (iPhone 14, Chrome: cold load ≤ ~1 s, everything else barely noticeable; VoiceOver skipped). **P2 is closed.** Polish follow-ups are in the P2e part 1 log entry. **Next: P4 per decision 18.** Detail P4a–P4c written 2026-11-01, Codex critique 8 accepted + 2 in part (PLAN Review log). **P4a done 2026-11-02** (phone gate pass, Large ships; see log). Decision 18 amended: Meteor fall 600 / 1,040 ms by size. **P4b done 2026-11-02**; **P4c-1 done 2026-11-02** (crosshair, named results, size-scaled Meteor marker; see log). **Start here next session:** (a) Step 11b run 2: `gh run list --workflow daily.yml -L 1`, then `gh run view <id> --log | grep -E 'Cache restored|already present|old=|new='` and step times via `gh run view <id> --json jobs`; record it in the Step 11b log entry and mark Step 11b done in PLAN. (b) Launch Codex on P4c (read to resume: `sed -n 672,690p PLAN.md`) (share link `core/share.js` + tests, crosshair at the visible map centre, no-impact results naming the road, README, final deployed transfer → `p4_transfer.json`); Claude writes the `docs/PLAYGROUND.md` part and verifies with the pane shown. Read to resume: the P4 block in PLAN (`grep -n 'P4 — Polish' PLAN.md`).
+  1. ~~P2's open questions~~ — decided 2026-10-30, PLAN decision 16: commit the 261027 export under `site/playground/data/`; delete the spike files in P2 (memory gate moves to `core/test/` first); no Meteor attribution budget. P2 detail (P2a–P2e) written 2026-10-30, Codex critique 10/10 accepted (PLAN Review log). P2a–P2d committed and on `main` (`5ddb70b`; `playground` fast-forwarded into `main`; CI green on both). **The playground is live** at https://jar-narvz.github.io/route-impact/site/playground/ (`e9ee428`, Pages run 41143931349). ~~(1) Daily → `pages.yml` paths~~ — exercised by scheduled runs, no dispatch needed: failed Daily 41196974293 (2026-10-31, snapshot 404) → Pages 41200117069 `skipped`; publishing Daily 41306368351 (2026-11-01) → Pages 41309441377 `success` on the bot's result commit `5e97b7b`, and `results/2026-10-31/impact.json` returns 200 on the live site. ~~P2e phone run~~ — done 2026-11-01 (iPhone 14, Chrome: cold load ≤ ~1 s, everything else barely noticeable; VoiceOver skipped). **P2 is closed.** Polish follow-ups are in the P2e part 1 log entry. **Next: P4 per decision 18.** Detail P4a–P4c written 2026-11-01, Codex critique 8 accepted + 2 in part (PLAN Review log). **P4a done 2026-11-02** (phone gate pass, Large ships; see log). Decision 18 amended: Meteor fall 600 / 1,040 ms by size. **P4b done 2026-11-02**; **P4c-1 done 2026-11-02** (crosshair, named results, size-scaled Meteor marker; see log). **Start here next session:** (a) Step 11b run 2: `gh run list --workflow daily.yml -L 1`, then `gh run view <id> --log | grep -E 'Cache restored|already present|old=|new='` and step times via `gh run view <id> --json jobs`; record it in the Step 11b log entry and mark Step 11b done in PLAN. (b) Review Codex's **P4c part 1** implementation (share parser/serializer, page replay/history, README; see newest log). Claude writes `docs/PLAYGROUND.md`, verifies with the pane shown, measures final deployed transfer into `p4_transfer.json` and runs the live smoke test. Read to resume: the P4 block in PLAN (`grep -n 'P4 — Polish' PLAN.md`).
   2. ~~P1c CI red~~ — fixed by `352dede` (portable fixture gzip); CI run 41116882066 on `db3054f` green: `264 passed in 58.88s`, JS `# pass 47` `# fail 0`, lint clean. **P1c Verify complete.**
   3. **Daily job failed 2026-10-30** (run 41051491538): retry fix on `main` as `167f37f` (main CI 41116698061 green). Exercised 2026-10-31 (run 41196974293: three 404 attempts over ~45 min, then a clean failure).
   4. ~~Geofabrik stalled~~ — resumed; Daily 2026-11-01 published `results/2026-10-31/` (download 32 of 39 min, impact ~7 min, no OOM on the runner). **Fallback + cache now proposed as PLAN decision 19 / Step 11b (2026-11-01):** chain OLD to the newest result, up to a 3-day window, then a fresh start with a note; cache NEW's pbf for tomorrow's OLD. Jared approved 2026-11-01; Codex critique 10 points, 9 accepted + #3 in part (PLAN Review log). Step 11b implemented by Codex and reviewed by Claude (offline Verify green, DESIGN §5.11 updated). Pushed as `8ef39c1` (plan `1f4d7d1`, critique `b02a792`); CI 41401285220 green. **Live Verify run 1 done 2026-11-02** (Daily 41461034907: chained old=261031, cache miss as expected, saved `norcal-pbf-261101`; see Step 11b log). **Next: Claude checks run 2 of the live Verify:** the first publishing scheduled run after `8ef39c1` (expected 2026-11-02, NEW=261101) logs a `df` line and saves the cache `norcal-pbf-261101`; the next one logs "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", with about one download less. Read the step timings with `gh run view <id> --json jobs`, record the run IDs in the Step 11b log entry, then mark Step 11b done in PLAN. Read to resume for this item: `sed -n 173,212p PLAN.md` (Step 11b) and `sed -n 699,712p PLAN.md` (decision 19).
@@ -56,6 +56,68 @@
 - **Deadlines:** build Oct 29 – Nov 2 · benchmark + README Nov 3 · apply Nov 4
 
 ## Log (append-only, newest on top)
+
+### 2026-11-02 — P4c part 1: share link + README
+- **Agent:** Codex
+- **Did:** Added a pure raw-hash parser/serializer for Stomp, Flip, Meteor and compound presets, with exact single-key grammar, bounded five-decimal coordinates, size/preset membership and exported-way/one-way validation. Added offline grammar and real-page wiring tests. Committed results write the share hash with `history.replaceState`; Rebuild clears it. Load-time and pasted hashes replay through the existing edit path; invalid links clear to the normal page with a short notice. Cancellation prevents a stale lookup or result from replacing a newer edit. Added a copyable result link and updated only the README playground section with both sizes, sharing and exact phone-gate values.
+- **Changed:** `site/playground/core/share.js` (new), `site/playground/core/test/share.test.mjs` (new), `site/playground/app.js`, `site/playground/style.css`, `site/playground/index.html`, `README.md`, `PROGRESS.md`.
+- **Verify:** All three required commands exited 0. `make test` and `make lint` used `PYENV_VERSION=3.11.14 PATH="$PWD/.venv/bin:$PATH"`. Actual output excerpts below (individual TAP cases/timings omitted; Python output and TAP totals pasted verbatim):
+
+```text
+$ node --test site/playground/core/test/share.test.mjs
+1..65
+# tests 65
+# suites 0
+# pass 65
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 124.484542
+$ PYENV_VERSION=3.11.14 PATH="$PWD/.venv/bin:$PATH" make test
+python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/jarednarvaez/route-impact
+configfile: pyproject.toml
+collected 314 items
+
+tests/test_check_outputs.py .......................                      [  7%]
+tests/test_daily.py .............................................        [ 21%]
+tests/test_extract.py ......                                             [ 23%]
+tests/test_faults.py ................................................... [ 39%]
+                                                                         [ 39%]
+tests/test_graph.py .............                                        [ 43%]
+tests/test_impact.py .......................................             [ 56%]
+tests/test_metrics.py ...............                                    [ 61%]
+tests/test_playground_export.py ................                         [ 66%]
+tests/test_playground_oracle.py ........................................ [ 78%]
+...........................                                              [ 87%]
+tests/test_report.py ................                                    [ 92%]
+tests/test_rootcause.py ................                                 [ 97%]
+tests/test_smoke.py .                                                    [ 98%]
+tests/test_trips.py ......                                               [100%]
+
+============================= 314 passed in 40.79s =============================
+/Applications/Xcode.app/Contents/Developer/usr/bin/make test-js
+node --test 'site/playground/core/test/*.test.mjs'
+1..196
+# tests 196
+# suites 0
+# pass 196
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9679.93125
+$ PYENV_VERSION=3.11.14 PATH="$PWD/.venv/bin:$PATH" make lint
+ruff check . && ruff format --check .
+All checks passed!
+50 files already formatted
+```
+
+- **Review:** Claude, 2026-11-02. Reran Verify: share 65/65, pytest 314 passed, JS 196 pass, lint clean. Fixed README float `394.9999999999709 ms` → `395 ms` (float error in `p4_phone_gate.json`, not a rounded measurement) and "1500 m" → "1,500 m". Follow-ups, not blocking: `loadWayLookup` refetches way arrays on the main thread instead of asking the worker; a hash pasted while the page shows an error is ignored. Still open: `docs/PLAYGROUND.md` (Claude), browser-pane checks, deployed transfer + smoke test.
+- **Gotchas:** Road-link replay lazily reads and SHA-256-verifies the existing `way_osm_id.bin.gz` and `way_oneway.bin.gz` URLs on the main thread, cached as one lookup promise; Meteor and preset links do not load those arrays again. This preserves the allowed file scope and keeps geometry in the worker; Claude should include these requests/cache behavior in the deployed transfer check. The history API's own `replaceState` writes emit no `hashchange`, so they do not replay. Phone timing values are copied verbatim from `results/playground/p4_phone_gate.json`, including the unrounded Bay Bridge median; `?timing` bypasses animations. P4c-1 crosshair/naming code was not redone. No browser-pane checks, deployed transfer measurement, live smoke test, network access, staging or commits. `PLAN.md`, `docs/DESIGN.md` and `docs/PLAYGROUND.md` were not edited. Existing untracked `.claude/` and `.codex/` directories were left untouched.
 
 ### 2026-11-02 — P4c-1: crosshair + named no-impact results; size-scaled Meteor marker (**done**)
 - **Agent:** Codex (crosshair, naming, tests); Claude (Meteor size scaling per Jared, review, browser Verify).
