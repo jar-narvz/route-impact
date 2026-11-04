@@ -59,6 +59,14 @@
 
 ## Log (append-only, newest on top)
 
+### 2026-11-03 — Results page explains quiet days; Bay Bridge sample
+- **Step:** small improvement at Jared's request (PLAN decision 21). **Agent:** Claude wrote it, because the page needs a browser loop and Codex's sandbox can't launch Chrome.
+- **Did:** the page opens on the latest day, has a day picker, and shows a verdict with broken, slowed and trips checked. Quiet days now say why the map is empty. The real 261027 what-if output is published as a labelled sample (`?sample=bay-bridge`). `results/index.json` is built in the Pages job, so it can't drift from `results/`.
+- **Changed:** `site/index.html`, `src/route_impact/site_index.py` (new), `tests/test_site_index.py` (new), `.github/workflows/pages.yml`, `results/samples/bay-bridge/` (new, 2.2 MB), `README.md`, `PLAN.md`.
+- **Verify:** `pytest` 319 passed; `make test-js` `# pass 265` `# fail 0`; lint clean. Browser, on a local copy of the Pages build: bare `/site/` opens Nov 1; `?date=2026-10-31` reads "339 trips crossed an edited road, and none lost 2 minutes or more."; the sample draws 99 paths, shows High risk, 2 broken, 347 slowed, with none under the panel; unpublished date, unknown sample and missing index each give a clear message; `?src=` still works; no horizontal scroll at 375×812. Medium and Low labels were checked with a temporarily edited local index. Not deployed yet, so the Pages index step hasn't run in CI.
+- **Review:** Codex, static read of the diff: no findings. It did not run the deploy or read `is_complete`.
+- **Gotchas:** `rerouted` counts trips whose old path crossed a changed segment and were re-checked, not trips that took a new route, so the page words it that way. 2026-11-01 has 0 changed segments on trip paths, against 22–81 on the other days; not yet checked whether the two snapshots really match.
+
 ### 2026-11-03 — Map icon on both pages; why the results map looks empty
 - **Step:** small fix at Jared's request. **Agent:** Claude.
 - **Did:** Added one shared `site/favicon.svg` (folded map with a red route), linked from `site/index.html` and `site/playground/index.html`. This also removes the `/favicon.ico` 404. Diagnosed the empty results map: not a bug. All 7 published days have 0 broken and 0 slowed trips, and the map draws only those.

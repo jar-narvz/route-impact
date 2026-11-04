@@ -809,6 +809,8 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
     - *Why traffic follows ways, not trips:* the baseline reaches the page as unique ways; ordering 2,057 trip paths needs a heavier protocol change for little visual gain. Density from trip counts keeps it honest.
     - *Why fonts count toward the budget:* the budget exists so a phone loads the page quickly; 52 kB of fonts load on that phone too.
 
+21. **Results page explains quiet days; day list built at deploy time** (2026-11-03, Claude's proposal; Jared approved 2026-11-03). *Problem:* every published day has 0 broken and 0 slowed trips, so the map looks broken, and the bare `/site/` address shows only a usage hint. *Decision:* open on the latest day, add a day picker and a plain summary, and publish the real Bay Bridge what-if output as a labelled sample. *Why:* a static page can't list a folder, and the GitHub API is rate-limited, so it needs an index. The Pages job builds `results/index.json` instead of Daily committing it, so the index can't drift from `results/`, and `daily.sh` doesn't change. *Non-goals:* no redesign of the results map, and no drawing of trips below the 2-minute threshold.
+
 ## Review log
 ### 2026-11-03 — Codex critique of P5 (`codex exec --sandbox read-only`, 10 points)
 | # | Point | Decision | Reason / change |

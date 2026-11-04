@@ -7,7 +7,7 @@ Every day it takes two consecutive [Geofabrik](https://download.geofabrik.de/nor
 
 Real breakages are rare, so the tool is also evaluated by **fault injection**: it deliberately breaks real roads (deletes a bridge, flips a one-way, disconnects an intersection) and checks whether it names the right culprit.
 
-**Results map:** https://jar-narvz.github.io/route-impact/site/?date=2026-10-28 · daily reports live in [`results/`](results/).
+**Results map:** https://jar-narvz.github.io/route-impact/site/ · daily reports live in [`results/`](results/). Every published day so far is quiet, so the map is usually empty; the [simulated Bay Bridge closure](https://jar-narvz.github.io/route-impact/site/?sample=bay-bridge) shows what a bad day looks like (2 broken, 347 slowed, risk HIGH; [`results/samples/bay-bridge/`](results/samples/bay-bridge/)).
 
 **Fault playground:** https://jar-narvz.github.io/route-impact/site/playground/: break Bay Area roads yourself and watch the sampled trips reroute, live in your browser.
 

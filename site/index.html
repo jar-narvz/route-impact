@@ -8,21 +8,112 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
+    :root { --fg: #0a0a0a; --fg-2: #666; --line: #eaeaea; --high: #d52222; --medium: #b25000; }
     html, body, #map { height: 100%; margin: 0; }
-    body { font-family: system-ui, sans-serif; }
-    #message { position: absolute; top: 12px; left: 55px; z-index: 1000;
-      background: white; padding: 10px 14px; border-radius: 4px; max-width: 32rem;
-      box-shadow: 0 1px 5px #777; }
+    body { font: 400 14px/1.45 system-ui, sans-serif; color: var(--fg); background: #f2f2f2; }
+    #panel { position: absolute; top: 12px; left: 12px; z-index: 1000; box-sizing: border-box;
+      width: 320px; max-width: calc(100% - 24px); padding: 14px 16px; background: #fff;
+      border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px #0002; }
+    #panel[hidden] { display: none; }
+    #picker { display: block; width: 100%; min-height: 36px; margin-bottom: 12px; padding: 0 8px;
+      font: inherit; color: inherit; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+    #verdict { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+    #verdict.high { color: var(--high); }
+    #verdict.medium { color: var(--medium); }
+    #stats { display: flex; gap: 20px; margin: 10px 0; }
+    #stats[hidden] { display: none; }
+    #stats div { display: flex; flex-direction: column; }
+    #stats strong { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    #stats span { font-size: 12px; color: var(--fg-2); }
+    #message { margin: 6px 0 0; color: var(--fg-2); }
+    #links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; }
+    #links a { color: var(--fg); }
     .leaflet-popup-content pre { white-space: pre-wrap; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
   <div id="map" aria-label="Affected routes and confirmed edits"></div>
-  <div id="message" role="status">Loading routes…</div>
+  <section id="panel" aria-label="Day summary">
+    <select id="picker" aria-label="Choose a day" hidden></select>
+    <h1 id="verdict"></h1>
+    <div id="stats" hidden></div>
+    <p id="message" role="status">Loading routes…</p>
+    <div id="links"></div>
+  </section>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
     const message = document.getElementById('message');
+    const picker = document.getElementById('picker');
+    const verdict = document.getElementById('verdict');
+    const stats = document.getElementById('stats');
+    const links = document.getElementById('links');
+    const number = value => value.toLocaleString('en-US');
+    function dayName(date) {
+      return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US',
+        {timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric'});
+    }
+    function isQuiet(entry) { return entry.broken === 0 && entry.slowed === 0; }
+    async function loadIndex() {
+      try {
+        const response = await fetch('../results/index.json');
+        return response.ok ? await response.json() : null;
+      } catch {
+        return null;
+      }
+    }
+    function addOption(parent, value, label, selected) {
+      const option = new Option(label, value, selected, selected);
+      parent.append(option);
+    }
+    function fillPicker(index, current) {
+      for (const day of index.days) {
+        const label = `${dayName(day.date)} · ${isQuiet(day) ? 'quiet' : day.risk.toLowerCase() + ' risk'}`;
+        addOption(picker, `date=${day.date}`, label, current === `date=${day.date}`);
+      }
+      if (index.samples.length) {
+        const group = document.createElement('optgroup');
+        group.label = 'Simulated';
+        for (const sample of index.samples) {
+          addOption(group, `sample=${sample.id}`, sample.title, current === `sample=${sample.id}`);
+        }
+        picker.append(group);
+      }
+      if (picker.value !== current) addOption(picker, current, current.replace('date=', ''), true);
+      picker.hidden = false;
+      picker.addEventListener('change', () => { location.search = `?${picker.value}`; });
+    }
+    function addLink(text, href) {
+      const link = document.createElement('a');
+      link.textContent = text;
+      link.href = href;
+      links.append(link);
+    }
+    function showStats(entry) {
+      for (const [label, value] of [['Broken', entry.broken], ['Slowed 2+ min', entry.slowed],
+          ['Trips checked', entry.trips_total]]) {
+        const box = document.createElement('div');
+        const strong = document.createElement('strong');
+        const name = document.createElement('span');
+        strong.textContent = number(value);
+        name.textContent = label;
+        box.append(strong, name);
+        stats.append(box);
+      }
+      stats.hidden = false;
+    }
+    function showSummary(entry, sample) {
+      const level = entry.risk.toLowerCase();
+      verdict.textContent = isQuiet(entry) ? 'Quiet day' : `${entry.risk[0]}${level.slice(1)} risk`;
+      verdict.className = isQuiet(entry) ? '' : level;
+      showStats(entry);
+      if (sample) return sample.note;
+      if (!isQuiet(entry)) return '';
+      const crossed = entry.rerouted === 0
+        ? 'No trip crossed an edited road.'
+        : `${number(entry.rerouted)} trips crossed an edited road, and none lost 2 minutes or more.`;
+      return `${crossed} The map only draws broken or slowed trips, so it's empty.`;
+    }
     function popup(feature) {
       const p = feature.properties;
       const box = document.createElement('div');
@@ -52,13 +143,17 @@
     }
     async function load() {
       if (typeof L === 'undefined') throw new Error('The map library could not load.');
-      const map = L.map('map').setView([38, -122], 7);
+      const map = L.map('map', {zoomControl: false}).setView([38, -122], 7);
+      L.control.zoom({position: 'topright'}).addTo(map);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
       }).addTo(map);
       const params = new URLSearchParams(location.search);
+      const index = params.has('src') ? null : await loadIndex();
       let source;
+      let entry = null;
+      let sample = null;
       if (params.has('src')) {
         source = params.get('src');
         // Backslashes and leading slashes can also resolve to absolute URLs in browsers.
@@ -66,14 +161,25 @@
             || source.startsWith('/') || /[\\\x00-\x20\x7f]/.test(source)) {
           throw new Error('src must be a relative path.');
         }
+      } else if (params.has('sample')) {
+        sample = index?.samples.find(item => item.id === params.get('sample'));
+        if (!sample) throw new Error('That sample does not exist.');
+        entry = sample;
+        source = `../results/samples/${sample.id}/impact.geojson`;
+        fillPicker(index, `sample=${sample.id}`);
       } else {
-        const date = params.get('date');
+        const date = params.get('date') ?? index?.days[0]?.date;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
-          throw new Error('Use ?date=YYYY-MM-DD or ?src=relative/path/impact.geojson.');
+          throw new Error(params.has('date') ? 'Use ?date=YYYY-MM-DD.' : 'The list of days could not load.');
         }
         source = `../results/${date}/impact.geojson`;
+        if (index) {
+          entry = index.days.find(day => day.date === date) ?? null;
+          fillPicker(index, `date=${date}`);
+        }
       }
       const response = await fetch(source);
+      if (response.status === 404) throw new Error('No results were published for that day.');
       if (!response.ok) throw new Error(`Could not load map data (${response.status}).`);
       const data = await response.json();
       if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
@@ -82,7 +188,20 @@
       const synthetic = data.snapshots && !/^[0-9]{6}$/.test(data.snapshots.old);
       const coverage = data.trips_shown < data.trips_total
         ? `Showing ${data.trips_shown} of ${data.trips_total} affected trips. ` : '';
-      const notice = coverage + (synthetic ? 'Synthetic test town — not real roads. ' : '');
+      const notice = (coverage + (synthetic ? 'Synthetic test town — not real roads. ' : '')).trim();
+      const simulated = /what-if/.test(data.snapshots?.new ?? '') && !sample
+        ? 'Simulated edit, not a real event.' : '';
+      const summary = entry ? showSummary(entry, sample) : '';
+      if (entry && isQuiet(entry) && index?.samples.length) {
+        addLink('See a bad day', `?sample=${index.samples[0].id}`);
+      }
+      if (sample) addLink('Back to the latest day', '?');
+      addLink('Break roads yourself', 'playground/');
+      if (!data.features.length) {
+        message.textContent = [simulated, notice,
+          summary || 'No affected routes or confirmed culprits in this file.'].filter(Boolean).join(' ');
+        return;
+      }
       const legend = L.control({position: 'bottomright'});
       legend.onAdd = () => {
         const box = L.DomUtil.create('div');
@@ -97,10 +216,6 @@
         return box;
       };
       legend.addTo(map);
-      if (!data.features.length) {
-        message.textContent = notice + 'No affected routes or confirmed culprits in this file.';
-        return;
-      }
       const layer = L.geoJSON(data, {
         style: feature => feature.properties.role === 'culprit'
           ? {color: '#d52222', weight: 7}
@@ -131,12 +246,19 @@
         const container = map.getContainer();
         if (!container.clientWidth || !container.clientHeight) return;
         map.invalidateSize();
-        map.fitBounds(layer.getBounds(), {padding: [24, 24]});
+        // Keep routes out from under the summary panel: beside it when wide, below it on phones.
+        const box = document.getElementById('panel').getBoundingClientRect();
+        const beside = container.clientWidth >= 700;
+        map.fitBounds(layer.getBounds(), {
+          paddingTopLeft: beside ? [box.right + 24, 24] : [24, box.bottom + 24],
+          paddingBottomRight: [24, 24]
+        });
       }
       window.addEventListener('resize', fit);
       new ResizeObserver(fit).observe(map.getContainer());
       requestAnimationFrame(fit);
-      message.textContent = notice + 'Old routes: grey dashed · New routes: blue · Culprits: red';
+      message.textContent = [simulated, notice, summary].filter(Boolean).join(' ')
+        || 'Old routes: grey dashed · New routes: blue · Culprits: red';
     }
     load().catch(error => { message.textContent = `Map unavailable: ${error.message}`; });
   </script>

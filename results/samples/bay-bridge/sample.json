@@ -1,0 +1,5 @@
+{
+  "title": "Bay Bridge closed",
+  "note": "Simulated closure, not a real event. All 10 Bay Bridge ways were removed from the 2026-10-27 snapshot.",
+  "command": "route-impact what-if --snapshot 261027 --delete-way 8921938 --delete-way 23874736 --delete-way 236348360 --delete-way 236348361 --delete-way 237731428 --delete-way 497579295 --delete-way 661905443 --delete-way 661905446 --delete-way 929579737 --delete-way 1343738800"
+}
