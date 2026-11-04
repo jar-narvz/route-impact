@@ -59,6 +59,14 @@
 
 ## Log (append-only, newest on top)
 
+### 2026-11-03 — Map icon on both pages; why the results map looks empty
+- **Step:** small fix at Jared's request. **Agent:** Claude.
+- **Did:** Added one shared `site/favicon.svg` (folded map with a red route), linked from `site/index.html` and `site/playground/index.html`. This also removes the `/favicon.ico` 404. Diagnosed the empty results map: not a bug. All 7 published days have 0 broken and 0 slowed trips, and the map draws only those.
+- **Changed:** `site/favicon.svg` (new), `site/index.html`, `site/playground/index.html`, `PROGRESS.md`.
+- **Verify:** both pages resolve the icon locally (200, `image/svg+xml`); icon checked at 16 and 32 px on dark and light; `make test-js` `# pass 265` `# fail 0`; lint clean. Map proof: `route-impact what-if --snapshot 261027` closing the 10 Bay Bridge ways gave broken 2, slowed 347, risk HIGH, 49 features, and the page drew 99 paths from `?src=../data/map_probe/impact.geojson` (gitignored, not committed).
+- **Review:** not reviewed by a second agent (one icon, two link tags).
+- **Gotchas:** the icon adds 245 B gzip, outside `playground_bytes.py`'s file list; `p5_transfer.json` stays the record for `869e2e8`. Open UX gaps on the results page: bare `/site/` shows only "Use ?date=…", the page never shows that day's rerouted count, and there is no date picker or sample result.
+
 ### 2026-11-03 — P5: deployed transfer + live smoke test
 - **Step:** P5c after-deploy Verify. **Agent:** Claude.
 - **Did:** After Jared pushed `869e2e8` (Pages 41735914991 success, CI 41735915052 success), measured the deployed transfer and ran the live smoke test. Also repaired `p5b_browser_check.json`: the shake re-run had replaced the 18-case record with a 15-case one, so the README claim no longer traced to it.
