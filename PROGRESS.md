@@ -59,6 +59,13 @@
 
 ## Log (append-only, newest on top)
 
+### 2026-11-04 — README test counts
+- **Agent:** Claude.
+- **Did:** Added a Tests paragraph to the README so `swe-route-16` can be confirmed from the repo. The playground section and the 39 min 14 s run time were already there.
+- **Changed:** `README.md`, `PROGRESS.md`.
+- **Verify:** `make test` at `de2313d`: `319 passed in 52.15s`, `# pass 265` `# fail 0`. CI on `de2313d`: success.
+- **Review:** docs only.
+
 ### 2026-11-03 — Results page explains quiet days; Bay Bridge sample
 - **Step:** small improvement at Jared's request (PLAN decision 21). **Agent:** Claude wrote it, because the page needs a browser loop and Codex's sandbox can't launch Chrome.
 - **Did:** the page opens on the latest day, has a day picker, and shows a verdict with broken, slowed and trips checked. Quiet days now say why the map is empty. The real 261027 what-if output is published as a labelled sample (`?sample=bay-bridge`). `results/index.json` is built in the Pages job, so it can't drift from `results/`.

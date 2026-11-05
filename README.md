@@ -32,6 +32,8 @@ Other commands:
 
 `route-impact impact` exits **0** for LOW/MEDIUM, **1** for HIGH and **2** for a tool error, so a crash is never mistaken for a quiet day. The daily workflow calls the CLI directly rather than `make`, because Make turns every failure into exit 2.
 
+**Tests:** `make test` runs 319 pytest tests on small checked-in map fixtures with known answers, then 265 Node tests for the playground (needs Node 22 or newer). Neither needs the network or the full data file. CI runs `make lint` (ruff) and `make test` on every push; those counts are from commit `de2313d`, where CI passed.
+
 ## How it works
 Full design with the reasoning behind each decision: [docs/DESIGN.md](docs/DESIGN.md).
 
