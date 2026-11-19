@@ -28,7 +28,7 @@ mkdir -p data
 filename="norcal-${date:-latest}.osm.pbf"
 pbf="data/$filename"
 manifest="$pbf.md5"
-base_url="https://download.geofabrik.de/north-america/us/california"
+base_url="https://download.geofabrik.de/north-america/us/california/norcal"
 # curl itself retries brief outages (timeouts, 408/429/5xx) a few times.
 curl_retry=(--retry 3 --retry-delay 30)
 

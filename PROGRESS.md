@@ -59,6 +59,14 @@
 
 ## Log (append-only, newest on top)
 
+### 2026-11-19 — Geofabrik moved NorCal into a `norcal/` subfolder
+- **Agent:** Claude (small fix, Jared asked for it directly).
+- **Did:** Daily 44549398658 (2026-11-19) failed with three `.md5` 404s for 261118, though that snapshot went up at 00:10 UTC. Geofabrik now serves NorCal under `california/norcal/`; old `.pbf` URLs redirect (308), old `.md5` URLs return 404 (261117 too), so every download would have failed. Pointed `base_url` at the new folder and updated the PLAN data note.
+- **Changed:** `scripts/download.sh`, `PLAN.md` (data note), `PROGRESS.md`.
+- **Verify:** new-base `.md5` for 261117 and 261118 both fetch (`03b89fb3…`, `394069732…`); `make test` `319 passed in 42.51s`, `# pass 265` `# fail 0`; `make lint` clean. End-to-end: manual Daily dispatch for 2026-11-18 after the push (run ID in the next entry or below).
+- **Review:** one-line URL change; no Codex review.
+- **Gotchas:** the 404 message reads "not published", which hid the real cause. A redirect-follow on the `.md5` fetch would not have helped: the old `.md5` path has no redirect.
+
 ### 2026-11-04 — README test counts
 - **Agent:** Claude.
 - **Did:** Added a Tests paragraph to the README so `swe-route-16` can be confirmed from the repo. The playground section and the 39 min 14 s run time were already there.
