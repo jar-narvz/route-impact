@@ -153,14 +153,14 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
     - a mismatched `faults.json` stops with an error.
   - Then Claude rehearses `route-impact faults --snapshot 261027 --n 10 --seed 2027 --results-dir <scratchpad>` (exit 0, runs 0 and 10 checked, `progress.jsonl` has 11 lines).
   - Then Claude starts `route-impact faults --snapshot 261027 --n 200 --seed 2027` in the background, writing to `results/faults/261027/`.
-- **Status:** todo
+- **Status:** done 2026-10-28 (`3200567`; n=10 rehearsal and the N=200 suite ran on it, scores `0c73497`). Marked done 2026-11-26 (status line was stale).
 
 ### Step 10 — CI (independent; any time after Step 0)
 - **Owner:** Codex
 - **Files:** `.github/workflows/ci.yml`, `README.md` (badge line only)
 - **Do:** On push/PR: ubuntu-latest, Python 3.11, cache pip and `~/.duckdb/extensions`, `pip install -e ".[dev]"`, `make setup`, `make lint`, `make test`. Add the badge to README.
 - **Verify:** push → Actions run green; badge renders in README.
-- **Status:** todo
+- **Status:** done 2026-10-29 (`c72c53c` + `eaf1149`; run 40838310758 green, `132 passed`, badge "passing"). Marked done 2026-11-26 (status line was stale).
 
 ### Step 11 — Daily job
 - **Owner:** Codex (workflow reviewed by Claude before first scheduled run)
@@ -208,7 +208,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
   - A shell test with fake `download.sh` and `route-impact` on `PATH` and temp dirs, no network (critique #7). It asserts the exact `--old`/`--new` arguments for (a) a chained run, (b) chained OLD returning 404 → fresh start with OLD = NEW−1 once, and (c) `pbf-cache/` holding exactly NEW's two files after a publish.
   - `tests/test_report.py`: exact titles for a 3-day window, a 1-day window, and non-date labels (unchanged).
   - Live, after merge: the first publishing scheduled run shows a cache save `norcal-pbf-<new>` and a `df` line. The next one shows "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", and its download time drops by about one file. Run IDs and step timings go in PROGRESS.
-- **Status:** decision 19 approved 2026-11-01. Codex critique 9.5/10 accepted (Review log). Code + offline Verify done 2026-11-01 (Codex; Claude review). Live Verify pending two scheduled runs.
+- **Status:** decision 19 approved 2026-11-01. Codex critique 9.5/10 accepted (Review log). Code + offline Verify done 2026-11-01 (Codex; Claude review). Live Verify run 1 done 2026-11-02 (Daily 41461034907). Run 2 (cache hit) still open: dispatch 45875157584 (2026-11-26) was a fresh start and saved `norcal-pbf-261125`; the 2026-11-27 scheduled Daily should restore it.
 
 ### Step 11c — Daily: survive runner connection failures; Pages: survive the artifact race (bug fix, 2026-11-25)
 - **Owner:** Codex (Claude reviews)
@@ -244,7 +244,7 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
     - Existing tests unchanged and green.
   - `actionlint` clean on all three workflows; `make test` green; `make lint` clean.
   - Live (Jared pushes): (a) Pages dispatch deploys 2026-11-20/21 (`results/2026-11-21/impact.json` 200 on the site). (b) Drill: dispatch Daily with `date` = an already-complete day and `simulate_connect_failure=true` → `attempt1` and `attempt2` green with `retry_elsewhere=true`, `attempt3` runs and skips (complete), run green. (c) Next scheduled Daily: publishes on some attempt, or fails only on `attempt3`. (d) Next Pages run that hits the race shows the retry step with `Found 1 artifact(s)`. Run IDs in PROGRESS.
-- **Status:** proposed 2026-11-25; Codex critique 8 accepted, 1 in part (Review log).
+- **Status:** proposed 2026-11-25; Codex critique 8 accepted, 1 in part (Review log). Implemented and pushed (`2b35ab4`); live Verify (a), (b), (d) pass (`4a75acf`). (c) open: waits on the 2026-11-27 scheduled Daily.
 
 ### Step 12 — Benchmark + real fault suite
 - **Owner:** Codex writes; **Jared runs on the full files**
