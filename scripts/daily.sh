@@ -27,6 +27,33 @@ if [[ "$test_high" != true && "$test_high" != false ]]; then
     exit 1
 fi
 
+last_attempt=${DAILY_LAST_ATTEMPT:-true}
+if [[ "$last_attempt" != true && "$last_attempt" != false ]]; then
+    echo "DAILY_LAST_ATTEMPT must be true or false" >&2
+    exit 1
+fi
+simulate_connect_failure=${DAILY_SIMULATE_CONNECT_FAILURE:-false}
+if [[ "$simulate_connect_failure" != true && "$simulate_connect_failure" != false ]]; then
+    echo "DAILY_SIMULATE_CONNECT_FAILURE must be true or false" >&2
+    exit 1
+fi
+
+connect_failure() {
+    if [[ "$last_attempt" == false ]]; then
+        if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+            printf 'retry_elsewhere=true\n' >> "$GITHUB_OUTPUT"
+        fi
+        echo "Could not connect to Geofabrik from this runner; retrying on a new runner" >&2
+        exit 0
+    fi
+    echo "Could not connect to Geofabrik from any runner tried" >&2
+    exit 1
+}
+
+if [[ "$simulate_connect_failure" == true && "$last_attempt" == false ]]; then
+    connect_failure
+fi
+
 run_command() {
     if [[ "${DAILY_DRY_RUN:-}" == 1 ]]; then
         printf 'DRY RUN:'
@@ -137,6 +164,9 @@ download() {
             download_code=$?
         fi
         cat "$work_dir/download.stderr" >&2
+        if grep -q 'Could not connect to Geofabrik' "$work_dir/download.stderr"; then
+            connect_failure
+        fi
         if [[ "$scheduled" == 1 && "$snapshot" == "$old" && "$old" != "$previous_day" ]] &&
             grep -qE 'not published|404' "$work_dir/download.stderr"; then
             return "$download_code"

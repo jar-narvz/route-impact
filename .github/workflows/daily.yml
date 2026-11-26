@@ -13,6 +13,10 @@ on:
         type: boolean
         default: false
 
+      simulate_connect_failure:
+        type: boolean
+        default: false
+
 permissions:
   contents: read
 
@@ -21,57 +25,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  run:
-    runs-on: ubuntu-latest
-    timeout-minutes: 300
+  attempt1:
+    uses: ./.github/workflows/daily-run.yml
     permissions:
       contents: write
       issues: write
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: main
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - name: Cache DuckDB extensions
-        uses: actions/cache@v5
-        with:
-          path: ~/.duckdb/extensions
-          key: duckdb-ext-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            duckdb-ext-${{ runner.os }}-
-      - name: Install dependencies
-        run: pip install -e ".[dev]"
-      - name: Install DuckDB spatial extension
-        run: make setup
-      - name: Plan window
-        id: plan
-        if: inputs.test_high != true
-        run: |
-          args=(plan --max-gap "${DAILY_MAX_GAP_DAYS:-3}")
-          if [[ -n "$DATE" ]]; then args+=(--date "$DATE"); fi
-          python -m route_impact.daily "${args[@]}"
-        env:
-          DATE: ${{ inputs.date }}
-      - name: Restore OLD snapshot
-        if: inputs.test_high != true && steps.plan.outputs.skip != 'true'
-        uses: actions/cache/restore@v5
-        with:
-          path: data/pbf-cache
-          key: norcal-pbf-${{ steps.plan.outputs.old }}
-      - name: Run daily impact
-        id: daily
-        run: bash scripts/daily.sh
-        env:
-          DATE: ${{ inputs.date }}
-          TEST_HIGH: ${{ inputs.test_high }}
-          GH_TOKEN: ${{ github.token }}
-      - name: Save NEW snapshot
-        if: steps.daily.outputs.publish == 'true'
-        uses: actions/cache/save@v5
-        with:
-          path: data/pbf-cache
-          key: norcal-pbf-${{ steps.plan.outputs.new }}
+    with:
+      date: ${{ inputs.date }}
+      test_high: ${{ inputs.test_high == true }}
+      simulate_connect_failure: ${{ inputs.simulate_connect_failure == true }}
+      last_attempt: false
+  attempt2:
+    needs: attempt1
+    if: needs.attempt1.outputs.retry_elsewhere == 'true'
+    uses: ./.github/workflows/daily-run.yml
+    permissions:
+      contents: write
+      issues: write
+    with:
+      date: ${{ inputs.date }}
+      test_high: ${{ inputs.test_high == true }}
+      simulate_connect_failure: ${{ inputs.simulate_connect_failure == true }}
+      last_attempt: false
+  attempt3:
+    needs: attempt2
+    if: needs.attempt2.outputs.retry_elsewhere == 'true'
+    uses: ./.github/workflows/daily-run.yml
+    permissions:
+      contents: write
+      issues: write
+    with:
+      date: ${{ inputs.date }}
+      test_high: ${{ inputs.test_high == true }}
+      simulate_connect_failure: ${{ inputs.simulate_connect_failure == true }}
+      last_attempt: true

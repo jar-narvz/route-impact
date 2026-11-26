@@ -198,6 +198,10 @@ def shell_repo(tmp_path: Path) -> tuple[Path, dict[str, str], date]:
     (tmp_path / "scripts/download.sh").write_text("""#!/usr/bin/env bash
 set -eu
 echo "$1" >> downloads
+if [[ "$1" == "${CONNECT_FAIL_SNAPSHOT:-}" ]]; then
+    echo "Could not connect to Geofabrik for norcal-$1.osm.pbf (curl 7)" >&2
+    exit 1
+fi
 if [[ "$1" == "${FAIL_SNAPSHOT:-}" ]]; then
     echo "not published (404)" >&2
     exit 1
@@ -237,6 +241,8 @@ printf '%s\\n' "$@" >> gh-args
         "PYTHONPATH": str(root / "src"),
         "DATE": "",
         "TEST_HIGH": "false",
+        "DAILY_LAST_ATTEMPT": "true",
+        "DAILY_SIMULATE_CONNECT_FAILURE": "false",
         "DAILY_DRY_RUN": "0",
         "DAILY_MAX_GAP_DAYS": "3",
         "DAILY_RETRIES": "2",
@@ -488,3 +494,124 @@ def test_shell_invalid_cap(shell_repo, max_gap: str) -> None:
     assert result.returncode == 1
     assert result.stderr == "DAILY_MAX_GAP_DAYS must be a positive integer\n"
     assert not (directory / "downloads").exists()
+
+
+def run_daily(directory: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", "scripts/daily.sh"],
+        cwd=directory,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=20,
+    )
+
+
+def assert_no_daily_actions(directory: Path) -> None:
+    for name in ("route-args", "git-args", "gh-args"):
+        assert not (directory / name).exists()
+
+
+@pytest.mark.parametrize(
+    ("case", "last"),
+    [
+        ("new", False),
+        ("new", True),
+        ("old", False),
+        ("fallback", False),
+        ("explicit", False),
+        ("explicit", True),
+    ],
+)
+def test_shell_connect_failure_stops_run(shell_repo, case: str, last: bool) -> None:
+    directory, env, target = shell_repo
+    old = (target - timedelta(days=3)).strftime("%y%m%d")
+    previous = (target - timedelta(days=1)).strftime("%y%m%d")
+    new = target.strftime("%y%m%d")
+    expected_downloads = [old, new]
+    gap = 3
+    if case == "old":
+        failed = old
+        expected_downloads = [old]
+    elif case == "fallback":
+        env["FAIL_SNAPSHOT"] = old
+        failed = previous
+        expected_downloads = [old, previous]
+    elif case == "explicit":
+        env["DATE"] = target.isoformat()
+        old = previous
+        gap = 1
+        failed = new
+        expected_downloads = [previous, new]
+    else:
+        failed = new
+    env.update(
+        CONNECT_FAIL_SNAPSHOT=failed,
+        DAILY_LAST_ATTEMPT=str(last).lower(),
+        DAILY_RETRY_SECONDS="3600",
+    )
+    result = run_daily(directory, env)
+    assert result.returncode == (1 if last else 0), result.stdout + result.stderr
+    assert (directory / "downloads").read_text().splitlines() == expected_downloads
+    expected_output = (
+        f"date={target}\nnew={new}\nold={old}\ngap_days={gap}\n"
+        "skip=false\nfresh_start=false\nnote=\n"
+    )
+    if not last:
+        expected_output += "retry_elsewhere=true\n"
+    assert (directory / "outputs").read_text() == expected_output + "publish=false\n"
+    message = (
+        "Could not connect to Geofabrik from any runner tried"
+        if last
+        else "Could not connect to Geofabrik from this runner; retrying on a new runner"
+    )
+    assert message in result.stdout + result.stderr
+    assert_no_daily_actions(directory)
+
+
+@pytest.mark.parametrize("last", [False, True])
+def test_shell_simulated_connect_failure(shell_repo, last: bool) -> None:
+    directory, env, target = shell_repo
+    env.update(
+        DAILY_SIMULATE_CONNECT_FAILURE="true",
+        DAILY_LAST_ATTEMPT=str(last).lower(),
+        DAILY_RETRY_SECONDS="3600",
+    )
+    result = run_daily(directory, env)
+    assert result.returncode == 0, result.stdout + result.stderr
+    if last:
+        old = (target - timedelta(days=3)).strftime("%y%m%d")
+        new = target.strftime("%y%m%d")
+        assert (directory / "downloads").read_text().splitlines() == [old, new]
+        assert (directory / "route-args").read_text().splitlines() == [
+            "impact",
+            "--old",
+            old,
+            "--new",
+            new,
+        ]
+        assert (directory / "outputs").read_text() == (
+            f"date={target}\nnew={new}\nold={old}\ngap_days=3\n"
+            "skip=false\nfresh_start=false\nnote=\npublish=true\n"
+        )
+        assert (directory / "git-args").exists()
+        assert not (directory / "gh-args").exists()
+    else:
+        assert not (directory / "downloads").exists()
+        assert (directory / "outputs").read_text() == "retry_elsewhere=true\npublish=false\n"
+        assert "retrying on a new runner" in result.stdout + result.stderr
+        assert_no_daily_actions(directory)
+
+
+@pytest.mark.parametrize("variable", ["DAILY_LAST_ATTEMPT", "DAILY_SIMULATE_CONNECT_FAILURE"])
+@pytest.mark.parametrize("value", ["invalid", "TRUE", "1"])
+def test_shell_invalid_connect_flags(shell_repo, variable: str, value: str) -> None:
+    directory, env, _ = shell_repo
+    env[variable] = value
+    result = run_daily(directory, env)
+    assert result.returncode == 1
+    assert result.stderr == f"{variable} must be true or false\n"
+    assert not (directory / "downloads").exists()
+    assert (directory / "outputs").read_text() == "publish=false\n"
+    assert_no_daily_actions(directory)

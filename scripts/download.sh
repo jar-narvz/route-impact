@@ -30,7 +30,7 @@ pbf="data/$filename"
 manifest="$pbf.md5"
 base_url="https://download.geofabrik.de/north-america/us/california/norcal"
 # curl itself retries brief outages (timeouts, 408/429/5xx) a few times.
-curl_retry=(--retry 3 --retry-delay 30)
+curl_retry=(--retry 3 --retry-delay 30 --retry-connrefused)
 
 matches_checksum() {
     local expected remainder actual
@@ -58,7 +58,10 @@ if http_status=$(curl -fsS "${curl_retry[@]}" -w '%{http_code}' -o "$manifest_tm
     fi
     mv "$manifest_tmp" "$manifest"
 else
-    if [[ "$http_status" == 404 ]]; then
+    curl_code=$?
+    if [[ "$curl_code" == 7 ]]; then
+        echo "Could not connect to Geofabrik for $filename (curl 7)" >&2
+    elif [[ "$http_status" == 404 ]]; then
         echo "$filename not published on Geofabrik" >&2
     elif [[ "$http_status" =~ ^(000|5[0-9][0-9])$ ]]; then
         echo "Geofabrik temporarily unavailable (HTTP $http_status) for $filename" >&2
@@ -73,8 +76,15 @@ if matches_checksum "$pbf"; then
     exit 0
 fi
 
-if ! curl -fL "${curl_retry[@]}" -C - -o "$pbf.part" "$base_url/$filename"; then
-    echo "Download failed for $filename; partial file kept for resume (temporarily unavailable)" >&2
+if curl -fL "${curl_retry[@]}" -C - -o "$pbf.part" "$base_url/$filename"; then
+    :
+else
+    curl_code=$?
+    if [[ "$curl_code" == 7 ]]; then
+        echo "Could not connect to Geofabrik for $filename (curl 7)" >&2
+    else
+        echo "Download failed for $filename; partial file kept for resume (temporarily unavailable)" >&2
+    fi
     exit 1
 fi
 if ! matches_checksum "$pbf.part"; then

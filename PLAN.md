@@ -210,6 +210,42 @@ Ship a public repo that measures how a day of OpenStreetMap edits changes naviga
   - Live, after merge: the first publishing scheduled run shows a cache save `norcal-pbf-<new>` and a `df` line. The next one shows "Cache restored from key: norcal-pbf-<old>" and "`norcal-<old>.osm.pbf` already present, checksum OK", and its download time drops by about one file. Run IDs and step timings go in PROGRESS.
 - **Status:** decision 19 approved 2026-11-01. Codex critique 9.5/10 accepted (Review log). Code + offline Verify done 2026-11-01 (Codex; Claude review). Live Verify pending two scheduled runs.
 
+### Step 11c — Daily: survive runner connection failures; Pages: survive the artifact race (bug fix, 2026-11-25)
+- **Owner:** Codex (Claude reviews)
+- **Why (evidence):**
+  - Daily 45222057955 / 45440862453 / 45654996902 (Nov 23–25) failed the same way: `curl: (7) Failed to connect to download.geofabrik.de port 443 after ~540 ms: Could not connect to server`, 3 attempts 20 min apart, ~40 min each. The same URLs return 200 from Jared's Mac and the snapshots are published. **Hypothesis** (not proven): Geofabrik refuses some GitHub runner addresses; other projects report the same since Nov 2026 (e.g. wirhabenzeit/activitymap#617, TommiContursi/Polku#1392). Every in-job retry runs on the same VM and address, so the 20-min waits can't help if that's true; a new job gets a new VM. curl's `--retry` also skips refused connections without `--retry-connrefused`.
+  - Pages 44912180220 / 45030478346 (Nov 21–22): `upload-pages-artifact` finalized the artifact, then `deploy-pages` listed artifacts 0.3 s later and got `Found 0 artifact(s)`. Same action SHAs as the green Nov 19 run; no GitHub incident. Likely a read-after-write race on GitHub's side; the retry is a **mitigation**. Results for 2026-11-20 and 2026-11-21 are on `main` but not deployed, so the site still ends at Nov 18.
+- **Files:** `scripts/download.sh`, `scripts/daily.sh`, `.github/workflows/daily.yml`, `.github/workflows/daily-run.yml` (new), `.github/workflows/pages.yml`, `tests/test_daily.py`, `tests/test_download.py` (new).
+- **Do:**
+  - `download.sh`: add `--retry-connrefused` to `curl_retry`. Capture curl's real exit status with a plain `if/else` (not `if ! curl`, whose `$?` is negated). On exit 7 (couldn't connect) for either the `.md5` or the `.pbf` fetch, print `Could not connect to Geofabrik for <file> (curl 7)` and exit 1 (`.part` kept, as today). All other messages unchanged.
+  - `daily.sh`:
+    - New env `DAILY_LAST_ATTEMPT` (`true`/`false`, default `true`, validated like `TEST_HIGH`) and `DAILY_SIMULATE_CONNECT_FAILURE` (`true`/`false`, default `false`, validated).
+    - In `download()`, stderr matching `Could not connect to Geofabrik` never sleeps or retries in-job, and **ends the script** (no fallback, no further downloads, no routing, git, or issue): not last → append `retry_elsewhere=true` to `$GITHUB_OUTPUT` (the trap still writes `publish=false`), print `Could not connect to Geofabrik from this runner; retrying on a new runner`, exit 0. Last → print `Could not connect to Geofabrik from any runner tried`, exit 1. Applies to scheduled and explicit runs, OLD, NEW and the fresh-start fallback download.
+    - Drill: if `DAILY_SIMULATE_CONNECT_FAILURE=true` and `DAILY_LAST_ATTEMPT=false`, take the same not-last path right after input validation (before planning or downloading). On the last attempt the flag is ignored.
+    - "not published" and 5xx/000 without the connect message keep today's behavior.
+  - `daily-run.yml` (new, `on: workflow_call`, no `concurrency`, no `permissions` beyond the caller's): today's `run` job moved here unchanged except:
+    - `inputs`: `date` (string, default `''`), `test_high` (boolean, default false), `last_attempt` (boolean, required), `simulate_connect_failure` (boolean, default false).
+    - Output wiring: daily step `id: daily` → `jobs.run.outputs.retry_elsewhere: ${{ steps.daily.outputs.retry_elsewhere }}` → `on.workflow_call.outputs.retry_elsewhere.value: ${{ jobs.run.outputs.retry_elsewhere }}`.
+    - Daily step env adds `DAILY_LAST_ATTEMPT: ${{ inputs.last_attempt }}` and `DAILY_SIMULATE_CONNECT_FAILURE: ${{ inputs.simulate_connect_failure }}`.
+    - `Save NEW snapshot` gets `continue-on-error: true` (best effort: a cache-save hiccup after a successful push must not turn Daily red and skip Pages).
+  - `daily.yml`: same triggers and `concurrency` (only here); new dispatch input `simulate_connect_failure` (boolean, default false). Jobs `attempt1`, `attempt2`, `attempt3` each `uses: ./.github/workflows/daily-run.yml`, `permissions: {contents: write, issues: write}`, `with:` `date: ${{ inputs.date }}`, `test_high: ${{ inputs.test_high == true }}`, `simulate_connect_failure: ${{ inputs.simulate_connect_failure == true }}`, and `last_attempt: false` / `false` / `true`. `attempt2` `needs: attempt1`, `if: needs.attempt1.outputs.retry_elsewhere == 'true'`; `attempt3` the same on `attempt2`. No `always()`: an unrelated failure stops the chain. Only the last attempt can fail on a connect error, so a run that recovers on attempt 2 or 3 is green (one email at most) and Pages sees `success`.
+  - `pages.yml`: first `deploy-pages` (`id: deploy`) gets `continue-on-error: true`; then `sleep 30` and a second `deploy-pages` (`id: deploy_retry`, no `continue-on-error`), both `if: steps.deploy.outcome == 'failure'`. Accepted scope: any first-deploy failure is retried once; a second failure fails the job. Environment URL prefers the retry: `${{ steps.deploy_retry.outputs.page_url || steps.deploy.outputs.page_url }}site/`.
+- **Non-goals:** a second data source (OSM France and others cut different boundaries and keep no dated history, so OLD/NEW would not be comparable); a self-hosted runner; retrying checksum mismatches (Nov 20, a one-off); logging the runner's public address (needs a third-party service).
+- **Verify:**
+  - `tests/test_download.py` (fake `curl` on `PATH` that logs its args, no network): exit 7 on the `.md5` → exit 1, stderr has `Could not connect to Geofabrik`, args include `--retry-connrefused`; `.md5` OK + exit 7 on the `.pbf` → same message, `.part` kept; 404 on `.md5` → "not published"; a 5xx → "temporarily unavailable"; a downloaded `.pbf` with the wrong md5 → "Checksum mismatch", `.part` deleted.
+  - `tests/test_daily.py` (existing harness; fixture sets `DAILY_LAST_ATTEMPT=true` and `DAILY_SIMULATE_CONNECT_FAILURE=false` explicitly; fake `download.sh` prints the connect line for `$CONNECT_FAIL_SNAPSHOT`), with `DAILY_RETRY_SECONDS=3600` and a 20 s subprocess timeout to prove no sleep. For each case assert exit code, the exact `downloads` list, `$GITHUB_OUTPUT` contents, and that `route-args`, `git-args`, `gh-args` don't exist:
+    - NEW fails, not last → exit 0, downloads `[old, new]`, outputs `retry_elsewhere=true` + `publish=false`;
+    - NEW fails, last → exit 1, no `retry_elsewhere`;
+    - chained OLD fails, not last → exit 0, downloads `[old]` (no fallback, no NEW);
+    - chained OLD 404 → fresh start, fallback OLD fails with connect, not last → exit 0, downloads `[old, previous_day]`;
+    - explicit `DATE`, NEW fails, not last → exit 0 + `retry_elsewhere=true`; last → exit 1;
+    - drill flag, not last → exit 0 + `retry_elsewhere=true`, no downloads; drill flag, last → runs normally (downloads `[old, new]`, routes);
+    - invalid `DAILY_LAST_ATTEMPT` / `DAILY_SIMULATE_CONNECT_FAILURE` → exit 1.
+    - Existing tests unchanged and green.
+  - `actionlint` clean on all three workflows; `make test` green; `make lint` clean.
+  - Live (Jared pushes): (a) Pages dispatch deploys 2026-11-20/21 (`results/2026-11-21/impact.json` 200 on the site). (b) Drill: dispatch Daily with `date` = an already-complete day and `simulate_connect_failure=true` → `attempt1` and `attempt2` green with `retry_elsewhere=true`, `attempt3` runs and skips (complete), run green. (c) Next scheduled Daily: publishes on some attempt, or fails only on `attempt3`. (d) Next Pages run that hits the race shows the retry step with `Found 1 artifact(s)`. Run IDs in PROGRESS.
+- **Status:** proposed 2026-11-25; Codex critique 8 accepted, 1 in part (Review log).
+
 ### Step 12 — Benchmark + real fault suite
 - **Owner:** Codex writes; **Jared runs on the full files**
 - **Files:** `src/route_impact/metrics.py`, `scripts/bench.sh`, `scripts/check_outputs.py`, `Makefile`, `tests/test_metrics.py`, `tests/test_check_outputs.py`
@@ -812,6 +848,16 @@ Branch `playground`; merge to `main` only after P2 Verify. Steps below are outli
 21. **Results page explains quiet days; day list built at deploy time** (2026-11-03, Claude's proposal; Jared approved 2026-11-03). *Problem:* every published day has 0 broken and 0 slowed trips, so the map looks broken, and the bare `/site/` address shows only a usage hint. *Decision:* open on the latest day, add a day picker and a plain summary, and publish the real Bay Bridge what-if output as a labelled sample. *Why:* a static page can't list a folder, and the GitHub API is rate-limited, so it needs an index. The Pages job builds `results/index.json` instead of Daily committing it, so the index can't drift from `results/`, and `daily.sh` doesn't change. *Non-goals:* no redesign of the results map, and no drawing of trips below the 2-minute threshold.
 
 ## Review log
+### 2026-11-25 — Codex critique of Step 11c (`codex exec --sandbox read-only`, 9 points)
+1. Spell out step → job → workflow_call output mapping — **accepted**.
+2. Capture curl's real status; a connect failure must end the script, not fall through to routing — **accepted** (tests assert no route/git/gh calls).
+3. curl 7 doesn't prove an IP block — **accepted**: called a hypothesis, message says "Could not connect". Logging the runner's public IP **rejected** (needs a third-party service).
+4. Explicit inputs per attempt, boolean `test_high` on schedule, no `always()` — **accepted**. Offline tests of the job chain aren't possible, so a dispatch **drill** flag (`simulate_connect_failure`) proves the wiring live.
+5. Cache-save failure could still turn a published run red — **accepted**: save is `continue-on-error`.
+6. The Pages race is plausible, not proven — **accepted**: called a mitigation; live Verify (d) checks the retry finds the artifact.
+7. The Pages retry also retries unrelated failures — **accepted as scope** (one retry, second failure fails).
+8. A failed first deploy can still emit `page_url` — **accepted**: the URL prefers the retry's output.
+9. More shell cases (fallback-OLD, explicit final, `.part`, checksum, 404/5xx, isolated env) — **accepted**, except "refusal then success" within one job, which can't happen (no in-job retry).
 ### 2026-11-03 — Codex critique of P5 (`codex exec --sandbox read-only`, 10 points)
 | # | Point | Decision | Reason / change |
 |---|---|---|---|

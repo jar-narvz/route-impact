@@ -30,7 +30,7 @@ jobs:
       contents: read
     environment:
       name: github-pages
-      url: '${{ steps.deploy.outputs.page_url }}site/'
+      url: '${{ steps.deploy_retry.outputs.page_url || steps.deploy.outputs.page_url }}site/'
     steps:
       - uses: actions/checkout@v5
         with:
@@ -45,3 +45,10 @@ jobs:
           path: _site
       - uses: actions/deploy-pages@v4
         id: deploy
+        continue-on-error: true
+      - name: Wait before retrying Pages deployment
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 30
+      - uses: actions/deploy-pages@v4
+        id: deploy_retry
+        if: steps.deploy.outcome == 'failure'
